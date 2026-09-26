@@ -32,9 +32,32 @@
     --ivory: #f6efe2;
     --heart: #ff8fa3;
     --warn: #ff9f8f;
+    --stage: #07060b;
+    --glass: rgba(10, 8, 16, .72);
+    --hint: rgba(236, 230, 245, .62);
+    --shadow: #000;
+    --text-2: #d6cfe2;
+    --panel-a: #1a1326; --panel-b: #0f0c16;
+    --heart-a: #26121d; --heart-b: #120b12; --heart-line: #5a2f45; --hold: #2a1520; --hold-line: #7a3d59;
+    --got-a: #221a10; --got-line: #6a5530;
+    --toast: rgba(18, 13, 26, .92);
+    --backdrop: rgba(4, 3, 8, .72);
+    --bar: #0a0810;
     --display: "Marcellus", "Cormorant Garamond", Georgia, serif;
     --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  /* Light theme: a pale, lamplit limestone. Chosen in Settings; stored as data-gc-theme so the host's own theme stamp can't flip it. */
+  :root[data-gc-theme="light"] {
+    color-scheme: light;
+    --ground: #eceef2; --slab: #ffffff; --slab-2: #f4f2f8; --line: #d9d5e2; --line-2: #b8b0cc;
+    --text: #1c1726; --muted: #5f586e;
+    --hum: #9a5f0c; --echo: #0d7f76; --amethyst: #7447d0; --shard: #8a4fd3; --fossil: #7d5f2c; --lumen: #2463c4;
+    --tide: #11768a; --pearl: #7a6a50; --fathom: #4351c4; --ivory: #7f6f4d; --heart: #c2365a; --warn: #b8402c;
+    --stage: #cfd1d8; --glass: rgba(255, 255, 255, .8); --hint: rgba(28, 23, 38, .55); --shadow: rgba(255, 255, 255, .9);
+    --text-2: #3a3448; --panel-a: #ffffff; --panel-b: #f1eef7;
+    --heart-a: #fff3f6; --heart-b: #fbe7ed; --heart-line: #e6b3c2; --hold: #fde8ee; --hold-line: #d88aa3;
+    --got-a: #fbf0d9; --got-line: #d9b97a; --toast: rgba(255, 255, 255, .96); --backdrop: rgba(30, 25, 40, .35); --bar: #e2dfe9;
   }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
@@ -45,7 +68,7 @@
   }
 
   /* ---------- the stage ---------- */
-  .stage { position: relative; min-height: 0; border-radius: 20px; overflow: hidden; background: #07060b; border: 1px solid var(--line); }
+  .stage { position: relative; min-height: 0; border-radius: 20px; overflow: hidden; background: var(--stage); border: 1px solid var(--line); }
   #cv { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
   .veil { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.6s ease; }
   .veil.on { opacity: 1; }
@@ -54,7 +77,7 @@
   .hud-right { justify-content: flex-end; }
   .chip {
     pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 11px; background: rgba(10, 8, 16, .72); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 11px; background: var(--glass); border: 1px solid var(--line); border-radius: 999px;
     font-size: 12px; color: var(--muted); backdrop-filter: blur(6px);
   }
   .chip b { color: var(--text); font-weight: 600; }
@@ -62,7 +85,7 @@
   button.chip { cursor: pointer; font: inherit; font-size: 12px; }
   button.chip:hover { color: var(--text); border-color: var(--line-2); }
   button.chip:focus-visible, .worlds button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
-  .worlds { pointer-events: auto; display: inline-flex; padding: 2px; gap: 2px; background: rgba(10, 8, 16, .72); border: 1px solid var(--line); border-radius: 999px; }
+  .worlds { pointer-events: auto; display: inline-flex; padding: 2px; gap: 2px; background: var(--glass); border: 1px solid var(--line); border-radius: 999px; }
   .worlds button { font: inherit; font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 4px 11px; cursor: pointer; }
   .worlds button[aria-pressed="true"] { background: var(--slab-2); color: var(--text); }
   #chord .dots { display: inline-flex; gap: 3px; }
@@ -72,13 +95,13 @@
   .hint, .whisper { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
   .hint {
     top: 50%; margin-top: 70px; font-family: var(--display); font-size: 19px; letter-spacing: .03em;
-    color: rgba(236, 230, 245, .62); animation: breathe 3.2s ease-in-out infinite; white-space: nowrap;
+    color: var(--hint); animation: breathe 3.2s ease-in-out infinite; white-space: nowrap;
   }
   @keyframes breathe { 50% { opacity: .35; } }
   .whisper {
     bottom: 18px; width: min(580px, calc(100% - 32px));
     font-family: var(--display); font-size: 16px; letter-spacing: .02em; color: var(--text);
-    text-shadow: 0 1px 12px #000; opacity: 0; transition: opacity .8s ease;
+    text-shadow: 0 1px 12px var(--shadow); opacity: 0; transition: opacity .8s ease;
   }
   .whisper.show { opacity: .94; }
 
@@ -141,10 +164,10 @@
   .item.pulse { animation: pulse .35s ease; }
   @keyframes pulse { 40% { transform: scale(.985); border-color: var(--echo); } }
 
-  .heartbox { padding: 14px; border-radius: 12px; border: 1px solid #5a2f45; background: linear-gradient(160deg, #26121d, #120b12); }
+  .heartbox { padding: 14px; border-radius: 12px; border: 1px solid var(--heart-line); background: linear-gradient(160deg, var(--heart-a), var(--heart-b)); }
   .holdbtn {
     position: relative; overflow: hidden; font: inherit; font-family: var(--display); font-size: 17px; letter-spacing: .06em;
-    padding: 11px 14px; border-radius: 10px; cursor: pointer; color: var(--text); background: #2a1520; border: 1px solid #7a3d59;
+    padding: 11px 14px; border-radius: 10px; cursor: pointer; color: var(--text); background: var(--hold); border: 1px solid var(--hold-line);
     user-select: none; -webkit-user-select: none; touch-action: none;
   }
   .holdbtn i { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, rgba(255, 143, 163, .35), rgba(255, 207, 134, .5)); }
@@ -171,11 +194,11 @@
   .horn .hb button.sal:hover { color: var(--warn); border-color: var(--warn); }
   .horn .hb button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
 
-  .descend { padding: 14px; border-radius: 12px; background: linear-gradient(160deg, #1a1326, #0f0c16); border: 1px solid var(--line); gap: 10px; }
+  .descend { padding: 14px; border-radius: 12px; background: linear-gradient(160deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); gap: 10px; }
   .descend p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
   .descend p b { color: var(--text); font-weight: 600; }
   .descend p b.fos { color: var(--fossil); } .descend p b.fat { color: var(--fathom); }
-  .bar { height: 6px; border-radius: 3px; background: #0a0810; overflow: hidden; }
+  .bar { height: 6px; border-radius: 3px; background: var(--bar); overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--echo), var(--amethyst)); transition: width .3s; }
   .bigbtn { font: inherit; font-family: var(--display); font-size: 17px; letter-spacing: .06em; padding: 10px 14px; border-radius: 10px; cursor: pointer; color: var(--text); background: var(--slab-2); border: 1px solid var(--line-2); }
   .bigbtn:not(.poor):hover { border-color: var(--fossil); box-shadow: 0 0 18px rgba(232, 213, 176, .2); }
@@ -221,7 +244,7 @@
   .toasts { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; width: min(420px, calc(100% - 32px)); }
   .toast {
     display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 10px;
-    background: rgba(18, 13, 26, .92); border: 1px solid var(--line-2); font-size: 13px; color: var(--text);
+    background: var(--toast); border: 1px solid var(--line-2); font-size: 13px; color: var(--text);
     animation: toast 4.2s ease forwards;
   }
   .toast b { font-weight: 600; }
@@ -229,7 +252,7 @@
   .toast.lore .k { color: var(--heart); }
   @keyframes toast { 0% { opacity: 0; transform: translateY(-6px); } 8%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 
-  .modal { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: rgba(4, 3, 8, .72); backdrop-filter: blur(3px); }
+  .modal { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: var(--backdrop); backdrop-filter: blur(3px); }
   .modal-box {
     width: min(720px, 100%); max-height: min(86vh, 900px); display: flex; flex-direction: column; gap: 14px;
     padding: 20px; border-radius: 16px; background: var(--ground); border: 1px solid var(--line-2); overflow: hidden;
@@ -242,7 +265,7 @@
   .chapter-name { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--heart); }
   .page { padding: 12px 14px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
   .page h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 19px; letter-spacing: .02em; }
-  .page p { margin: 0; font-size: 13.5px; line-height: 1.6; color: #d6cfe2; max-width: 62ch; }
+  .page p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-2); max-width: 62ch; }
   .page.locked { background: none; border-style: dashed; }
   .page.locked p { color: var(--muted); font-style: italic; }
   .page button { align-self: flex-start; font: inherit; font-size: 12px; color: var(--text); cursor: pointer; background: var(--slab-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 4px 10px; }
@@ -251,9 +274,18 @@
   .feat { padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
   .feat b { font-weight: 600; font-size: 13.5px; }
   .feat span { font-size: 12px; color: var(--muted); line-height: 1.4; }
-  .feat.got { border-color: #6a5530; background: linear-gradient(160deg, #221a10, var(--slab)); }
+  .feat.got { border-color: var(--got-line); background: linear-gradient(160deg, var(--got-a), var(--slab)); }
   .feat.got b { color: var(--hum); }
   .feat:not(.got) { opacity: .6; }
+
+  .settings { display: flex; flex-direction: column; gap: 4px; }
+  .set-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .set-row:last-child { border-bottom: 0; }
+  .set-row b { font-weight: 600; font-size: 14px; }
+  .set-row p { grid-column: 1; margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .set-row .worlds, .set-row .link { grid-column: 2; grid-row: 1 / span 2; }
+  .worlds.seg { background: var(--slab); }
+  @media (max-width: 520px) { .set-row { grid-template-columns: minmax(0, 1fr); } .set-row .worlds, .set-row .link { grid-column: 1; grid-row: auto; justify-self: start; } }
 
   @media (max-width: 820px) {
     body { overflow: auto; }
@@ -285,8 +317,8 @@
       <div class="hud-right">
         <div class="chip" id="chord" hidden><span>Chord</span><span class="dots"></span><span class="mono" id="chordMult">×1</span></div>
         <button class="chip" id="chronBtn" type="button">Chronicle<i class="new" id="chronDot" hidden></i></button>
-        <button class="chip" id="fxBtn" type="button" title="How much animation to draw">Effects: Auto</button>
         <button class="chip" id="soundBtn" type="button" aria-pressed="true">Sound on</button>
+        <button class="chip" id="setBtn" type="button">Settings</button>
       </div>
     </div>
     <div class="hint" id="hint">Click the dark to shout.</div>
@@ -443,9 +475,45 @@
 
     <div class="foot">
       <span id="lifetime">0 hum sung, all told</span>
-      <button class="link" id="resetBtn" type="button">Forget everything</button>
     </div>
   </aside>
+</div>
+
+<div class="modal" id="settings" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="modal-box" style="width:min(520px,100%)">
+    <div class="modal-head">
+      <div class="modal-title" id="setTitle">Settings</div>
+      <button class="link" id="setClose" type="button">Close</button>
+    </div>
+    <div class="settings">
+      <div class="set-row">
+        <b>Theme</b>
+        <div class="worlds seg" role="group" aria-label="Theme">
+          <button type="button" data-theme-opt="dark">Dark</button><button type="button" data-theme-opt="light">Light</button><button type="button" data-theme-opt="system">System</button>
+        </div>
+        <p>Dark is the cave as it was meant to be seen. Light turns it into lamplit limestone.</p>
+      </div>
+      <div class="set-row">
+        <b>Effects</b>
+        <div class="worlds seg" role="group" aria-label="Effects">
+          <button type="button" data-fx-opt="auto">Auto</button><button type="button" data-fx-opt="full">Full</button><button type="button" data-fx-opt="calm">Calm</button>
+        </div>
+        <p id="fxNote">Auto trims glows and halos when more than about 100 things are moving. Calm always does, and draws at lower resolution.</p>
+      </div>
+      <div class="set-row">
+        <b>Sound</b>
+        <div class="worlds seg" role="group" aria-label="Sound">
+          <button type="button" data-snd-opt="on">On</button><button type="button" data-snd-opt="off">Off</button>
+        </div>
+        <p>Every crystal and bell is tuned by its height.</p>
+      </div>
+      <div class="set-row">
+        <b>Forget everything</b>
+        <button class="link" id="resetBtn" type="button">Forget everything</button>
+        <p>Wipes all progress, including horns, the Chronicle and feats. You'll be asked twice.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="modal" id="chron" hidden role="dialog" aria-modal="true" aria-labelledby="chronTitle">
@@ -574,7 +642,7 @@
     ...freshCave(), total: 0, world: 'cave', hearts: 0,
     horns: [], equipped: [], hornSeq: 0, hornBuys: 0, hornsOn: false, hornTimer: 360, ivory: 0,
     hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
-    sea: freshSea(), seen: {}, muted: false, fx: 'auto', saved: Date.now(), shouts: 0, tab: 'cave',
+    sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', saved: Date.now(), shouts: 0, tab: 'cave',
     lore: {}, feats: {}, stats: freshStats(),
   });
   function freshStats() {
@@ -619,16 +687,16 @@
   const offlineEff = () => Math.min(1, 0.5 + HB.offline);
   // cave
   const shoutN = l => 6 + 3 * l + HB.lungs;
-  const retainAt = l => Math.min(0.985, 1 - 0.32 * Math.pow(0.86, l));
-  const polishAt = l => Math.pow(1.6, l);
-  const humMult = () => Math.pow(2, S.depth) * Math.pow(1.5, S.strata.old) * Math.pow(1.5, S.illum.lantern) * heartMult() * HB.hum;
-  const deepenAt = () => 2e4 * Math.pow(4, S.depth);
+  const retainAt = l => Math.min(0.95, 1 - 0.4 * Math.pow(0.88, l));
+  const polishAt = l => Math.pow(1.4, l);
+  const humMult = () => Math.pow(1.6, S.depth) * Math.pow(1.3, S.strata.old) * Math.pow(1.3, S.illum.lantern) * heartMult() * HB.hum;
+  const deepenAt = () => 2e4 * Math.pow(3.5, S.depth);
   const fossilGain = () => S.run < deepenAt() ? 0 :
     Math.floor((1 + 0.5 * S.depth) * 2 * Math.sqrt(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils);
   const maxCrystals = () => 8 + S.lv.chisel + 4 * S.strata.wide;
   const crackAt = () => 40 * Math.pow(0.8, S.strata.fault);
-  const shardsOn = () => S.depth >= 1;
-  const lumenMult = () => Math.pow(1.5, S.illum.silk) * Math.pow(1.25, S.depth) * Math.pow(2, S.hearts) * HB.lumen;
+  const shardsOn = () => S.depth >= 3;
+  const lumenMult = () => Math.pow(1.35, S.illum.silk) * Math.pow(1.25, S.depth) * Math.pow(2, S.hearts) * HB.lumen;
   const crystalCost = t => Math.ceil(TIERS[t].base * Math.pow(TIERS[t].g, S.bought[t] || 0) * priceK());
   const wonderCost = k => Math.ceil(WONDERS[k].base * Math.pow(WONDERS[k].g, S.wBought[k] || 0));
   const attuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.attune[t]));
@@ -647,7 +715,7 @@
   const quietEff = () => 0.25 + 0.1 * S.sea.choir.listen;
   const choirK = () => 0.1 * (1 + S.sea.choir.open);
   const choirBonus = () => 1 + choirK() * Math.log10(1 + (S.idleRate || 0));
-  const tideMult = () => Math.pow(2, S.sea.soundings) * Math.pow(1.5, S.sea.deep.current) * heartMult() * HB.tide * choirBonus() * Math.pow(1.6, S.sea.lv.bronze);
+  const tideMult = () => Math.pow(1.6, S.sea.soundings) * Math.pow(1.3, S.sea.deep.current) * heartMult() * HB.tide * choirBonus() * Math.pow(1.4, S.sea.lv.bronze);
   const skipsN = l => 1 + l + HB.skips;
   const seaDecayAt = l => 0.3 * Math.pow(0.86, l);
   const openAt = () => 30 * Math.pow(0.8, S.sea.deep.beds);
@@ -663,7 +731,7 @@
   function refreshK() {
     K = {
       ret: retainAt(S.lv.resonance), pol: polishAt(S.lv.polish), dm: humMult(), harm: S.lv.harmony,
-      att: S.attune.map(a => Math.pow(2, a)), crack: crackAt(), shards: shardsOn(), lm: lumenMult(),
+      att: S.attune.map(a => Math.pow(1.6, a)), crack: crackAt(), shards: shardsOn(), lm: lumenMult(),
       crys: HB.crystal, wall: HB.wall, sh: HB.shards,
     };
   }
@@ -671,7 +739,7 @@
     const q = S.sea;
     SK = {
       decay: seaDecayAt(q.lv.still), tm: tideMult(), cross: crossAt(q.lv.interf),
-      tune: q.tune.map(a => Math.pow(2, a)), open: openAt(), bell: HB.bell, pearl: HB.pearls,
+      tune: q.tune.map(a => Math.pow(1.6, a)), open: openAt(), bell: HB.bell, pearl: HB.pearls,
     };
   }
   function refreshAll() { computeHB(); refreshK(); refreshSK(); hornsDirty = true; }
@@ -865,7 +933,7 @@
     cx = W / 2; cy = H / 2 + 8;
     rx = W * 0.47; ry = H * (S.world === 'sea' ? 0.42 : 0.44);
     SC = Math.max(0.72, Math.min(1.35, Math.min(W, H) / 600));
-    V = 230 * SC;
+    V = 150 * SC;
     for (const list of objLists()) list.forEach(placeObj);
     P.length = 0; drops.length = 0; ripples.length = 0; skipsQ.length = 0; jumps.length = 0;
     buildWorms();
@@ -912,15 +980,16 @@
     const b = bctx, R = rng(S.depth * 104729 + 3);
     const h = caveHue();
     b.setTransform(DPR, 0, 0, DPR, 0, 0);
-    b.fillStyle = `hsl(${h}, 22%, 3.5%)`; b.fillRect(0, 0, W, H);
+    b.fillStyle = LT ? `hsl(${h}, 10%, 76%)` : `hsl(${h}, 22%, 3.5%)`; b.fillRect(0, 0, W, H);
     for (let i = 0; i < 1100; i++) {
-      b.fillStyle = `rgba(255,255,255,${0.012 + R() * 0.035})`;
+      b.fillStyle = LT ? `rgba(40,30,60,${0.02 + R() * 0.05})` : `rgba(255,255,255,${0.012 + R() * 0.035})`;
       const s = R() < 0.9 ? 1 : 2;
       b.fillRect(R() * W, R() * H, s, s);
     }
     const path = outlinePath();
     const grd = b.createRadialGradient(cx, cy + ry * 0.25, 10, cx, cy, Math.max(rx, ry));
-    grd.addColorStop(0, `hsl(${h}, 30%, 13%)`); grd.addColorStop(0.65, `hsl(${h}, 28%, 8%)`); grd.addColorStop(1, `hsl(${h}, 26%, 5.5%)`);
+    if (LT) { grd.addColorStop(0, `hsl(${h}, 24%, 97%)`); grd.addColorStop(0.65, `hsl(${h}, 18%, 91%)`); grd.addColorStop(1, `hsl(${h}, 14%, 85%)`); }
+    else { grd.addColorStop(0, `hsl(${h}, 30%, 13%)`); grd.addColorStop(0.65, `hsl(${h}, 28%, 8%)`); grd.addColorStop(1, `hsl(${h}, 26%, 5.5%)`); }
     b.fillStyle = grd; b.fill(path);
     b.save(); b.clip(path);
     for (let i = 0; i < 18; i++) {
@@ -930,14 +999,14 @@
         const y = y0 + Math.sin(x * 0.012 + i) * 6 * SC + Math.sin(x * 0.041 + i * 3) * 2;
         x === cx - rx ? b.moveTo(x, y) : b.lineTo(x, y);
       }
-      b.strokeStyle = `rgba(255,255,255,${0.012 + R() * 0.02})`; b.lineWidth = 1 + R() * 2; b.stroke();
+      b.strokeStyle = LT ? `rgba(60,40,90,${0.02 + R() * 0.03})` : `rgba(255,255,255,${0.012 + R() * 0.02})`; b.lineWidth = 1 + R() * 2; b.stroke();
     }
     for (let i = 0; i < 140; i++) {
-      b.fillStyle = `hsla(${h + R() * 60 - 30}, 70%, 80%, ${0.05 + R() * 0.12})`;
+      b.fillStyle = LT ? `hsla(${h + R() * 60 - 30}, 50%, 45%, ${0.08 + R() * 0.15})` : `hsla(${h + R() * 60 - 30}, 70%, 80%, ${0.05 + R() * 0.12})`;
       b.fillRect(cx + (R() - 0.5) * rx * 2, cy + (R() - 0.5) * ry * 2, 1, 1);
     }
     b.restore();
-    const rock = `hsl(${h}, 22%, 3.5%)`;
+    const rock = LT ? `hsl(${h}, 10%, 76%)` : `hsl(${h}, 22%, 3.5%)`;
     const tooth = (t, len, wid) => {
       const r = rho(t) * 1.01;
       const bx = cx + Math.cos(t) * r * rx, by = cy + Math.sin(t) * r * ry;
@@ -949,11 +1018,11 @@
       b.quadraticCurveTo(bx - tx * wid * 0.3 + dx * len * 0.5, by - ty * wid * 0.3 + dy * len * 0.5, bx - tx * wid - dx * 3, by - ty * wid - dy * 3);
       b.closePath();
       b.fillStyle = rock; b.fill();
-      b.strokeStyle = `hsla(${h}, 30%, 60%, .08)`; b.lineWidth = 1; b.stroke();
+      b.strokeStyle = LT ? `hsla(${h}, 20%, 40%, .15)` : `hsla(${h}, 30%, 60%, .08)`; b.lineWidth = 1; b.stroke();
     };
     for (let i = 0; i < 30; i++) tooth(-Math.PI + 0.35 + R() * (Math.PI - 0.7), (8 + R() * 26) * SC, (3 + R() * 6) * SC);
     for (let i = 0; i < 16; i++) tooth(0.4 + R() * (Math.PI - 0.8), (5 + R() * 13) * SC, (4 + R() * 7) * SC);
-    b.strokeStyle = `hsla(${h}, 40%, 75%, .16)`; b.lineWidth = 1.5; b.stroke(path);
+    b.strokeStyle = LT ? `hsla(${h}, 30%, 35%, .3)` : `hsla(${h}, 40%, 75%, .16)`; b.lineWidth = 1.5; b.stroke(path);
   }
   function outlinePath() {
     const path = new Path2D(), N = 260;
@@ -1011,7 +1080,7 @@
     c.ring = 1; c.last = T;
     // chordNow is counted once per frame, not once per hit
     const voices = Math.max(1, chordNow);
-    const hm = 1 + 0.2 * K.harm * Math.min(voices - 1, 10);
+    const hm = 1 + 0.15 * K.harm * Math.min(voices - 1, 10);
     const g = TIERS[c.t].value * K.att[c.t] * K.crys * e * w * K.pol * K.dm * hm;
     gain(g, idle);
     c.pend = (c.pend || 0) + g;
@@ -1059,7 +1128,7 @@
   }
 
   function stepParticles(dt) {
-    const dec = Math.exp(-0.05 * dt), ret = K.ret;
+    const dec = Math.exp(-0.2 * dt), ret = K.ret;
     const pull = 1400 * SC * dt, LR = 120 * SC, LR2 = LR * LR, lodeDec = Math.exp(-0.35 * dt);
     for (let i = P.length - 1; i >= 0; i--) {
       const p = P[i];
@@ -1292,21 +1361,22 @@
   function drawSeaBG() {
     const b = bctx, R = rng(S.sea.soundings * 3571 + 11), h = seaHue();
     b.setTransform(DPR, 0, 0, DPR, 0, 0);
-    b.fillStyle = `hsl(${h}, 18%, 4%)`; b.fillRect(0, 0, W, H);
+    b.fillStyle = LT ? `hsl(${h}, 10%, 78%)` : `hsl(${h}, 18%, 4%)`; b.fillRect(0, 0, W, H);
     for (let i = 0; i < 900; i++) {
-      b.fillStyle = `rgba(200,230,235,${0.01 + R() * 0.03})`;
+      b.fillStyle = LT ? `rgba(20,50,60,${0.02 + R() * 0.04})` : `rgba(200,230,235,${0.01 + R() * 0.03})`;
       b.fillRect(R() * W, R() * H, 1, 1);
     }
     seaPath = outlinePath();
     const grd = b.createRadialGradient(cx, cy - ry * 0.2, 10, cx, cy, Math.max(rx, ry) * 1.05);
-    grd.addColorStop(0, `hsl(${h}, 42%, 15%)`); grd.addColorStop(0.7, `hsl(${h}, 48%, 9%)`); grd.addColorStop(1, `hsl(${h}, 50%, 6%)`);
+    if (LT) { grd.addColorStop(0, `hsl(${h}, 45%, 88%)`); grd.addColorStop(0.7, `hsl(${h}, 42%, 78%)`); grd.addColorStop(1, `hsl(${h}, 38%, 70%)`); }
+    else { grd.addColorStop(0, `hsl(${h}, 42%, 15%)`); grd.addColorStop(0.7, `hsl(${h}, 48%, 9%)`); grd.addColorStop(1, `hsl(${h}, 50%, 6%)`); }
     b.fillStyle = grd; b.fill(seaPath);
     b.save(); b.clip(seaPath);
     for (let i = 0; i < 26; i++) {
       const x0 = cx + (R() - 0.5) * rx * 2, y0 = cy + (R() - 0.5) * ry * 2, L = (40 + R() * 90) * SC;
       b.beginPath(); b.moveTo(x0, y0);
       b.bezierCurveTo(x0 + L * 0.3, y0 - 8, x0 + L * 0.6, y0 + 8, x0 + L, y0);
-      b.strokeStyle = `rgba(170,235,240,${0.02 + R() * 0.03})`; b.lineWidth = 1 + R(); b.stroke();
+      b.strokeStyle = LT ? `rgba(255,255,255,${0.2 + R() * 0.2})` : `rgba(170,235,240,${0.02 + R() * 0.03})`; b.lineWidth = 1 + R(); b.stroke();
     }
     b.restore();
     // shore stones
@@ -1314,10 +1384,10 @@
       const t = R() * Math.PI * 2, r = rho(t) * (1.0 + R() * 0.06);
       const x = cx + Math.cos(t) * r * rx, y = cy + Math.sin(t) * r * ry, s = (3 + R() * 9) * SC;
       b.beginPath(); b.ellipse(x, y, s, s * 0.7, R() * 3, 0, Math.PI * 2);
-      b.fillStyle = `hsl(${h}, 12%, ${5 + R() * 5}%)`; b.fill();
+      b.fillStyle = LT ? `hsl(${h}, 8%, ${55 + R() * 12}%)` : `hsl(${h}, 12%, ${5 + R() * 5}%)`; b.fill();
     }
-    b.strokeStyle = 'rgba(190,235,240,.22)'; b.lineWidth = 1.5; b.stroke(seaPath);
-    b.setLineDash([2, 7]); b.strokeStyle = 'rgba(230,250,250,.12)'; b.lineWidth = 3; b.stroke(seaPath); b.setLineDash([]);
+    b.strokeStyle = LT ? 'rgba(20,70,80,.35)' : 'rgba(190,235,240,.22)'; b.lineWidth = 1.5; b.stroke(seaPath);
+    b.setLineDash([2, 7]); b.strokeStyle = LT ? 'rgba(255,255,255,.7)' : 'rgba(230,250,250,.12)'; b.lineWidth = 3; b.stroke(seaPath); b.setLineDash([]);
   }
 
   function seaGain(g, idle) {
@@ -1564,7 +1634,7 @@
   function drawBat(b) {
     const s = SC, flap = lite ? 2 * s : Math.sin(T * 17 + b.ph) * 5 * s;
     ctx.save(); ctx.translate(b.x, b.y);
-    ctx.fillStyle = 'rgba(214,202,236,.85)';
+    ctx.fillStyle = LT ? 'rgba(45,36,64,.85)' : 'rgba(214,202,236,.85)';
     ctx.beginPath();
     ctx.moveTo(0, -2 * s);
     ctx.quadraticCurveTo(-5 * s, -3 * s - flap, -11 * s, -flap);
@@ -1609,7 +1679,7 @@
   function drawRings(hue) {
     for (const r of rings) {
       ctx.strokeStyle = r.col ? `rgba(${r.col},${r.life * 0.5})` :
-        r.idle ? `hsla(${hue}, 60%, 80%, ${r.life * 0.25})` : `hsla(${hue}, 80%, 82%, ${r.life * 0.55})`;
+        r.idle ? `hsla(${hue}, 60%, ${LT ? 35 : 80}%, ${r.life * 0.25})` : `hsla(${hue}, 80%, ${LT ? 32 : 82}%, ${r.life * 0.55})`;
       ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2); ctx.stroke();
     }
@@ -1618,7 +1688,7 @@
     ctx.font = `600 ${Math.round(11 * Math.max(1, SC))}px "JetBrains Mono", ui-monospace, monospace`;
     ctx.textAlign = 'center';
     for (const f of floats) {
-      ctx.fillStyle = `rgba(${f.col || '255,207,134'},${Math.min(1, f.life * 1.4)})`;
+      ctx.fillStyle = `rgba(${inkCol(f.col || '255,207,134')},${Math.min(1, f.life * 1.4)})`;
       ctx.fillText(f.s, f.x, f.y);
     }
   }
@@ -1630,7 +1700,7 @@
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     ctx.drawImage(bg, 0, 0, W, H);
 
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = ADD();
     for (const c of S.crystals) {
       if (lite && c.ring < 0.3) continue;
       const rr = c.r * (2.4 + 2.2 * c.ring);
@@ -1652,7 +1722,7 @@
     const tail = lite ? 0.018 : 0.032;
     for (let k = 0; k < 4; k++) {
       const bk = buckets[k]; if (!bk.length) continue;
-      ctx.strokeStyle = `hsla(${hue}, 85%, 74%, ${lite ? BUCKET_A[k] * 0.8 : BUCKET_A[k]})`;
+      ctx.strokeStyle = `hsla(${hue}, ${LT ? '75%, 30%' : '85%, 74%'}, ${lite ? BUCKET_A[k] * 0.8 : BUCKET_A[k]})`;
       ctx.lineWidth = 1.2 + k * 0.35;
       ctx.beginPath();
       for (const p of bk) { ctx.moveTo(p.x - p.vx * tail, p.y - p.vy * tail); ctx.lineTo(p.x, p.y); }
@@ -1691,7 +1761,7 @@
       drawGem(c.px, c.py, c.r * (lifted ? 1.12 : 1), TIERS[c.t].color, 1, tint, c.ring);
     }
 
-    ctx.strokeStyle = `hsla(${hue}, 70%, 85%, .85)`; ctx.lineWidth = 1.6;
+    ctx.strokeStyle = LT ? `hsla(${hue}, 70%, 32%, .85)` : `hsla(${hue}, 70%, 85%, .85)`; ctx.lineWidth = 1.6;
     ctx.beginPath();
     for (const d of drops) { ctx.moveTo(d.x, d.y - Math.min(9, d.vy * 0.012)); ctx.lineTo(d.x, d.y); }
     ctx.stroke();
@@ -1756,7 +1826,7 @@
       ctx.strokeStyle = 'rgba(134,216,230,.12)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(0, 0, 90 * SC, 0, Math.PI * 2); ctx.stroke();
       const spin = lite ? 0 : -T * 1.2;
-      ctx.strokeStyle = tint || 'rgba(170,235,240,.55)'; ctx.lineWidth = 1.6;
+      ctx.strokeStyle = tint || (LT ? 'rgba(20,80,95,.6)' : 'rgba(170,235,240,.55)'); ctx.lineWidth = 1.6;
       for (let arm = 0; arm < 3; arm++) {
         ctx.beginPath();
         for (let s = 0; s <= 20; s++) {
@@ -1777,7 +1847,7 @@
     // lighthouse beam under the ripples
     if (q.lv.light > 0) {
       const L = lighthousePos(), dir = beamDir(L), len = Math.max(rx, ry) * 2.2;
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      ctx.save(); ctx.globalCompositeOperation = ADD();
       const g = ctx.createRadialGradient(L.x, L.y, 0, L.x, L.y, len);
       g.addColorStop(0, 'rgba(255,230,170,.18)'); g.addColorStop(1, 'rgba(255,230,170,0)');
       ctx.fillStyle = g;
@@ -1787,7 +1857,7 @@
     }
 
     ctx.save(); ctx.clip(seaPath);
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = ADD();
     for (const b of buckets) b.length = 0;
     const every = lite === 2 ? Math.ceil(ripples.length / 90) : 1;
     for (let i = 0; i < ripples.length; i += every) {
@@ -1796,13 +1866,13 @@
     }
     for (let k = 0; k < 4; k++) {
       const bk = buckets[k]; if (!bk.length) continue;
-      ctx.strokeStyle = `rgba(190,240,240,${BUCKET_A[k] * 0.7})`;
+      ctx.strokeStyle = `rgba(${LT ? '15,70,85' : '190,240,240'},${BUCKET_A[k] * 0.7})`;
       ctx.lineWidth = 1.2 + k * 0.4;
       ctx.beginPath();
       for (const rp of bk) { ctx.moveTo(rp.x + rp.r, rp.y); ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2); }
       ctx.stroke();
       if (!lite && k >= 2) {
-        ctx.strokeStyle = `rgba(190,240,240,${BUCKET_A[k] * 0.2})`;
+        ctx.strokeStyle = `rgba(${LT ? '15,70,85' : '190,240,240'},${BUCKET_A[k] * 0.2})`;
         ctx.beginPath();
         for (const rp of bk) { const r2 = Math.max(0, rp.r - 6 * SC); ctx.moveTo(rp.x + r2, rp.y); ctx.arc(rp.x, rp.y, r2, 0, Math.PI * 2); }
         ctx.stroke();
@@ -1845,6 +1915,10 @@
     }
     drawFloats();
   }
+  // Light mode draws on a pale ground: additive light would vanish, so marks are inked instead.
+  let LT = false;
+  const ADD = () => LT ? 'source-over' : 'lighter';
+  const inkCol = c => LT ? c.split(',').map(v => Math.round(+v * 0.55)).join(',') : c;
   function hexA(a) { return Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, '0'); }
 
   function updateSharedFx(dt) {
@@ -1955,6 +2029,7 @@
     const b = $('soundBtn');
     b.textContent = m ? 'Sound off' : 'Sound on';
     b.setAttribute('aria-pressed', String(!m));
+    syncSeg('snd', m ? 'off' : 'on');
   }
 
   // =====================================================================
@@ -2011,12 +2086,35 @@
     else { once('firstFuse'); tierWhisper(into.t); }
   }
   $('soundBtn').addEventListener('click', () => { initAudio(); setMuted(!S.muted); });
-  const FX_ORDER = ['auto', 'full', 'calm'];
-  $('fxBtn').addEventListener('click', () => {
-    S.fx = FX_ORDER[(FX_ORDER.indexOf(S.fx) + 1) % 3];
+
+  // ---------- settings ----------
+  const segButtons = kind => document.querySelectorAll ? [...document.querySelectorAll(`[data-${kind}-opt]`)] : [];
+  function syncSeg(kind, val) { for (const b of segButtons(kind)) b.setAttribute('aria-pressed', String(b.dataset[kind + 'Opt'] === val)); }
+  function setFx(v) {
+    S.fx = v;
     capP = Math.min(capP, fxLimits().p); capR = Math.min(capR, fxLimits().r);
+    syncSeg('fx', v);
     updateLite(); resize(); updateUI();
-  });
+  }
+  const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+  function applyTheme() {
+    const t = S.theme === 'system' ? (mq && mq.matches ? 'light' : 'dark') : S.theme;
+    const was = LT; LT = t === 'light';
+    if (document.documentElement) document.documentElement.setAttribute('data-gc-theme', t);
+    syncSeg('theme', S.theme);
+    if (was !== LT && W > 0) resize();
+  }
+  if (mq && mq.addEventListener) mq.addEventListener('change', () => { if (S.theme === 'system') applyTheme(); });
+  for (const b of segButtons('theme')) b.addEventListener('click', () => { S.theme = b.dataset.themeOpt; applyTheme(); save(); });
+  for (const b of segButtons('fx')) b.addEventListener('click', () => { setFx(b.dataset.fxOpt); save(); });
+  for (const b of segButtons('snd')) b.addEventListener('click', () => { initAudio(); setMuted(b.dataset.sndOpt === 'off'); save(); });
+  let setOpen = false;
+  function openSettings() { setOpen = true; $('settings').hidden = false; syncSeg('theme', S.theme); syncSeg('fx', S.fx); syncSeg('snd', S.muted ? 'off' : 'on'); $('setClose').focus(); }
+  function closeSettings() { setOpen = false; $('settings').hidden = true; $('setBtn').focus(); }
+  $('setBtn').addEventListener('click', () => { initAudio(); setOpen ? closeSettings() : openSettings(); });
+  $('setClose').addEventListener('click', closeSettings);
+  $('settings').addEventListener('click', e => { if (e.target === $('settings')) closeSettings(); });
+  window.addEventListener('keydown', e => { if (setOpen && e.key === 'Escape') closeSettings(); });
 
   // =====================================================================
   // shop
@@ -2153,8 +2251,8 @@
     cv_('shopVoices', 'bats', 'Bat', ICONS.bat(), 700, 1.45, () => S.run >= 250, () => 'Flutters through the dark, shouting every ~5s with your lungs.', { pre: '×', onBuy: () => once('firstBat') });
     cv_('shopTuning', 'chisel', 'Chisel', ICONS.chisel(), 400, 2.4, () => S.run >= 100 || S.crystals.length >= 6, l => `Room for ${maxCrystals()} → ${maxCrystals() + 1} crystals`, { max: 12 });
     cv_('shopTuning', 'resonance', 'Resonance', ICONS.wave(), 60, 2.1, () => S.run >= 20, l => `Echoes keep ${pct(retainAt(l))} → ${pct(retainAt(l + 1))} of their voice per bounce`);
-    cv_('shopTuning', 'polish', 'Polish', ICONS.spark(), 250, 3, () => S.run >= 120, l => `Crystals ring ×${fmt(polishAt(l))} → ×${fmt(polishAt(l + 1))}`);
-    cv_('shopTuning', 'harmony', 'Harmony', ICONS.fork(), 1800, 3.4, () => S.run >= 900 && S.crystals.length >= 3, l => `+${20 * (l + 1)}% hum for every extra crystal ringing in the same breath`, { onBuy: () => once('firstHarmony') });
+    cv_('shopTuning', 'polish', 'Polish', ICONS.spark(), 250, 3, () => S.run >= 120, l => `Crystals ring ×${fmtX(polishAt(l))} → ×${fmtX(polishAt(l + 1))}`);
+    cv_('shopTuning', 'harmony', 'Harmony', ICONS.fork(), 1800, 3.4, () => S.run >= 900 && S.crystals.length >= 3, l => `+${15 * (l + 1)}% hum for every extra crystal ringing in the same breath`, { onBuy: () => once('firstHarmony') });
 
     // ------------------------------- cave: wonders & attunement (shards)
     const wIcon = { prism: ICONS.prism(), lodestone: ICONS.lode(), gong: ICONS.gong() };
@@ -2172,7 +2270,7 @@
       parent: 'shopAttune', icon: ICONS.tune(tier.color), unit: 'shard', name: `Attune ${tier.name}`,
       get: () => S.attune[t], inc: () => { S.attune[t]++; }, base: 4 * (t + 1), g: 2.1,
       show: () => t === 0 || S.attune[t] > 0 || S.crystals.some(c => c.t === t),
-      desc: l => `Every ${tier.name.toLowerCase()} rings ×${fmt(Math.pow(2, l))} → ×${fmt(Math.pow(2, l + 1))}`,
+      desc: l => `Every ${tier.name.toLowerCase()} rings ×${fmtX(Math.pow(1.6, l))} → ×${fmtX(Math.pow(1.6, l + 1))}`,
     }));
 
     // ------------------------------- cave: strata (fossils)
@@ -2180,7 +2278,7 @@
       parent: 'shopStrata', icon, unit: 'fossil', name, base, g, max, desc, show,
       get: () => S.strata[k], inc: () => { S.strata[k]++; }, ...extra,
     });
-    st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
+    st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmtX(Math.pow(1.3, l))} → ×${fmtX(Math.pow(1.3, l + 1))}`);
     st('lungs', 'Deep Lungs', ICONS.lungs(), 2, 1.7, 1e9, l => `Every descent starts with Lungs Lv ${2 * l} → ${2 * (l + 1)}`);
     st('water', 'Old Water', ICONS.drip(), 2, 1.7, 1e9, l => `Every descent starts with ${2 * l} → ${2 * (l + 1)} extra drips`);
     st('seed', 'Seed Crystals', ICONS.gem('#b58cff'), 4, 2, 6, l => `Every descent starts with ${l} → ${l + 1} amethyst already placed`);
@@ -2189,7 +2287,7 @@
     st('record', 'Fossil Record', ICONS.bone(), 6, 2.3, 1e9, l => `Fossils from each descent ×${fmt(Math.pow(1.25, l))} → ×${fmt(Math.pow(1.25, l + 1))}`);
     st('nest', 'Glowworm Nest', ICONS.worm(), 15, 1, 1,
       l => l ? 'Glowworms hang from the ceiling of every cave. Opens the Glow ledger.' : 'A glowworm moves in. It eats echoes and turns them into lumen. Opens the Glow ledger, and the road to the Heartstone.',
-      () => S.strata.nest > 0 || S.depth >= 2 || S.fossilsTotal >= 8, { single: true, onBuy: () => { once('nest'); buildWorms(); } });
+      () => S.strata.nest > 0 || S.depth >= 10, { single: true, onBuy: () => { once('nest'); buildWorms(); } });
     st('worm', 'Glowworm', ICONS.worm(), 6, 1.8, 19, l => `${1 + l} → ${2 + l} glowworms on the ceiling`, () => S.strata.nest > 0, { onBuy: () => buildWorms() });
 
     // ------------------------------- cave: illuminations (lumen)
@@ -2197,23 +2295,23 @@
       parent: 'shopGlow', icon, unit: 'lumen', name, base, g, max, desc,
       get: () => S.illum[k], inc: () => { S.illum[k]++; }, ...extra,
     });
-    const toggle = (k, name, icon, cost, desc) => addItem({
-      parent: 'shopGlow', icon, unit: 'lumen', name: () => name,
+    const toggle = (k, name, icon, cost, desc, parent = 'shopGlow', unit = 'lumen') => addItem({
+      parent, icon, unit, name: () => name,
       state: () => S.illum[k] ? (S.toggles[k] ? 'on' : 'off') : null,
       cost: () => cost,
       desc: () => S.illum[k] ? `${desc} Click to turn ${S.toggles[k] ? 'off' : 'on'}.` : desc,
       buy: () => {
         if (S.illum[k]) { S.toggles[k] = S.toggles[k] ? 0 : 1; return true; }
-        if (!spend('lumen', cost)) return false;
+        if (!spend(unit, cost)) return false;
         S.illum[k] = 1; S.toggles[k] = 1;
         return true;
       },
     });
     il('firefly', 'Firefly Hands', ICONS.firefly(), 4, 2, 15, l => l ? `Shouts somewhere random every ${Math.max(0.3, 3 * Math.pow(0.8, l - 1)).toFixed(1)}s → ${Math.max(0.3, 3 * Math.pow(0.8, l)).toFixed(1)}s` : 'Something shouts for you every 3s, even while you’re away.', { onBuy: () => once('firstFirefly') });
-    il('lantern', 'Lantern', ICONS.lantern(), 8, 2.3, 1e9, l => `All hum ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
-    il('silk', 'Silk Threads', ICONS.silk(), 12, 2.0, 1e9, l => `Glowworms make lumen ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
-    toggle('autofuse', 'Patient Hands', ICONS.gear(), 20, 'Fuses twin crystals for you.');
-    toggle('autobuy', 'Crystal Seeker', ICONS.gear(), 40, 'Buys the best crystal you can afford.');
+    il('lantern', 'Lantern', ICONS.lantern(), 8, 2.3, 1e9, l => `All hum ×${fmtX(Math.pow(1.3, l))} → ×${fmtX(Math.pow(1.3, l + 1))}`);
+    il('silk', 'Silk Threads', ICONS.silk(), 12, 2.0, 1e9, l => `Glowworms make lumen ×${fmtX(Math.pow(1.35, l))} → ×${fmtX(Math.pow(1.35, l + 1))}`);
+    toggle('autofuse', 'Patient Hands', ICONS.gear(), 12, 'Fuses twin crystals for you. Stays with you through every descent.', 'shopStrata', 'fossil');
+    toggle('autobuy', 'Crystal Seeker', ICONS.gear(), 60, 'Buys the best crystal you can afford. Stays with you through every descent.', 'shopWonders', 'shard');
     il('carry', 'Carry Wonders', ICONS.chest(), 60, 1, 1, l => l ? 'Your wonders come with you when you descend.' : 'Wonders come down with you when you descend, instead of being lost.', { single: true });
     toggle('autodescend', 'Sinking Stone', ICONS.down(), 90, 'Descends on its own once you’ve sung twice what the floor needs.');
 
@@ -2239,7 +2337,7 @@
       l => l ? `Its beam starts a ripple every ${Math.max(0.4, 2.2 * Math.pow(0.8, l - 1)).toFixed(1)}s → ${Math.max(0.4, 2.2 * Math.pow(0.8, l)).toFixed(1)}s` : 'A sweeping beam that starts ripples wherever it falls.', { max: 8, onBuy: () => once('firstLight') });
     sv('shopSeaTuning', 'line', 'Buoy Line', ICONS.buoy(), 400, 2.4, () => S.sea.run >= 100 || S.sea.bells.length >= 6, () => `Room for ${bellCap()} → ${bellCap() + 1} bells`, { max: 12 });
     sv('shopSeaTuning', 'still', 'Stillness', ICONS.wave('#86d8e6'), 60, 2.1, () => S.sea.run >= 20, l => `Ripples fade ${pct(1 - seaDecayAt(l + 1) / seaDecayAt(l))} slower (lasting ~${Math.round(Math.log(25) / seaDecayAt(l))}s → ~${Math.round(Math.log(25) / seaDecayAt(l + 1))}s)`);
-    sv('shopSeaTuning', 'bronze', 'Bronze Casting', ICONS.spark('#d0955a'), 250, 3, () => S.sea.run >= 120, l => `Bells ring ×${fmt(Math.pow(1.6, l))} → ×${fmt(Math.pow(1.6, l + 1))}`);
+    sv('shopSeaTuning', 'bronze', 'Bronze Casting', ICONS.spark('#d0955a'), 250, 3, () => S.sea.run >= 120, l => `Bells ring ×${fmtX(Math.pow(1.4, l))} → ×${fmtX(Math.pow(1.4, l + 1))}`);
     sv('shopSeaTuning', 'interf', 'Crossing Waves', ICONS.cross(), 1800, 3.4, () => S.sea.run >= 900 && S.sea.bells.length >= 2, l => `When two ripples cross at a bell it rings ×${fmtX(crossAt(l))} → ×${fmtX(crossAt(l + 1))}`);
 
     // ------------------------------- sea: pearls
@@ -2265,7 +2363,7 @@
       parent: 'shopBellTune', icon: ICONS.tune(bell.color, '#efe6d8'), unit: 'pearl', name: `Recast ${bell.name}s`,
       get: () => S.sea.tune[t], inc: () => { S.sea.tune[t]++; }, base: 4 * (t + 1), g: 2.1,
       show: () => t === 0 || S.sea.tune[t] > 0 || S.sea.bells.some(b => b.bt === t),
-      desc: l => `Every ${bell.name.toLowerCase()} rings ×${fmt(Math.pow(2, l))} → ×${fmt(Math.pow(2, l + 1))}`,
+      desc: l => `Every ${bell.name.toLowerCase()} rings ×${fmtX(Math.pow(1.6, l))} → ×${fmtX(Math.pow(1.6, l + 1))}`,
     }));
 
     // ------------------------------- sea: the deep (fathoms)
@@ -2273,7 +2371,7 @@
       parent: 'shopDeep', icon, unit: 'fathom', name, base, g, max, desc,
       get: () => S.sea.deep[k], inc: () => { S.sea.deep[k]++; }, ...extra,
     });
-    dp('current', 'Deep Current', ICONS.layers('#9aa7ff'), 2, 1.9, 1e9, l => `All tide ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
+    dp('current', 'Deep Current', ICONS.layers('#9aa7ff'), 2, 1.9, 1e9, l => `All tide ×${fmtX(Math.pow(1.3, l))} → ×${fmtX(Math.pow(1.3, l + 1))}`);
     dp('rain', 'Old Rain', ICONS.drip('#9aa7ff'), 2, 1.7, 1e9, l => `Every sounding starts with ${2 * l} → ${2 * (l + 1)} extra rain`);
     dp('buoys', 'Long Moorings', ICONS.widen('#9aa7ff'), 5, 2.4, 6, l => `Room for 2 more bells (+${2 * l} → +${2 * (l + 1)})`);
     dp('beds', 'Pearl Beds', ICONS.oyster(), 4, 2, 12, l => `Oysters open after ${fmt(30 * Math.pow(0.8, l))} → ${fmt(30 * Math.pow(0.8, l + 1))} washing`);
@@ -2472,8 +2570,8 @@
   $('resetBtn').addEventListener('click', () => {
     if (Date.now() - resetArmed > 3000) { resetArmed = Date.now(); $('resetBtn').textContent = 'Click again to forget'; return; }
     resetArmed = 0;
-    const muted = S.muted, fx = S.fx;
-    S = fresh(); S.muted = muted; S.fx = fx; S.lore.prologue = 1;
+    const muted = S.muted, fx = S.fx, theme = S.theme;
+    S = fresh(); S.muted = muted; S.fx = fx; S.theme = theme; S.lore.prologue = 1;
     try { localStorage.removeItem(KEY); } catch (_) {}
     refreshAll();
     afterStateChange();
@@ -2506,7 +2604,7 @@
       S.crystals.push(c);
     }
     let msg = `Depth ${S.depth}. You carry ${got} fossil${got > 1 ? 's' : ''} down. The cave now sings in ${MODES[S.depth % MODES.length].name.toLowerCase()}.`;
-    if (!S.hornsOn || Math.random() < 0.4) { const h = gainHorn(0); msg += ' ' + hornMsg(h); }
+    if (S.depth >= 5 && (!S.hornsOn || Math.random() < 0.4)) { const h = gainHorn(0); msg += ' ' + hornMsg(h); }
     whisper(msg);
     save();
   }
@@ -2532,7 +2630,9 @@
   // ---------- the Heartstone: press and hold ----------
   let holding = false, holdT = 0;
   const heartBtn = $('heartBtn');
-  const startHold = () => { if (S.lumen >= heartCost() && !cinematic) { initAudio(); holding = true; } };
+  const HEART_DEPTH = 12;
+  const canKindle = () => S.lumen >= heartCost() && S.depth >= HEART_DEPTH;
+  const startHold = () => { if (canKindle() && !cinematic) { initAudio(); holding = true; } };
   const stopHold = () => { holding = false; };
   heartBtn.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
   heartBtn.addEventListener('pointerup', stopHold);
@@ -2543,7 +2643,7 @@
   heartBtn.addEventListener('contextmenu', e => e.preventDefault());
 
   function kindle() {
-    if (S.lumen < heartCost() || cinematic) return;
+    if (!canKindle() || cinematic) return;
     cinematic = true;
     for (const c of S.crystals) { c.ring = 1; spawn(c.px, c.py, 10, 1, false, null, 0, c.r + 2); }
     chordSound();
@@ -2553,7 +2653,7 @@
       const keep = {
         total: S.total, world: 'sea', hearts: S.hearts + 1,
         horns: S.horns, equipped: S.equipped, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
-        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, shouts: S.shouts, tab: 'sea',
+        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, shouts: S.shouts, tab: 'sea',
         lore: S.lore, feats: S.feats, stats: S.stats,
       };
       keep.sea.unlocked = true;
@@ -2847,7 +2947,7 @@
     setHid('worlds', !q.unlocked);
     $('wCave').setAttribute('aria-pressed', String(!sea));
     $('wSea').setAttribute('aria-pressed', String(sea));
-    setT('fxBtn', `Effects: ${S.fx === 'auto' ? (lite ? 'Auto · calm' : 'Auto') : S.fx === 'full' ? 'Full' : 'Calm'}`);
+    if (setOpen) setT('fxNote', `Auto trims glows and halos when more than about 100 things are moving. Calm always does, and draws at lower resolution.${S.fx === 'auto' ? (lite ? ' Right now it is trimming.' : ' Right now it is drawing everything.') : ''}`);
 
     setHid('pillShard', sea || !shardsOn()); setT('shardVal', fmt(S.shards));
     setHid('pillFossil', sea || !(S.depth >= 1 || S.fossilsTotal > 0)); setT('fossilVal', fmt(S.fossils));
@@ -2878,7 +2978,7 @@
     if (!chord.hidden) {
       const on = Math.min(8, chordNow);
       [...chordDots.children].forEach((d, i) => d.classList.toggle('on', i < on));
-      setT('chordMult', '×' + (1 + 0.2 * S.lv.harmony * Math.max(0, Math.min(chordNow - 1, 10))).toFixed(1));
+      setT('chordMult', '×' + (1 + 0.15 * S.lv.harmony * Math.max(0, Math.min(chordNow - 1, 10))).toFixed(1));
     }
 
     // heartstone
@@ -2886,11 +2986,12 @@
     setHid('heartBox', !showHeart);
     if (showHeart) {
       once('heartSeen');
-      const cost = heartCost(), can = S.lumen >= cost;
+      const cost = heartCost(), can = canKindle();
+      const tick = ok => ok ? '✓' : '·';
       setT('heartCount', S.hearts ? `${S.hearts} kindled` : '');
-      setH('heartText', `Costs <b>${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns and the sea. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens a second world.'}`);
+      setH('heartText', `Needs <b>${tick(S.depth >= HEART_DEPTH)} depth ${HEART_DEPTH}</b> (you're at ${S.depth}) and <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
       heartBtn.classList.toggle('poor', !can);
-      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : 'Not enough lumen');
+      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < HEART_DEPTH ? `Reach depth ${HEART_DEPTH} first` : 'Not enough lumen');
     }
 
     // choir
@@ -2983,6 +3084,7 @@
     if (S.world !== 'sea' || !S.sea.unlocked) S.world = 'cave';
     if (!TABS.includes(S.tab)) S.tab = S.world;
     if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
+    if (!['dark', 'light', 'system'].includes(S.theme)) S.theme = 'dark';
     return Math.min((Date.now() - (d.saved || Date.now())) / 1000, 8 * 3600);
   }
   function grantAway(seconds) {
@@ -3096,6 +3198,7 @@
     const away = load(data);
     const returning = away != null;
     refreshAll(); buildShop();
+    applyTheme();
     setMuted(S.muted);
     new ResizeObserver(resize).observe($('stage'));
     afterStateChange();
