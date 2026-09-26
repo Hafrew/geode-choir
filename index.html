@@ -1,0 +1,3121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="An idle game in two worlds: shout into a crystal cave, kindle the Heartstone, and skip stones across a sunless sea.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>Geode Choir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Geode Choir is a single-world design: always underground, always dark. */
+  :root {
+    color-scheme: dark;
+    --ground: #0a0810;
+    --slab: #15111c;
+    --slab-2: #1d1727;
+    --line: #2c2439;
+    --line-2: #4a3d63;
+    --text: #ece6f5;
+    --muted: #958ca8;
+    --hum: #ffcf86;
+    --echo: #8ff2e6;
+    --amethyst: #b58cff;
+    --shard: #d6a8ff;
+    --fossil: #e8d5b0;
+    --lumen: #7fb8ff;
+    --tide: #86d8e6;
+    --pearl: #efe6d8;
+    --fathom: #9aa7ff;
+    --ivory: #f6efe2;
+    --heart: #ff8fa3;
+    --warn: #ff9f8f;
+    --display: "Marcellus", "Cormorant Garamond", Georgia, serif;
+    --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--ground); color: var(--text); font-family: var(--body); font-size: 14px; overflow: hidden; }
+  .app {
+    box-sizing: border-box; height: 100%;
+    display: grid; grid-template-columns: minmax(0, 1fr) 368px; gap: 16px; padding: 16px;
+  }
+
+  /* ---------- the stage ---------- */
+  .stage { position: relative; min-height: 0; border-radius: 20px; overflow: hidden; background: #07060b; border: 1px solid var(--line); }
+  #cv { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  .veil { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.6s ease; }
+  .veil.on { opacity: 1; }
+  .hud { position: absolute; inset: 14px 14px auto 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; pointer-events: none; }
+  .hud-left, .hud-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .hud-right { justify-content: flex-end; }
+  .chip {
+    pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 11px; background: rgba(10, 8, 16, .72); border: 1px solid var(--line); border-radius: 999px;
+    font-size: 12px; color: var(--muted); backdrop-filter: blur(6px);
+  }
+  .chip b { color: var(--text); font-weight: 600; }
+  .chip .mono { font-family: var(--mono); }
+  button.chip { cursor: pointer; font: inherit; font-size: 12px; }
+  button.chip:hover { color: var(--text); border-color: var(--line-2); }
+  button.chip:focus-visible, .worlds button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+  .worlds { pointer-events: auto; display: inline-flex; padding: 2px; gap: 2px; background: rgba(10, 8, 16, .72); border: 1px solid var(--line); border-radius: 999px; }
+  .worlds button { font: inherit; font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+  .worlds button[aria-pressed="true"] { background: var(--slab-2); color: var(--text); }
+  #chord .dots { display: inline-flex; gap: 3px; }
+  #chord .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); }
+  #chord .dots i.on { background: var(--amethyst); box-shadow: 0 0 6px var(--amethyst); }
+
+  .hint, .whisper { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
+  .hint {
+    top: 50%; margin-top: 70px; font-family: var(--display); font-size: 19px; letter-spacing: .03em;
+    color: rgba(236, 230, 245, .62); animation: breathe 3.2s ease-in-out infinite; white-space: nowrap;
+  }
+  @keyframes breathe { 50% { opacity: .35; } }
+  .whisper {
+    bottom: 18px; width: min(580px, calc(100% - 32px));
+    font-family: var(--display); font-size: 16px; letter-spacing: .02em; color: var(--text);
+    text-shadow: 0 1px 12px #000; opacity: 0; transition: opacity .8s ease;
+  }
+  .whisper.show { opacity: .94; }
+
+  /* ---------- the ledger ---------- */
+  .ledger { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  .ledger header { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
+  h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 32px; letter-spacing: .05em; line-height: 1.05; }
+  .tagline { margin: 0 0 12px; color: var(--muted); font-style: italic; }
+  .purse { display: flex; align-items: baseline; gap: 8px; --main: var(--hum); }
+  .purse.sea { --main: var(--tide); }
+  #humVal { font-family: var(--mono); font-weight: 600; font-size: 36px; color: var(--main); font-variant-numeric: tabular-nums; letter-spacing: -.02em; text-shadow: 0 0 18px color-mix(in srgb, var(--main) 30%, transparent); }
+  .purse small { color: var(--muted); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+  .rates { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rates b { color: var(--text); font-weight: 400; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pill { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--slab); border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .pill b { font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pill.shard b { color: var(--shard); } .pill.fossil b { color: var(--fossil); } .pill.lumen b { color: var(--lumen); }
+  .pill.pearl b { color: var(--pearl); } .pill.fathom b { color: var(--fathom); } .pill.heart b { color: var(--heart); } .pill.ivory b { color: var(--ivory); }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--line); }
+  .tab { position: relative; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 9px 9px; margin-bottom: -1px; cursor: pointer; }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--tabc, var(--echo)); }
+  .tab:focus-visible { outline: 2px solid var(--echo); outline-offset: -2px; border-radius: 6px; }
+  .tab .new { position: absolute; top: 6px; right: 1px; width: 6px; height: 6px; border-radius: 50%; background: var(--tabc, var(--echo)); }
+  #tab-wonders { --tabc: var(--shard); } #tab-strata { --tabc: var(--fossil); } #tab-glow { --tabc: var(--lumen); }
+  #tab-sea { --tabc: var(--tide); } #tab-pearls { --tabc: var(--pearl); } #tab-deep { --tabc: var(--fathom); } #tab-choir { --tabc: var(--hum); } #tab-horns { --tabc: var(--heart); }
+  .panel { display: flex; flex-direction: column; gap: 20px; }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+
+  section { display: flex; flex-direction: column; gap: 8px; }
+  h2 { margin: 0; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  h2 span { font-family: var(--mono); letter-spacing: 0; font-weight: 400; text-transform: none; }
+  .note { margin: -2px 0 2px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .note b { color: var(--text); font-weight: 600; }
+
+  .item {
+    display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center;
+    width: 100%; text-align: left; padding: 10px 12px; background: var(--slab); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; font: inherit; cursor: pointer;
+    transition: background .15s, border-color .15s, opacity .15s;
+  }
+  .item:hover { background: var(--slab-2); border-color: var(--line-2); }
+  .item:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+  .item .sw { grid-row: span 2; width: 30px; height: 30px; }
+  .item .nm { font-weight: 600; font-size: 14px; }
+  .item .lv { font-family: var(--mono); font-weight: 400; font-size: 11.5px; color: var(--muted); margin-left: 6px; }
+  .item .cs { font-family: var(--mono); font-size: 13px; color: var(--hum); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .item .cs small { font-family: var(--body); font-size: 11px; opacity: .8; }
+  .item .cs.shard { color: var(--shard); } .item .cs.fossil { color: var(--fossil); } .item .cs.lumen { color: var(--lumen); }
+  .item .cs.tide { color: var(--tide); } .item .cs.pearl { color: var(--pearl); } .item .cs.fathom { color: var(--fathom); } .item .cs.ivory { color: var(--ivory); }
+  .item .cs.state { color: var(--echo); font-family: var(--body); font-weight: 600; font-size: 12px; }
+  .item .cs.state.off { color: var(--muted); }
+  .item .ds { grid-column: 2 / 4; font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+  .item.poor { opacity: .55; }
+  .item.poor .cs { color: var(--muted); }
+  .item.poor:hover { background: var(--slab); border-color: var(--line); }
+  .item.maxed { opacity: .7; cursor: default; }
+  .item.pulse { animation: pulse .35s ease; }
+  @keyframes pulse { 40% { transform: scale(.985); border-color: var(--echo); } }
+
+  .heartbox { padding: 14px; border-radius: 12px; border: 1px solid #5a2f45; background: linear-gradient(160deg, #26121d, #120b12); }
+  .holdbtn {
+    position: relative; overflow: hidden; font: inherit; font-family: var(--display); font-size: 17px; letter-spacing: .06em;
+    padding: 11px 14px; border-radius: 10px; cursor: pointer; color: var(--text); background: #2a1520; border: 1px solid #7a3d59;
+    user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  .holdbtn i { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, rgba(255, 143, 163, .35), rgba(255, 207, 134, .5)); }
+  .holdbtn span { position: relative; }
+  .holdbtn.poor { opacity: .45; cursor: not-allowed; }
+  .holdbtn:focus-visible { outline: 2px solid var(--heart); outline-offset: 2px; }
+
+  .hornsum { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px 12px; padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); font-size: 12.5px; }
+  .hornsum span { color: var(--muted); }
+  .hornsum b { font-family: var(--mono); font-weight: 600; color: var(--text); }
+  .hornsum .empty { grid-column: 1 / -1; color: var(--muted); }
+  .horn { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 4px 10px; padding: 10px 12px; background: var(--slab); border: 1px solid var(--line); border-radius: 10px; }
+  .horn.on { border-color: color-mix(in srgb, var(--rc) 55%, var(--line)); background: color-mix(in srgb, var(--rc) 7%, var(--slab)); }
+  .horn .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--rc); box-shadow: 0 0 8px var(--rc); margin-top: 5px; }
+  .horn .hh { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .horn .hn { color: var(--rc); font-weight: 600; }
+  .horn .hr { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .horn ul { grid-column: 2; margin: 0; padding: 0; list-style: none; font-size: 12.5px; display: flex; flex-direction: column; gap: 1px; }
+  .horn ul b { font-family: var(--mono); font-weight: 600; }
+  .horn .hb { grid-column: 2; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .horn .hb button { font: inherit; font-size: 12px; color: var(--text); cursor: pointer; background: var(--slab-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 4px 10px; }
+  .horn .hb button:hover { border-color: var(--rc); }
+  .horn .hb button.sal { color: var(--muted); }
+  .horn .hb button.sal:hover { color: var(--warn); border-color: var(--warn); }
+  .horn .hb button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+
+  .descend { padding: 14px; border-radius: 12px; background: linear-gradient(160deg, #1a1326, #0f0c16); border: 1px solid var(--line); gap: 10px; }
+  .descend p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .descend p b { color: var(--text); font-weight: 600; }
+  .descend p b.fos { color: var(--fossil); } .descend p b.fat { color: var(--fathom); }
+  .bar { height: 6px; border-radius: 3px; background: #0a0810; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--echo), var(--amethyst)); transition: width .3s; }
+  .bigbtn { font: inherit; font-family: var(--display); font-size: 17px; letter-spacing: .06em; padding: 10px 14px; border-radius: 10px; cursor: pointer; color: var(--text); background: var(--slab-2); border: 1px solid var(--line-2); }
+  .bigbtn:not(.poor):hover { border-color: var(--fossil); box-shadow: 0 0 18px rgba(232, 213, 176, .2); }
+  .bigbtn.poor { opacity: .45; cursor: not-allowed; }
+  .bigbtn:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+
+  .foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 6px; font-size: 12px; color: var(--muted); }
+  .link { font: inherit; font-size: 12px; background: none; border: 0; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+  .link:hover { color: var(--warn); }
+  .link:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+
+  /* ---------- story: cutscenes, toasts, chronicle ---------- */
+  .chip .new { width: 6px; height: 6px; border-radius: 50%; background: var(--heart); }
+  .scene {
+    position: absolute; inset: 0; z-index: 5; cursor: pointer;
+    display: grid; place-items: center; padding: 16px;
+    background: radial-gradient(ellipse at 50% 45%, rgba(10, 7, 16, .88), rgba(0, 0, 0, .97) 75%);
+    animation: fadein .6s ease;
+  }
+  .stage:has(.scene:not([hidden])) .hint, .stage:has(.scene:not([hidden])) .whisper { visibility: hidden; }
+  .scene::before, .scene::after { content: ""; position: absolute; left: 0; right: 0; height: 9%; background: #000; animation: bars .7s ease; }
+  .scene::before { top: 0; transform-origin: top; }
+  .scene::after { bottom: 0; transform-origin: bottom; }
+  @keyframes bars { from { transform: scaleY(0); } }
+  @keyframes fadein { from { opacity: 0; } }
+  .scene-card { position: relative; max-width: 34rem; display: flex; flex-direction: column; gap: 12px; animation: rise .7s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .scene-eyebrow { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--heart); }
+  .scene-title { margin: 0; font-family: var(--display); font-size: clamp(26px, 4.4vw, 40px); letter-spacing: .03em; line-height: 1.1; text-wrap: balance; }
+  .scene-text { margin: 0; font-size: clamp(15px, 1.9vw, 18px); line-height: 1.62; color: #ddd5ea; }
+  .scene-foot {
+    position: absolute; left: 16px; right: 16px; bottom: calc(9% + 12px);
+    display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 12px; color: var(--muted);
+  }
+  .scene-foot .dots { display: inline-flex; gap: 5px; }
+  .scene-foot .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+  .scene-foot .dots i.on { background: var(--text); }
+  .scene-foot button { font: inherit; font-size: 13px; cursor: pointer; border-radius: 8px; padding: 6px 12px; }
+  .scene-foot .skip { background: none; border: 0; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+  .scene-foot .next { color: var(--text); background: var(--slab-2); border: 1px solid var(--line-2); font-weight: 600; }
+  .scene-foot button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+
+  .toasts { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; width: min(420px, calc(100% - 32px)); }
+  .toast {
+    display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 10px;
+    background: rgba(18, 13, 26, .92); border: 1px solid var(--line-2); font-size: 13px; color: var(--text);
+    animation: toast 4.2s ease forwards;
+  }
+  .toast b { font-weight: 600; }
+  .toast .k { font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--hum); }
+  .toast.lore .k { color: var(--heart); }
+  @keyframes toast { 0% { opacity: 0; transform: translateY(-6px); } 8%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+  .modal { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: rgba(4, 3, 8, .72); backdrop-filter: blur(3px); }
+  .modal-box {
+    width: min(720px, 100%); max-height: min(86vh, 900px); display: flex; flex-direction: column; gap: 14px;
+    padding: 20px; border-radius: 16px; background: var(--ground); border: 1px solid var(--line-2); overflow: hidden;
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .modal-title { font-family: var(--display); font-size: 28px; letter-spacing: .04em; }
+  .modal-sub { font-size: 12.5px; color: var(--muted); }
+  .chron-body { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 18px; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  .chapter { display: flex; flex-direction: column; gap: 10px; }
+  .chapter-name { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--heart); }
+  .page { padding: 12px 14px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .page h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 19px; letter-spacing: .02em; }
+  .page p { margin: 0; font-size: 13.5px; line-height: 1.6; color: #d6cfe2; max-width: 62ch; }
+  .page.locked { background: none; border-style: dashed; }
+  .page.locked p { color: var(--muted); font-style: italic; }
+  .page button { align-self: flex-start; font: inherit; font-size: 12px; color: var(--text); cursor: pointer; background: var(--slab-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 4px 10px; }
+  .page button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+  .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+  .feat { padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
+  .feat b { font-weight: 600; font-size: 13.5px; }
+  .feat span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .feat.got { border-color: #6a5530; background: linear-gradient(160deg, #221a10, var(--slab)); }
+  .feat.got b { color: var(--hum); }
+  .feat:not(.got) { opacity: .6; }
+
+  @media (max-width: 820px) {
+    body { overflow: auto; }
+    .app { height: auto; grid-template-columns: minmax(0, 1fr); }
+    .stage { height: min(64vh, 540px); min-height: 340px; }
+    .ledger { overflow: visible; padding-right: 0; }
+    h1 { font-size: 28px; }
+    .hint { font-size: 16px; margin-top: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hint { animation: none; }
+    .item.pulse { animation: none; }
+    .veil { transition-duration: .4s; }
+  }
+</style>
+
+<div class="app">
+  <main class="stage" id="stage">
+    <canvas id="cv" aria-label="The cave. Click or tap to shout; drag crystals to move or fuse them."></canvas>
+    <div class="veil" id="veil"></div>
+    <div class="hud">
+      <div class="hud-left">
+        <div class="worlds" id="worlds" hidden>
+          <button type="button" id="wCave" aria-pressed="true">Cave</button>
+          <button type="button" id="wSea" aria-pressed="false">Sea</button>
+        </div>
+        <div class="chip" id="depthChip"><b>Depth 0</b><span>Major pentatonic</span></div>
+      </div>
+      <div class="hud-right">
+        <div class="chip" id="chord" hidden><span>Chord</span><span class="dots"></span><span class="mono" id="chordMult">×1</span></div>
+        <button class="chip" id="chronBtn" type="button">Chronicle<i class="new" id="chronDot" hidden></i></button>
+        <button class="chip" id="fxBtn" type="button" title="How much animation to draw">Effects: Auto</button>
+        <button class="chip" id="soundBtn" type="button" aria-pressed="true">Sound on</button>
+      </div>
+    </div>
+    <div class="hint" id="hint">Click the dark to shout.</div>
+    <div class="whisper" id="whisper" aria-live="polite"></div>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+    <div class="scene" id="scene" hidden role="dialog" aria-modal="true" aria-labelledby="sceneTitle">
+      <div class="scene-card" id="sceneCard">
+        <p class="scene-eyebrow" id="sceneEyebrow"></p>
+        <div class="scene-title" id="sceneTitle"></div>
+        <p class="scene-text" id="sceneText"></p>
+      </div>
+      <div class="scene-foot">
+        <button type="button" class="skip" id="sceneSkip">Skip</button>
+        <span class="dots" id="sceneDots"></span>
+        <button type="button" class="next" id="sceneNext">Continue</button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="ledger">
+    <header>
+      <h1>Geode Choir</h1>
+      <p class="tagline" id="tagline">A cave that pays you in echoes.</p>
+      <div class="purse" id="purse"><span id="humVal">0</span><small id="humUnit">hum</small></div>
+      <div class="rates"><b id="rateVal">0</b> <span id="rateUnit">hum/s</span> &nbsp;·&nbsp; <b id="echoVal">0</b> <span id="echoUnit">echoes ringing</span></div>
+      <div class="pills">
+        <span class="pill shard" id="pillShard" hidden><b id="shardVal">0</b> shards</span>
+        <span class="pill fossil" id="pillFossil" hidden><b id="fossilVal">0</b> fossils</span>
+        <span class="pill lumen" id="pillLumen" hidden><b id="lumenVal">0</b> lumen <span id="lumenRate"></span></span>
+        <span class="pill pearl" id="pillPearl" hidden><b id="pearlVal">0</b> pearls</span>
+        <span class="pill fathom" id="pillFathom" hidden><b id="fathomVal">0</b> fathoms</span>
+        <span class="pill ivory" id="pillIvory" hidden><b id="ivoryVal">0</b> ivory</span>
+        <span class="pill heart" id="pillHeart" hidden><b id="heartVal">0</b> Heartstones</span>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs" role="tablist" hidden>
+      <button class="tab" role="tab" id="tab-cave" type="button">Cave</button>
+      <button class="tab" role="tab" id="tab-wonders" type="button">Wonders<i class="new" hidden></i></button>
+      <button class="tab" role="tab" id="tab-strata" type="button">Strata<i class="new" hidden></i></button>
+      <button class="tab" role="tab" id="tab-glow" type="button">Glow<i class="new" hidden></i></button>
+      <button class="tab" role="tab" id="tab-sea" type="button">Sea</button>
+      <button class="tab" role="tab" id="tab-pearls" type="button">Pearls<i class="new" hidden></i></button>
+      <button class="tab" role="tab" id="tab-deep" type="button">Deep<i class="new" hidden></i></button>
+      <button class="tab" role="tab" id="tab-choir" type="button">Choir<i class="new" hidden></i></button>
+      <button class="tab" role="tab" id="tab-horns" type="button">Horns<i class="new" hidden></i></button>
+    </nav>
+
+    <!-- cave -->
+    <div class="panel" id="panel-cave" role="tabpanel">
+      <section>
+        <h2>Crystals <span id="crystalCount">1 / 8</span></h2>
+        <p class="note">Echoes that strike a crystal ring it for hum. New crystals find their own spot; drag one to move it, or drop it on a twin to fuse them into the next stone.</p>
+        <div class="list" id="shopCrystals"></div>
+      </section>
+      <section><h2>Voices</h2><div class="list" id="shopVoices"></div></section>
+      <section><h2>Tuning</h2><div class="list" id="shopTuning"></div></section>
+    </div>
+    <div class="panel" id="panel-wonders" role="tabpanel" hidden>
+      <section>
+        <h2>Wonders</h2>
+        <p class="note">Every crystal slowly cracks from ringing and sheds shards; bigger stones shed more. Wonders place themselves and can be dragged like crystals. They are lost when you descend.</p>
+        <div class="list" id="shopWonders"></div>
+      </section>
+      <section>
+        <h2>Attunement</h2>
+        <p class="note">Tune a whole kind of stone with shards. Each level doubles what it rings for.</p>
+        <div class="list" id="shopAttune"></div>
+      </section>
+    </div>
+    <div class="panel" id="panel-strata" role="tabpanel" hidden>
+      <section>
+        <h2>Strata</h2>
+        <p class="note">Fossils are what you carry down when you descend. Strata never reset until a Heartstone is kindled.</p>
+        <div class="list" id="shopStrata"></div>
+      </section>
+    </div>
+    <div class="panel" id="panel-glow" role="tabpanel" hidden>
+      <section>
+        <h2>Illuminations</h2>
+        <p class="note">Glowworms hang from the ceiling and eat any echo that touches their threads, turning it into lumen. Spend it on light, and on hands that play the cave for you.</p>
+        <div class="list" id="shopGlow"></div>
+      </section>
+      <section class="heartbox" id="heartBox" hidden>
+        <h2 style="color:var(--heart)">The Heartstone <span id="heartCount"></span></h2>
+        <p class="note" id="heartText"></p>
+        <button class="holdbtn poor" id="heartBtn" type="button"><i id="heartFill"></i><span id="heartLabel">Hold to kindle</span></button>
+      </section>
+    </div>
+
+    <!-- sea -->
+    <div class="panel" id="panel-sea" role="tabpanel" hidden>
+      <section>
+        <h2>Bells <span id="bellCount">1 / 8</span></h2>
+        <p class="note">A bell rings when a ripple reaches it. When two ripples reach the same bell at almost the same moment, they <b>cross</b> and it rings far harder. Drag bells to move them; drop one on a twin to fuse.</p>
+        <div class="list" id="shopBells"></div>
+      </section>
+      <section><h2>Voices</h2><div class="list" id="shopSeaVoices"></div></section>
+      <section><h2>Tuning</h2><div class="list" id="shopSeaTuning"></div></section>
+    </div>
+    <div class="panel" id="panel-pearls" role="tabpanel" hidden>
+      <section>
+        <h2>Oysters</h2>
+        <p class="note">Oysters open after enough ripples wash over them and give up a pearl.</p>
+        <div class="list" id="shopOysters"></div>
+      </section>
+      <section><h2>Pearl works</h2><div class="list" id="shopPearlObjs"></div></section>
+      <section>
+        <h2>Bell casting</h2>
+        <p class="note">Recast a whole kind of bell with pearls. Each level doubles what it rings for.</p>
+        <div class="list" id="shopBellTune"></div>
+      </section>
+    </div>
+    <div class="panel" id="panel-deep" role="tabpanel" hidden>
+      <section>
+        <h2>The Deep</h2>
+        <p class="note">Fathoms are earned by sounding the depths. Deep upgrades never reset.</p>
+        <div class="list" id="shopDeep"></div>
+      </section>
+    </div>
+    <div class="panel" id="panel-choir" role="tabpanel" hidden>
+      <section>
+        <h2>The Choir Above</h2>
+        <p class="note" id="choirInfo"></p>
+        <div class="list" id="shopChoir"></div>
+      </section>
+    </div>
+
+    <!-- shared -->
+    <div class="panel" id="panel-horns" role="tabpanel" hidden>
+      <section>
+        <h2>Worn horns <span id="hornSlots">0 / 1</span></h2>
+        <p class="note">Only the horns you <b>equip</b> count, in both worlds. Horns turn up on their own over time, and when you descend, sound the depths or kindle a Heartstone. Each is random. Rarer horns have bigger, and sometimes multiplying, bonuses.</p>
+        <div class="hornsum" id="hornSum"></div>
+        <p class="note" id="hornTimer"></p>
+      </section>
+      <section>
+        <h2>The horn rack</h2>
+        <p class="note">Salvage horns you don't want for ivory. Chances per horn: Common 58%, Rare 27%, Epic 10%, Legendary 4%, Mythic 1%.</p>
+        <div class="list" id="shopHorns"></div>
+      </section>
+      <section>
+        <h2>Your horns <span id="hornCount">0 / 30</span></h2>
+        <div class="list" id="hornList"></div>
+      </section>
+    </div>
+
+    <section class="descend" id="descend">
+      <h2><span style="font-family:var(--body);letter-spacing:.16em;text-transform:uppercase;font-weight:600" id="descTitle">Descend</span> <span id="descPct">0%</span></h2>
+      <div class="bar"><i id="descBar"></i></div>
+      <p id="descText"></p>
+      <button class="bigbtn poor" id="descBtn" type="button">Descend</button>
+    </section>
+
+    <div class="foot">
+      <span id="lifetime">0 hum sung, all told</span>
+      <button class="link" id="resetBtn" type="button">Forget everything</button>
+    </div>
+  </aside>
+</div>
+
+<div class="modal" id="chron" hidden role="dialog" aria-modal="true" aria-labelledby="chronTitle">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="chronTitle">The Chronicle</div>
+        <div class="modal-sub" id="chronSub"></div>
+      </div>
+      <button class="link" id="chronClose" type="button">Close</button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" id="ctab-story" type="button" aria-selected="true">Story</button>
+      <button class="tab" role="tab" id="ctab-feats" type="button" aria-selected="false">Feats</button>
+    </nav>
+    <div class="chron-body" id="chronStory"></div>
+    <div class="chron-body" id="chronFeats" hidden><div class="feat-grid" id="featGrid"></div></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
+  const KEY = 'geode-choir-v1';
+
+  // =====================================================================
+  // content
+  // =====================================================================
+  const TIERS = [
+    { name: 'Quartz',    color: '#e3edf5', glow: '#bcdcff', value: 1,  base: 12,    g: 1.30, r: 11 },
+    { name: 'Amethyst',  color: '#b58cff', glow: '#b58cff', value: 3,  base: 150,   g: 1.30, r: 12.5 },
+    { name: 'Citrine',   color: '#ffc766', glow: '#ffbf5a', value: 9,  base: 2500,  g: 1.30, r: 14 },
+    { name: 'Moonstone', color: '#a4f2d6', glow: '#8ff2e6', value: 27, base: 40000, g: 1.30, r: 15.5 },
+  ];
+  const WONDERS = {
+    prism:     { name: 'Prism',     r: 13, base: 6,  g: 1.8, max: 4, desc: 'Splits echoes: one bounces back, a twin passes straight through.' },
+    lodestone: { name: 'Lodestone', r: 11, base: 10, g: 2.0, max: 3, desc: 'Bends nearby echoes toward itself. Put crystals around it.' },
+    gong:      { name: 'Gong',      r: 20, base: 25, g: 2.2, max: 3, desc: 'Drinks echoes until full, then booms: a double shout that rings every crystal near it.' },
+  };
+  const BELLS = [
+    { name: 'Tin Bell',     color: '#bdb8b0', value: 1,  base: 15,    g: 1.30, r: 11 },
+    { name: 'Bronze Bell',  color: '#d0955a', value: 3,  base: 200,   g: 1.30, r: 12.5 },
+    { name: 'Silver Bell',  color: '#dfe6ee', value: 9,  base: 3500,  g: 1.30, r: 14 },
+    { name: 'Abyssal Bell', color: '#6fe3d0', value: 27, base: 60000, g: 1.30, r: 15.5 },
+  ];
+  const PEARLOBJ = {
+    breakwater: { name: 'Breakwater', r: 12, base: 6,  g: 1.8, max: 4, desc: 'When a ripple reaches it, it sends out a ripple of its own.' },
+    raft:       { name: 'Drum Raft',  r: 12, base: 10, g: 2.0, max: 3, desc: 'Beats a ripple every 3 seconds, forever.' },
+    whirlpool:  { name: 'Whirlpool',  r: 14, base: 20, g: 2.2, max: 3, desc: 'Bells inside its pull ring for ×2.' },
+  };
+  const OYSTER_R = 12;
+  const MODES = [
+    { name: 'Major pentatonic', steps: [0, 2, 4, 7, 9] },
+    { name: 'Minor pentatonic', steps: [0, 3, 5, 7, 10] },
+    { name: 'Hirajoshi',        steps: [0, 2, 3, 7, 8] },
+    { name: 'Dorian',           steps: [0, 2, 3, 5, 7, 9, 10] },
+    { name: 'Whole tone',       steps: [0, 2, 4, 6, 8, 10] },
+    { name: 'Lydian',           steps: [0, 2, 4, 6, 7, 9, 11] },
+  ];
+  const RARITY = [
+    { name: 'Common',    col: '#bdb5cc', p: 0.58, lines: 1, pct: [5, 15],    flatK: 1, ivory: 1 },
+    { name: 'Rare',      col: '#7fb8ff', p: 0.27, lines: 1, pct: [15, 40],   flatK: 2, ivory: 3 },
+    { name: 'Epic',      col: '#b58cff', p: 0.10, lines: 2, pct: [40, 90],   flatK: 3, ivory: 10, mult: [1.2, 1.5], multP: 0.3 },
+    { name: 'Legendary', col: '#ffcf86', p: 0.04, lines: 2, pct: [90, 200],  flatK: 4, ivory: 30, mult: [1.5, 2.5], multP: 0.5 },
+    { name: 'Mythic',    col: '#ff8fa3', p: 0.01, lines: 3, pct: [200, 400], flatK: 6, ivory: 100, mult: [2.5, 5], multP: 1 },
+  ];
+  const HSTATS = {
+    hum:     { label: 'Hum',               kind: 'scale', of: 'the Deep Choir' },
+    lumen:   { label: 'Lumen',             kind: 'scale', of: 'the Glowworm' },
+    shards:  { label: 'Shards',            kind: 'scale', of: 'Cracked Stone' },
+    fossils: { label: 'Fossils',           kind: 'scale', of: 'Old Bones' },
+    crystal: { label: 'Crystal value',     kind: 'scale', of: 'Quartz' },
+    wall:    { label: 'Stone echoes',      kind: 'scale', of: 'the Walls' },
+    tide:    { label: 'Tide',              kind: 'scale', of: 'the Sunless Sea' },
+    pearls:  { label: 'Pearls',            kind: 'scale', of: 'the Oyster' },
+    fathoms: { label: 'Fathoms',           kind: 'scale', of: 'the Plumb Line' },
+    bell:    { label: 'Bell value',        kind: 'scale', of: 'Bronze' },
+    interf:  { label: 'Crossing bonus',    kind: 'scale', of: 'Crossing Waves' },
+    lungs:   { label: 'Echoes per shout',  kind: 'flat', per: 1, of: 'Great Lungs' },
+    skips:   { label: 'Stone skips',       kind: 'flat', per: 0.5, of: 'the Skipping Stone' },
+    offline: { label: 'Away earnings',     kind: 'flatpct', per: 4, of: 'Long Sleep' },
+    cost:    { label: 'Crystal & bell prices', kind: 'discount', per: 3, of: 'the Haggler' },
+  };
+  const ANIMALS = ['Ram', 'Stag', 'Ibex', 'Oryx', 'Kudu', 'Narwhal', 'Markhor', 'Auroch', 'Conch', 'Wyrm'];
+  const ADJ = [
+    ['Chipped', 'Plain', 'Dusty', 'Worn'],
+    ['Carved', 'Polished', 'Humming', 'Banded'],
+    ['Singing', 'Spiral', 'Moonlit', 'Hollow'],
+    ['Gilded', 'Thundering', 'Ancient', 'Crowned'],
+    ['Starborn', 'Worldsong', 'Unending', 'First'],
+  ];
+  const MAX_P = 1400, GONG_CAP = 25, MAX_R = 220, HORN_CAP = 30;
+  // Live budgets. The governor shrinks these when frames run slow; extra voices fold into the survivors.
+  let capP = 900, capR = 160, frameMs = 6;
+
+  // =====================================================================
+  // state
+  // =====================================================================
+  const freshCave = () => ({
+    hum: 0, run: 0, depth: 0,
+    crystals: [{ t: 0, x: 0, y: -0.12 }], bought: [0, 0, 0, 0],
+    lv: { lungs: 0, drips: 0, bats: 0, resonance: 0, polish: 0, harmony: 0, chisel: 0 },
+    shards: 0, attune: [0, 0, 0, 0], wonders: [], wBought: { prism: 0, lodestone: 0, gong: 0 },
+    fossils: 0, fossilsTotal: 0,
+    strata: { old: 0, lungs: 0, water: 0, seed: 0, wide: 0, fault: 0, record: 0, nest: 0, worm: 0 },
+    lumen: 0, lumenTotal: 0,
+    illum: { firefly: 0, lantern: 0, silk: 0, autofuse: 0, autobuy: 0, autodescend: 0, carry: 0 },
+    toggles: { autofuse: 1, autobuy: 1, autodescend: 1 },
+    idleRate: 0, lumenIdle: 0, rate: 0,
+  });
+  const freshSeaRun = () => ({
+    tide: 0, run: 0,
+    bells: [{ bt: 0, x: 0, y: -0.1 }], bought: [0, 0, 0, 0],
+    lv: { skips: 0, rain: 0, fish: 0, light: 0, still: 0, bronze: 0, interf: 0, line: 0 },
+    pearls: 0, tune: [0, 0, 0, 0], oysters: [], oBought: 0, objs: [], pBought: { breakwater: 0, raft: 0, whirlpool: 0 },
+  });
+  const freshSea = () => ({
+    ...freshSeaRun(), unlocked: false, soundings: 0, fathoms: 0, fathomsTotal: 0,
+    deep: { current: 0, rain: 0, buoys: 0, beds: 0, record: 0, light: 0 },
+    choir: { open: 0, listen: 0 },
+    total: 0, idleRate: 0, rate: 0, throws: 0,
+  });
+  const fresh = () => ({
+    ...freshCave(), total: 0, world: 'cave', hearts: 0,
+    horns: [], equipped: [], hornSeq: 0, hornBuys: 0, hornsOn: false, hornTimer: 360, ivory: 0,
+    hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
+    sea: freshSea(), seen: {}, muted: false, fx: 'auto', saved: Date.now(), shouts: 0, tab: 'cave',
+    lore: {}, feats: {}, stats: freshStats(),
+  });
+  function freshStats() {
+    return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0 };
+  }
+  let S = fresh();
+
+  // =====================================================================
+  // derived numbers
+  // =====================================================================
+  let HB = {};
+  function hornBoost(h) { return 1 + S.hornUp.whet * 0.08 * (1 + h.r * 0.5); }
+  function lineVal(h, l) {
+    const b = hornBoost(h);
+    if (l.kind === 'mult') return 1 + (l.v - 1) * b;
+    return l.v * b;
+  }
+  function computeHB() {
+    const add = {}, mul = {}; let lungs = 0, skips = 0, offline = 0, cost = 0;
+    const eq = new Set(S.equipped);
+    for (const h of S.horns) {
+      if (!eq.has(h.id)) continue;
+      for (const l of h.lines) {
+        const st = HSTATS[l.stat]; if (!st) continue;
+        const v = lineVal(h, l);
+        if (st.kind === 'scale') {
+          if (l.kind === 'mult') mul[l.stat] = (mul[l.stat] || 1) * v; else add[l.stat] = (add[l.stat] || 0) + v;
+        } else if (l.stat === 'lungs') lungs += Math.round(v);
+        else if (l.stat === 'skips') skips += Math.round(v);
+        else if (l.stat === 'offline') offline += v;
+        else if (l.stat === 'cost') cost += v;
+      }
+    }
+    HB = { lungs, skips, offline: Math.min(0.5, offline / 100), cost: Math.min(0.6, cost / 100) };
+    for (const k of Object.keys(HSTATS)) if (HSTATS[k].kind === 'scale') HB[k] = (1 + (add[k] || 0) / 100) * (mul[k] || 1);
+  }
+  computeHB();
+
+  const featMult = () => 1 + 0.02 * Object.keys(S.feats).length;
+  const heartMult = () => Math.pow(3, S.hearts) * featMult();
+  const priceK = () => 1 - HB.cost;
+  const offlineEff = () => Math.min(1, 0.5 + HB.offline);
+  // cave
+  const shoutN = l => 6 + 3 * l + HB.lungs;
+  const retainAt = l => Math.min(0.985, 1 - 0.32 * Math.pow(0.86, l));
+  const polishAt = l => Math.pow(1.6, l);
+  const humMult = () => Math.pow(2, S.depth) * Math.pow(1.5, S.strata.old) * Math.pow(1.5, S.illum.lantern) * heartMult() * HB.hum;
+  const deepenAt = () => 2e4 * Math.pow(4, S.depth);
+  const fossilGain = () => S.run < deepenAt() ? 0 :
+    Math.floor((1 + 0.5 * S.depth) * 2 * Math.sqrt(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils);
+  const maxCrystals = () => 8 + S.lv.chisel + 4 * S.strata.wide;
+  const crackAt = () => 40 * Math.pow(0.8, S.strata.fault);
+  const shardsOn = () => S.depth >= 1;
+  const lumenMult = () => Math.pow(1.5, S.illum.silk) * Math.pow(1.25, S.depth) * Math.pow(2, S.hearts) * HB.lumen;
+  const crystalCost = t => Math.ceil(TIERS[t].base * Math.pow(TIERS[t].g, S.bought[t] || 0) * priceK());
+  const wonderCost = k => Math.ceil(WONDERS[k].base * Math.pow(WONDERS[k].g, S.wBought[k] || 0));
+  const attuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.attune[t]));
+  const heartCost = () => 1e7 * Math.pow(5, S.hearts);
+  // sea
+  const bellCap = () => 8 + S.sea.lv.line + 2 * S.sea.deep.buoys;
+  const bellCost = t => Math.ceil(BELLS[t].base * Math.pow(BELLS[t].g, S.sea.bought[t] || 0) * priceK());
+  const tuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.sea.tune[t]));
+  const oysterCost = () => Math.ceil(300 * Math.pow(1.8, S.sea.oBought));
+  const pobjCost = k => Math.ceil(PEARLOBJ[k].base * Math.pow(PEARLOBJ[k].g, S.sea.pBought[k] || 0));
+  const soundAt = () => 5e4 * Math.pow(4, S.sea.soundings);
+  const fathomGain = () => {
+    const q = S.sea;
+    return q.run < soundAt() ? 0 : Math.floor((1 + 0.5 * q.soundings) * 2 * Math.sqrt(q.run / soundAt()) * Math.pow(1.25, q.deep.record) * HB.fathoms);
+  };
+  const quietEff = () => 0.25 + 0.1 * S.sea.choir.listen;
+  const choirK = () => 0.1 * (1 + S.sea.choir.open);
+  const choirBonus = () => 1 + choirK() * Math.log10(1 + (S.idleRate || 0));
+  const tideMult = () => Math.pow(2, S.sea.soundings) * Math.pow(1.5, S.sea.deep.current) * heartMult() * HB.tide * choirBonus() * Math.pow(1.6, S.sea.lv.bronze);
+  const skipsN = l => 1 + l + HB.skips;
+  const seaDecayAt = l => 0.3 * Math.pow(0.86, l);
+  const openAt = () => 30 * Math.pow(0.8, S.sea.deep.beds);
+  const crossAt = l => (3 + l) * HB.interf;
+  const pearlsOn = () => S.sea.soundings >= 1;
+  // horns
+  const hornSlots = () => 1 + S.hornUp.rack;
+  const hornInterval = () => 360 * Math.pow(0.85, S.hornUp.ear);
+  const hornRollCost = () => Math.ceil(5 * Math.pow(1.6, S.hornBuys));
+  const pct = x => (x * 100).toFixed(x > 0.95 ? 1 : 0) + '%';
+
+  let K = {}, SK = {};
+  function refreshK() {
+    K = {
+      ret: retainAt(S.lv.resonance), pol: polishAt(S.lv.polish), dm: humMult(), harm: S.lv.harmony,
+      att: S.attune.map(a => Math.pow(2, a)), crack: crackAt(), shards: shardsOn(), lm: lumenMult(),
+      crys: HB.crystal, wall: HB.wall, sh: HB.shards,
+    };
+  }
+  function refreshSK() {
+    const q = S.sea;
+    SK = {
+      decay: seaDecayAt(q.lv.still), tm: tideMult(), cross: crossAt(q.lv.interf),
+      tune: q.tune.map(a => Math.pow(2, a)), open: openAt(), bell: HB.bell, pearl: HB.pearls,
+    };
+  }
+  function refreshAll() { computeHB(); refreshK(); refreshSK(); hornsDirty = true; }
+
+  const WHISPERS = {
+    firstShout: 'The cave answers.',
+    firstQuartz: 'The quartz hums back.',
+    firstDrip: 'Water keeps time where you can’t.',
+    firstBat: 'Something else in here is singing.',
+    firstFuse: 'Two stones, one voice.',
+    firstAmethyst: 'Violet light. A lower, rounder note.',
+    firstCitrine: 'Citrine burns like a held breath.',
+    firstMoonstone: 'Moonstone. The dark itself seems to listen.',
+    firstHarmony: 'Ring them together. The cave pays for chords.',
+    canDescend: 'The floor sounds hollow. You could descend.',
+    twins: 'Two of a kind. Drag one onto the other.',
+    full: 'The cave is full. Fuse twins, or chisel out more room.',
+    firstShard: 'A crystal cracks. Shards glitter in the dust. Spend them on Wonders.',
+    firstPrism: 'Light and sound both split here.',
+    firstLodestone: 'The echoes lean toward it like iron filings.',
+    firstGong: 'Feed it echoes. It will answer for everyone.',
+    firstBoom: 'The gong booms, and every crystal near it sings at once.',
+    nest: 'Glowworms uncoil from the ceiling. They are hungry for sound.',
+    firstFirefly: 'A firefly hand drifts in and starts shouting for you.',
+    heartSeen: 'Something beneath the glow is beating. The Heartstone.',
+    firstThrow: 'The water answers, softer than stone.',
+    firstCross: 'Two ripples met at a bell, and it rang three times as hard. Aim for the crossings.',
+    firstRain: 'Rain on still water. Every drop is a voice.',
+    firstFish: 'Something leaps in the black water.',
+    firstLight: 'A lighthouse with no ships to warn. It rings the bells instead.',
+    firstPearl: 'An oyster opens. A pearl, pale as the moon.',
+    canSound: 'The water goes deeper still. You could sound the depths.',
+    firstBreakwater: 'Ripples break against it and start again.',
+    firstRaft: 'A little drum, keeping time on the water.',
+    firstWhirlpool: 'The sea turns slowly around it.',
+    bellTwins: 'Two bells alike. Drag one onto the other.',
+    bellFull: 'No room for another bell. Fuse twins, or lay more buoy line.',
+    firstBellFuse: 'Two bells melt into one deeper note.',
+    firstHorn: 'You found a horn. Open the Horns tab to wear it.',
+  };
+
+  // =====================================================================
+  // utilities
+  // =====================================================================
+  function fmt(n) {
+    if (!isFinite(n)) return '∞';
+    if (n < 10) return (Math.floor(n * 10) / 10).toString();
+    if (n < 1000) return Math.floor(n).toString();
+    const u = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+    let i = -1;
+    while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+    if (n >= 1000) return n.toExponential(2);
+    return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : n.toFixed(0)) + u[i];
+  }
+  const fmtX = x => x < 10 ? x.toFixed(2).replace(/\.?0+$/, '') : fmt(x);
+  function rng(seed) {
+    return () => {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[(Math.random() * a.length) | 0];
+  let whisperTimer = 0;
+  function whisper(text) {
+    const el = $('whisper');
+    el.textContent = text; el.classList.add('show');
+    clearTimeout(whisperTimer);
+    whisperTimer = setTimeout(() => el.classList.remove('show'), 5800);
+  }
+  function once(key) {
+    if (S.seen[key]) return;
+    S.seen[key] = 1; whisper(WHISPERS[key]);
+  }
+  const UNIT = {
+    hum:    { get: () => S.hum,          set: v => { S.hum = v; } },
+    shard:  { get: () => S.shards,       set: v => { S.shards = v; } },
+    fossil: { get: () => S.fossils,      set: v => { S.fossils = v; } },
+    lumen:  { get: () => S.lumen,        set: v => { S.lumen = v; } },
+    tide:   { get: () => S.sea.tide,     set: v => { S.sea.tide = v; } },
+    pearl:  { get: () => S.sea.pearls,   set: v => { S.sea.pearls = v; } },
+    fathom: { get: () => S.sea.fathoms,  set: v => { S.sea.fathoms = v; } },
+    ivory:  { get: () => S.ivory,        set: v => { S.ivory = v; } },
+  };
+  const have = u => UNIT[u].get();
+  function spend(u, c) { if (have(u) < c) return false; UNIT[u].set(have(u) - c); return true; }
+
+  // =====================================================================
+  // geometry (shared by both worlds)
+  // =====================================================================
+  let W = 0, H = 0, DPR = 1, cx = 0, cy = 0, rx = 1, ry = 1, SC = 1, V = 230;
+  let shape = [], seaPath = null;
+  function buildShape() {
+    if (S.world === 'sea') {
+      const R = rng(S.sea.soundings * 6007 + 91);
+      shape = [
+        { k: 2, a: 0.02 + R() * 0.03, p: R() * 6.283 },
+        { k: 3, a: 0.03 + R() * 0.03, p: R() * 6.283 },
+        { k: 4, a: 0.015 + R() * 0.015, p: R() * 6.283 },
+        { k: 7, a: 0.01, p: R() * 6.283 },
+      ];
+    } else {
+      const R = rng(S.depth * 7919 + 17);
+      shape = [
+        { k: 2, a: 0.03 + R() * 0.03, p: R() * 6.283 },
+        { k: 3, a: 0.04 + R() * 0.04, p: R() * 6.283 },
+        { k: 5, a: 0.025 + R() * 0.02, p: R() * 6.283 },
+        { k: 8, a: 0.01 + R() * 0.01, p: R() * 6.283 },
+        { k: 13, a: 0.006, p: R() * 6.283 },
+      ];
+    }
+  }
+  function rho(t) { let r = 0.88; for (const h of shape) r += h.a * Math.sin(h.k * t + h.p); return r; }
+  function drho(t) { let r = 0; for (const h of shape) r += h.a * h.k * Math.cos(h.k * t + h.p); return r; }
+  function insideBy(x, y, marginPx) {
+    const u = (x - cx) / rx, v = (y - cy) / ry;
+    return Math.sqrt(u * u + v * v) < rho(Math.atan2(v, u)) - marginPx / Math.min(rx, ry);
+  }
+  const objR = o => (o.k ? WONDERS[o.k].r : o.pk ? PEARLOBJ[o.pk].r : o.oy ? OYSTER_R : o.bt != null ? BELLS[o.bt].r : TIERS[o.t].r) * SC;
+  function placeObj(o) { o.px = cx + o.x * rx; o.py = cy + o.y * ry; o.r = objR(o); }
+  function setObjPx(o, x, y) { o.x = (x - cx) / rx; o.y = (y - cy) / ry; placeObj(o); }
+  const objLists = () => S.world === 'sea' ? [S.sea.bells, S.sea.objs, S.sea.oysters] : [S.crystals, S.wonders];
+  function validSpot(x, y, r, ignore) {
+    if (!insideBy(x, y, r * 1.7)) return false;
+    for (const list of objLists()) {
+      for (const o of list) {
+        if (o === ignore) continue;
+        if (Math.hypot(o.px - x, o.py - y) < (o.r + r) * 1.45) return false;
+      }
+    }
+    return true;
+  }
+  function twinAt(x, y, tier, ignore, list, key) {
+    if (tier >= 3) return null;
+    for (const o of list) {
+      if (o === ignore || o[key] !== tier) continue;
+      if (Math.hypot(o.px - x, o.py - y) < o.r * 1.6) return o;
+    }
+    return null;
+  }
+  function twinOf(o) {
+    if (o.bt != null) return twinAt(o.px, o.py, o.bt, o, S.sea.bells, 'bt');
+    if (o.t != null && !o.k) return twinAt(o.px, o.py, o.t, o, S.crystals, 't');
+    return null;
+  }
+  function objAt(x, y) {
+    const lists = objLists();
+    for (let li = lists.length - 1; li >= 0; li--) {
+      const list = lists[li];
+      for (let i = list.length - 1; i >= 0; i--) {
+        const o = list[i];
+        if (Math.hypot(o.px - x, o.py - y) < o.r * 1.5) return o;
+      }
+    }
+    return null;
+  }
+  function randomSpot(r) {
+    for (let i = 0; i < 400; i++) {
+      const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()) * 0.85;
+      const x = cx + Math.cos(a) * d * rx, y = cy + Math.sin(a) * d * ry;
+      if (validSpot(x, y, r, null)) return { x, y };
+    }
+    return null;
+  }
+  function randomInside() {
+    for (let i = 0; i < 20; i++) {
+      const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()) * 0.8;
+      const x = cx + Math.cos(a) * d * rx, y = cy + Math.sin(a) * d * ry;
+      if (insideBy(x, y, 8)) return { x, y };
+    }
+    return { x: cx, y: cy };
+  }
+  function placeNew(list, o, fullMsg) {
+    const s = randomSpot(objR(o));
+    if (!s) { whisper(WHISPERS[fullMsg] || 'No open space left. Fuse twins to make room.'); return false; }
+    setObjPx(o, s.x, s.y); o.ring = 1;
+    list.push(o);
+    rings.push({ x: o.px, y: o.py, r: o.r, life: 1 });
+    return true;
+  }
+
+  function resize() {
+    const r = cv.getBoundingClientRect();
+    if (r.width < 10 || r.height < 10) return;
+    // Calm mode draws at 1× density: a quarter of the pixels on a high-DPI screen.
+    DPR = S.fx === 'calm' ? 1 : Math.min(2, window.devicePixelRatio || 1);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    bg.width = cv.width; bg.height = cv.height;
+    cx = W / 2; cy = H / 2 + 8;
+    rx = W * 0.47; ry = H * (S.world === 'sea' ? 0.42 : 0.44);
+    SC = Math.max(0.72, Math.min(1.35, Math.min(W, H) / 600));
+    V = 230 * SC;
+    for (const list of objLists()) list.forEach(placeObj);
+    P.length = 0; drops.length = 0; ripples.length = 0; skipsQ.length = 0; jumps.length = 0;
+    buildWorms();
+    if (S.world === 'sea') drawSeaBG(); else drawCaveBG();
+  }
+
+  // =====================================================================
+  // shared effects + level-of-detail
+  // =====================================================================
+  const rings = [];  // expanding rings
+  const floats = []; // +numbers
+  let T = 0, lite = 0;
+  function entityCount() {
+    const objs = objLists().reduce((a, l) => a + l.length, 0);
+    return P.length + ripples.length + objs + bats.length + drops.length + jumps.length + floats.length + rings.length + worms.length;
+  }
+  function updateLite() {
+    if (S.fx === 'full') { lite = 0; return; }
+    const n = entityCount();
+    if (S.fx === 'calm') { lite = n > 400 ? 2 : 1; return; }
+    if (lite === 0 && n > 110) lite = 1;
+    else if (lite === 1 && n < 90) lite = 0;
+    if (lite === 1 && n > 420) lite = 2;
+    else if (lite === 2 && n < 380) lite = 1;
+  }
+  function pushFloat(f) {
+    if (lite && floats.length > 12) return;
+    floats.push(f);
+  }
+
+  // =====================================================================
+  // CAVE
+  // =====================================================================
+  const P = [], drops = [];
+  let bats = [], dripTimers = [], worms = [];
+  let chordNow = 0, fireT = 1, autoT = 0;
+  let secAcc = 0, idleAcc = 0, lumAcc = 0; let hist = [], ihist = [], lhist = [];
+  let lumenRate = 0;
+
+  function caveHue() { return (268 - S.depth * 23 + 360) % 360; }
+  function echoHue() { return (172 + S.depth * 41) % 360; }
+
+  function drawCaveBG() {
+    const b = bctx, R = rng(S.depth * 104729 + 3);
+    const h = caveHue();
+    b.setTransform(DPR, 0, 0, DPR, 0, 0);
+    b.fillStyle = `hsl(${h}, 22%, 3.5%)`; b.fillRect(0, 0, W, H);
+    for (let i = 0; i < 1100; i++) {
+      b.fillStyle = `rgba(255,255,255,${0.012 + R() * 0.035})`;
+      const s = R() < 0.9 ? 1 : 2;
+      b.fillRect(R() * W, R() * H, s, s);
+    }
+    const path = outlinePath();
+    const grd = b.createRadialGradient(cx, cy + ry * 0.25, 10, cx, cy, Math.max(rx, ry));
+    grd.addColorStop(0, `hsl(${h}, 30%, 13%)`); grd.addColorStop(0.65, `hsl(${h}, 28%, 8%)`); grd.addColorStop(1, `hsl(${h}, 26%, 5.5%)`);
+    b.fillStyle = grd; b.fill(path);
+    b.save(); b.clip(path);
+    for (let i = 0; i < 18; i++) {
+      const y0 = cy - ry + (i / 18) * ry * 2 + R() * 10;
+      b.beginPath();
+      for (let x = cx - rx; x <= cx + rx; x += 12) {
+        const y = y0 + Math.sin(x * 0.012 + i) * 6 * SC + Math.sin(x * 0.041 + i * 3) * 2;
+        x === cx - rx ? b.moveTo(x, y) : b.lineTo(x, y);
+      }
+      b.strokeStyle = `rgba(255,255,255,${0.012 + R() * 0.02})`; b.lineWidth = 1 + R() * 2; b.stroke();
+    }
+    for (let i = 0; i < 140; i++) {
+      b.fillStyle = `hsla(${h + R() * 60 - 30}, 70%, 80%, ${0.05 + R() * 0.12})`;
+      b.fillRect(cx + (R() - 0.5) * rx * 2, cy + (R() - 0.5) * ry * 2, 1, 1);
+    }
+    b.restore();
+    const rock = `hsl(${h}, 22%, 3.5%)`;
+    const tooth = (t, len, wid) => {
+      const r = rho(t) * 1.01;
+      const bx = cx + Math.cos(t) * r * rx, by = cy + Math.sin(t) * r * ry;
+      let dx = cx - bx, dy = cy - by; const d = Math.hypot(dx, dy); dx /= d; dy /= d;
+      const tx = -dy, ty = dx;
+      b.beginPath();
+      b.moveTo(bx + tx * wid - dx * 3, by + ty * wid - dy * 3);
+      b.quadraticCurveTo(bx + tx * wid * 0.3 + dx * len * 0.5, by + ty * wid * 0.3 + dy * len * 0.5, bx + dx * len, by + dy * len);
+      b.quadraticCurveTo(bx - tx * wid * 0.3 + dx * len * 0.5, by - ty * wid * 0.3 + dy * len * 0.5, bx - tx * wid - dx * 3, by - ty * wid - dy * 3);
+      b.closePath();
+      b.fillStyle = rock; b.fill();
+      b.strokeStyle = `hsla(${h}, 30%, 60%, .08)`; b.lineWidth = 1; b.stroke();
+    };
+    for (let i = 0; i < 30; i++) tooth(-Math.PI + 0.35 + R() * (Math.PI - 0.7), (8 + R() * 26) * SC, (3 + R() * 6) * SC);
+    for (let i = 0; i < 16; i++) tooth(0.4 + R() * (Math.PI - 0.8), (5 + R() * 13) * SC, (4 + R() * 7) * SC);
+    b.strokeStyle = `hsla(${h}, 40%, 75%, .16)`; b.lineWidth = 1.5; b.stroke(path);
+  }
+  function outlinePath() {
+    const path = new Path2D(), N = 260;
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * Math.PI * 2 - Math.PI, r = rho(t);
+      const x = cx + Math.cos(t) * r * rx, y = cy + Math.sin(t) * r * ry;
+      i ? path.lineTo(x, y) : path.moveTo(x, y);
+    }
+    path.closePath();
+    return path;
+  }
+
+  function gain(g, idle) {
+    S.hum += g; S.run += g; S.total += g; secAcc += g;
+    if (idle) idleAcc += g;
+  }
+
+  function spawn(x, y, n, e, idle, dir, spread, offset) {
+    let w = 1;
+    const load = P.length / capP;
+    if (load > 0.45) {
+      const n2 = Math.max(1, Math.round(n * Math.max(0.06, (1 - load) / 0.55)));
+      w = n / n2; n = n2;
+    }
+    if (P.length + n > capP) {
+      // The cave is saturated: fold this voice into echoes already ringing.
+      for (let i = 0; i < n; i++) {
+        const q = P[(Math.random() * P.length) | 0];
+        q.w += (w * e) / Math.max(q.e, 0.15);
+      }
+      return;
+    }
+    const full = dir == null;
+    const a0 = full ? Math.random() * Math.PI * 2 : dir - spread / 2;
+    for (let i = 0; i < n; i++) {
+      const a = full ? a0 + (i * Math.PI * 2) / n : a0 + spread * (n === 1 ? 0.5 : i / (n - 1));
+      const ca = Math.cos(a), sa = Math.sin(a), o = offset || 0;
+      P.push({ x: x + ca * o, y: y + sa * o, vx: ca * V, vy: sa * V, e, w, idle, g: 0 });
+    }
+  }
+
+  let lastShout = -1;
+  function shout(x, y, fromObj) {
+    if (T - lastShout < 0.11) return;
+    if (!fromObj && !insideBy(x, y, 2)) return;
+    lastShout = T;
+    spawn(x, y, shoutN(S.lv.lungs), 1, false, null, 0, fromObj ? fromObj.r + 3 : 0);
+    rings.push({ x, y, r: 4, life: 1 });
+    S.shouts++;
+    once('firstShout');
+    if (S.shouts >= 3) $('hint').hidden = true;
+  }
+
+  function ringCrystal(c, e, w, idle) {
+    c.ring = 1; c.last = T;
+    // chordNow is counted once per frame, not once per hit
+    const voices = Math.max(1, chordNow);
+    const hm = 1 + 0.2 * K.harm * Math.min(voices - 1, 10);
+    const g = TIERS[c.t].value * K.att[c.t] * K.crys * e * w * K.pol * K.dm * hm;
+    gain(g, idle);
+    c.pend = (c.pend || 0) + g;
+    if (K.shards) {
+      c.strain = (c.strain || 0) + e * Math.min(w, 4);
+      if (c.strain >= K.crack) {
+        c.strain -= K.crack;
+        const n = (c.t + 1) * K.sh;
+        S.shards += n; c.crack = 1; S.stats.shards += n;
+        pushFloat({ x: c.px, y: c.py + c.r * 2.4, s: `+${fmt(n)} shard${n >= 2 ? 's' : ''}`, life: 1.2, col: '214,168,255' });
+        once('firstShard');
+      }
+    }
+    note(c.y, c.t, e, c);
+  }
+
+  function boom(o) {
+    o.charge = 0; o.ring = 1;
+    spawn(o.px, o.py, shoutN(S.lv.lungs) * 2, 1, true, null, 0, o.r + 3);
+    rings.push({ x: o.px, y: o.py, r: o.r, life: 1.6, col: '224,164,88' });
+    const R2 = Math.pow(190 * SC, 2);
+    for (const c of S.crystals) if ((c.px - o.px) ** 2 + (c.py - o.py) ** 2 < R2) ringCrystal(c, 1, 1, true);
+    boomSound();
+    S.stats.booms++;
+    once('firstBoom');
+  }
+
+  // Broad-phase grid: each echo only tests the handful of stones in its own cell.
+  const CELL = 40, EMPTY = [];
+  let gridW = 1, gridH = 1, grid = [], lodes = [];
+  function buildGrid() {
+    gridW = Math.max(1, Math.ceil(W / CELL) + 1); gridH = Math.max(1, Math.ceil(H / CELL) + 1);
+    const n = gridW * gridH;
+    if (grid.length !== n) grid = Array.from({ length: n }, () => []);
+    else for (let i = 0; i < n; i++) if (grid[i].length) grid[i].length = 0;
+    const add = o => {
+      const pad = o.r + 8;
+      const x0 = Math.max(0, ((o.px - pad) / CELL) | 0), x1 = Math.min(gridW - 1, ((o.px + pad) / CELL) | 0);
+      const y0 = Math.max(0, ((o.py - pad) / CELL) | 0), y1 = Math.min(gridH - 1, ((o.py + pad) / CELL) | 0);
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) grid[y * gridW + x].push(o);
+    };
+    for (const c of S.crystals) add(c);
+    lodes = [];
+    for (const o of S.wonders) { if (o.k === 'lodestone') lodes.push(o); else add(o); }
+  }
+
+  function stepParticles(dt) {
+    const dec = Math.exp(-0.05 * dt), ret = K.ret;
+    const pull = 1400 * SC * dt, LR = 120 * SC, LR2 = LR * LR, lodeDec = Math.exp(-0.35 * dt);
+    for (let i = P.length - 1; i >= 0; i--) {
+      const p = P[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.e *= dec;
+      const gx = (p.x / CELL) | 0, gy = (p.y / CELL) | 0;
+      const cell = gx >= 0 && gy >= 0 && gx < gridW && gy < gridH ? grid[gy * gridW + gx] : EMPTY;
+      for (let j = 0; j < cell.length; j++) {
+        const o = cell[j];
+        const dx = p.x - o.px, dy = p.y - o.py, rr = o.r + 1.5, d2 = dx * dx + dy * dy;
+        if (d2 >= rr * rr) continue;
+        const d = Math.sqrt(d2) || 1, nx = dx / d, ny = dy / d;
+        const ivx = p.vx, ivy = p.vy, dot = p.vx * nx + p.vy * ny;
+        if (dot < 0) { p.vx -= 2 * dot * nx; p.vy -= 2 * dot * ny; }
+        p.x = o.px + nx * rr; p.y = o.py + ny * rr;
+        if (!o.k) { ringCrystal(o, p.e, p.w, p.idle); p.e *= ret; continue; }
+        o.ring = 1;
+        if (o.k === 'prism') {
+          if (p.g < 2) {
+            p.g++; p.e *= 0.9;
+            if (dot < 0 && P.length < capP) {
+              const a = 0.3 * (Math.random() < 0.5 ? -1 : 1), ca = Math.cos(a), sa = Math.sin(a);
+              P.push({ x: o.px - nx * rr, y: o.py - ny * rr, vx: ivx * ca - ivy * sa, vy: ivx * sa + ivy * ca, e: p.e, w: p.w, idle: p.idle, g: p.g });
+            }
+          } else p.e *= ret;
+        } else {
+          o.charge = (o.charge || 0) + p.e * Math.min(p.w, 4);
+          p.e *= ret;
+          if (o.charge >= GONG_CAP) boom(o);
+        }
+      }
+      for (let j = 0; j < lodes.length; j++) {
+        const o = lodes[j];
+        const dx = p.x - o.px, dy = p.y - o.py, d2 = dx * dx + dy * dy;
+        if (d2 < LR2 && d2 > 16) {
+          const d = Math.sqrt(d2), f = pull * (1 - d / LR);
+          p.vx -= (dx / d) * f; p.vy -= (dy / d) * f;
+          const sp = Math.hypot(p.vx, p.vy) || 1;
+          p.vx *= V / sp; p.vy *= V / sp;
+          p.e *= lodeDec;
+        }
+      }
+      for (let j = 0; j < worms.length; j++) {
+        const w = worms[j];
+        if (p.y > w.y0 && p.y < w.y1 && Math.abs(p.x - w.x) < 4 * SC) {
+          const l = 0.05 * p.e * Math.min(p.w, 30) * K.lm;
+          S.lumen += l; S.lumenTotal += l; lumAcc += l;
+          w.glow = 1; w.pend += l; p.e = 0;
+          break;
+        }
+      }
+      const u = (p.x - cx) / rx, v = (p.y - cy) / ry, d = Math.sqrt(u * u + v * v);
+      if (d > 0.6 && p.e > 0) {
+        const t = Math.atan2(v, u), r = rho(t);
+        if (d > r) {
+          const ct = Math.cos(t), st = Math.sin(t), k = drho(t) / d;
+          let nx = (ct + k * st) / rx, ny = (st - k * ct) / ry;
+          const nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
+          const dot = p.vx * nx + p.vy * ny;
+          if (dot > 0) {
+            p.vx -= 2 * dot * nx; p.vy -= 2 * dot * ny;
+            // rough stone: nudge the angle so echoes never fall into a perfect loop
+            const j = (Math.random() - 0.5) * 0.12, cj = Math.cos(j), sj = Math.sin(j);
+            const vx = p.vx * cj - p.vy * sj; p.vy = p.vx * sj + p.vy * cj; p.vx = vx;
+          }
+          const s = (r - 0.004) / d;
+          p.x = cx + u * s * rx; p.y = cy + v * s * ry;
+          gain(0.15 * p.e * p.w * K.dm * K.wall, p.idle);
+          p.e *= ret;
+        }
+      }
+      if (p.e < 0.04) { P[i] = P[P.length - 1]; P.pop(); }
+    }
+  }
+
+  function buildWorms() {
+    worms = [];
+    if (S.world !== 'cave') return;
+    const n = S.strata.nest ? 1 + S.strata.worm : 0;
+    const R = rng(S.depth * 31 + 7);
+    for (let i = 0; i < n; i++) {
+      const t = -Math.PI / 2 + ((i + 0.5) / n - 0.5) * 1.9 + (R() - 0.5) * 0.12;
+      const r = rho(t) * 0.99;
+      const x = cx + Math.cos(t) * r * rx, y0 = cy + Math.sin(t) * r * ry;
+      worms.push({ x, y0, y1: y0 + (40 + R() * 60) * SC, glow: 0, pend: 0, ph: R() * 6.283 });
+    }
+  }
+
+  function syncCaveVoices() {
+    while (bats.length < S.lv.bats) bats.push({ ph: Math.random() * 6.283, fx: 0.18 + Math.random() * 0.22, fy: 0.25 + Math.random() * 0.3, timer: 1 + Math.random() * 4, x: cx, y: cy });
+    bats.length = S.lv.bats;
+    while (dripTimers.length < S.lv.drips) dripTimers.push(Math.random() * 3);
+    dripTimers.length = S.lv.drips;
+    if (worms.length !== (S.strata.nest ? 1 + S.strata.worm : 0)) buildWorms();
+  }
+
+  function updateCaveVoices(dt) {
+    for (const b of bats) {
+      b.x = cx + rx * 0.46 * Math.sin(T * b.fx + b.ph);
+      b.y = cy - ry * 0.06 + ry * 0.4 * Math.sin(T * b.fy + b.ph * 1.7);
+      b.timer -= dt;
+      if (b.timer <= 0) {
+        b.timer = 4.5 + Math.random();
+        spawn(b.x, b.y, shoutN(S.lv.lungs), 0.9, true, null, 0, 0);
+        if (!lite) rings.push({ x: b.x, y: b.y, r: 3, life: 0.7, idle: true });
+      }
+    }
+    for (let i = 0; i < dripTimers.length; i++) {
+      dripTimers[i] -= dt;
+      if (dripTimers[i] <= 0) {
+        dripTimers[i] = 2.6 + Math.random() * 0.8;
+        const t = -Math.PI / 2 + (Math.random() - 0.5) * 1.7, r = rho(t) * 0.96;
+        drops.push({ x: cx + Math.cos(t) * r * rx, y: cy + Math.sin(t) * r * ry, vy: 0, py: 0 });
+      }
+    }
+    if (S.illum.firefly > 0) {
+      fireT -= dt;
+      if (fireT <= 0) {
+        fireT = Math.max(0.3, 3 * Math.pow(0.8, S.illum.firefly - 1));
+        const q = randomInside();
+        spawn(q.x, q.y, shoutN(S.lv.lungs), 1, true, null, 0, 0);
+        if (!lite) rings.push({ x: q.x, y: q.y, r: 3, life: 0.8, col: '255,220,140' });
+      }
+    }
+  }
+
+  function updateDrops(dt) {
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i];
+      d.py = d.y; d.vy += 900 * SC * dt; d.y += d.vy * dt;
+      let splashY = null;
+      for (const c of S.crystals) {
+        if (Math.abs(d.x - c.px) < c.r * 0.8 && d.y > c.py - c.r * 1.3 && d.py <= c.py - c.r * 1.3) {
+          ringCrystal(c, 0.8, 1, true);
+          splashY = c.py - c.r * 1.3 - 3;
+          break;
+        }
+      }
+      if (splashY == null && !insideBy(d.x, d.y, 0)) splashY = d.py - 2;
+      if (splashY != null) {
+        spawn(d.x, splashY, 4, 0.7, true, -Math.PI / 2, 1.9, 0);
+        if (!lite) rings.push({ x: d.x, y: splashY, r: 2, life: 0.5, idle: true });
+        drops.splice(i, 1);
+      }
+    }
+  }
+
+  let floatT = 0;
+  function updateCaveFx(dt) {
+    for (const c of S.crystals) {
+      c.ring = Math.max(0, (c.ring || 0) - dt * 2.4);
+      c.crack = Math.max(0, (c.crack || 0) - dt * 1.5);
+    }
+    for (const o of S.wonders) o.ring = Math.max(0, (o.ring || 0) - dt * 2.4);
+    for (const w of worms) w.glow = Math.max(0, w.glow - dt * 1.2);
+    floatT += dt;
+    if (floatT > 0.75) {
+      floatT = 0;
+      if (lite) {
+        // One summary number instead of one per crystal.
+        let sum = 0; for (const c of S.crystals) { sum += c.pend || 0; c.pend = 0; }
+        if (sum > 0) pushFloat({ x: cx, y: cy - ry * 0.75, s: '+' + fmt(sum), life: 1 });
+        let ls = 0; for (const w of worms) { ls += w.pend; w.pend = 0; }
+        if (ls >= 0.1) pushFloat({ x: cx, y: cy - ry * 0.62, s: '+' + fmt(ls) + ' lumen', life: 1, col: '127,184,255' });
+      } else {
+        for (const c of S.crystals) if (c.pend > 0) { pushFloat({ x: c.px, y: c.py - c.r * 1.8, s: '+' + fmt(c.pend), life: 1 }); c.pend = 0; }
+        for (const w of worms) if (w.pend >= 0.1) { pushFloat({ x: w.x, y: w.y1 + 16, s: '+' + fmt(w.pend) + ' lumen', life: 1, col: '127,184,255' }); w.pend = 0; }
+      }
+    }
+    chordNow = 0;
+    for (const o of S.crystals) if (T - (o.last ?? -9) < 0.3) chordNow++;
+  }
+
+  // ---------- cave buying (everything places itself) ----------
+  function buyCrystal(t) {
+    if (S.crystals.length >= maxCrystals()) { once('full'); return false; }
+    const cost = crystalCost(t);
+    if (S.hum < cost) return false;
+    const c = { t, x: 0, y: 0 };
+    if (!placeNew(S.crystals, c, 'full')) return false;
+    S.hum -= cost; S.bought[t]++;
+    if (t === 0) once('firstQuartz'); else tierWhisper(t);
+    if (t < 3 && S.crystals.filter(o => o.t === t).length === 2) once('twins');
+    return true;
+  }
+  function buyWonder(k) {
+    if (S.wonders.filter(o => o.k === k).length >= WONDERS[k].max) return false;
+    const cost = wonderCost(k);
+    if (S.shards < cost) return false;
+    const o = { k, x: 0, y: 0, charge: 0 };
+    if (!placeNew(S.wonders, o)) return false;
+    S.shards -= cost; S.wBought[k]++;
+    once('first' + WONDERS[k].name);
+    return true;
+  }
+  function tierWhisper(t) {
+    if (t === 1) once('firstAmethyst');
+    if (t === 2) once('firstCitrine');
+    if (t === 3) once('firstMoonstone');
+  }
+
+  function runAutomation() {
+    if (S.world !== 'cave') return;
+    if (S.illum.autofuse && S.toggles.autofuse) {
+      for (let t = 0; t < TIERS.length - 1; t++) {
+        const pair = S.crystals.filter(c => c.t === t && !(drag && drag.o === c));
+        if (pair.length >= 2) { fuse(pair[0], pair[1]); break; }
+      }
+    }
+    if (S.illum.autobuy && S.toggles.autobuy && S.crystals.length < maxCrystals()) {
+      for (let t = TIERS.length - 1; t >= 0; t--) {
+        if (t > 0 && S.run < TIERS[t].base * 0.4) continue;
+        if (S.hum >= crystalCost(t)) { buyCrystal(t); break; }
+      }
+    }
+    if (S.illum.autodescend && S.toggles.autodescend && S.run >= 2 * deepenAt()) descend();
+  }
+
+  // =====================================================================
+  // SEA
+  // =====================================================================
+  const ripples = [], skipsQ = [], jumps = [];
+  let rippleSeq = 0, rainTimers = [], fishTimers = [], lightT = 1, beamA = 0;
+
+  function seaHue() { return (195 - S.sea.soundings * 14 + 360) % 360; }
+  function lighthousePos() {
+    const t = -0.85, r = rho(t) * 1.04;
+    return { x: cx + Math.cos(t) * r * rx, y: cy + Math.sin(t) * r * ry };
+  }
+
+  function drawSeaBG() {
+    const b = bctx, R = rng(S.sea.soundings * 3571 + 11), h = seaHue();
+    b.setTransform(DPR, 0, 0, DPR, 0, 0);
+    b.fillStyle = `hsl(${h}, 18%, 4%)`; b.fillRect(0, 0, W, H);
+    for (let i = 0; i < 900; i++) {
+      b.fillStyle = `rgba(200,230,235,${0.01 + R() * 0.03})`;
+      b.fillRect(R() * W, R() * H, 1, 1);
+    }
+    seaPath = outlinePath();
+    const grd = b.createRadialGradient(cx, cy - ry * 0.2, 10, cx, cy, Math.max(rx, ry) * 1.05);
+    grd.addColorStop(0, `hsl(${h}, 42%, 15%)`); grd.addColorStop(0.7, `hsl(${h}, 48%, 9%)`); grd.addColorStop(1, `hsl(${h}, 50%, 6%)`);
+    b.fillStyle = grd; b.fill(seaPath);
+    b.save(); b.clip(seaPath);
+    for (let i = 0; i < 26; i++) {
+      const x0 = cx + (R() - 0.5) * rx * 2, y0 = cy + (R() - 0.5) * ry * 2, L = (40 + R() * 90) * SC;
+      b.beginPath(); b.moveTo(x0, y0);
+      b.bezierCurveTo(x0 + L * 0.3, y0 - 8, x0 + L * 0.6, y0 + 8, x0 + L, y0);
+      b.strokeStyle = `rgba(170,235,240,${0.02 + R() * 0.03})`; b.lineWidth = 1 + R(); b.stroke();
+    }
+    b.restore();
+    // shore stones
+    for (let i = 0; i < 70; i++) {
+      const t = R() * Math.PI * 2, r = rho(t) * (1.0 + R() * 0.06);
+      const x = cx + Math.cos(t) * r * rx, y = cy + Math.sin(t) * r * ry, s = (3 + R() * 9) * SC;
+      b.beginPath(); b.ellipse(x, y, s, s * 0.7, R() * 3, 0, Math.PI * 2);
+      b.fillStyle = `hsl(${h}, 12%, ${5 + R() * 5}%)`; b.fill();
+    }
+    b.strokeStyle = 'rgba(190,235,240,.22)'; b.lineWidth = 1.5; b.stroke(seaPath);
+    b.setLineDash([2, 7]); b.strokeStyle = 'rgba(230,250,250,.12)'; b.lineWidth = 3; b.stroke(seaPath); b.setLineDash([]);
+  }
+
+  function seaGain(g, idle) {
+    const q = S.sea; q.tide += g; q.run += g; q.total += g; secAcc += g;
+    if (idle) idleAcc += g;
+  }
+  function makeRipple(x, y, e, w, idle, gen, skip) {
+    if (ripples.length >= capR) {
+      const q = ripples[(Math.random() * ripples.length) | 0];
+      if (q) q.w += (w * e) / Math.max(q.e, 0.2);
+      return null;
+    }
+    // Everything this ripple will ever reach, nearest first. Each frame just walks the list.
+    const q = S.sea, tq = [];
+    for (const b of q.bells) tq.push({ o: b, k: 0, d: Math.hypot(b.px - x, b.py - y) });
+    for (const o of q.oysters) tq.push({ o, k: 1, d: Math.hypot(o.px - x, o.py - y) });
+    for (const o of q.objs) if (o.pk === 'breakwater' && o !== skip) tq.push({ o, k: 2, d: Math.hypot(o.px - x, o.py - y) });
+    tq.sort((a, b) => a.d - b.d);
+    const rp = { id: ++rippleSeq, x, y, r: 0, t: 0, e0: e, e, w, idle, gen: gen || 0, tq, ti: 0 };
+    ripples.push(rp);
+    return rp;
+  }
+  function throwStone(x, y, fromObj) {
+    if (T - lastShout < 0.11) return;
+    if (!fromObj && !insideBy(x, y, 2)) return;
+    lastShout = T;
+    const n = skipsN(S.sea.lv.skips), a = Math.random() * Math.PI * 2, step = 45 * SC;
+    for (let i = 0; i < n; i++) {
+      skipsQ.push({ x: x + Math.cos(a) * step * i, y: y + Math.sin(a) * step * i, t: i * 0.13, e: Math.pow(0.88, i), idle: false });
+    }
+    S.sea.throws++;
+    once('firstThrow');
+    if (S.sea.throws >= 3) $('hint').hidden = true;
+  }
+
+  function ringBell(b, rp) {
+    let cross = 1;
+    if (b.lastT != null && T - b.lastT < 0.18 && b.lastId !== rp.id) {
+      cross = SK.cross; b.flash = 1; S.stats.crossings++;
+      once('firstCross');
+      if (!lite) pushFloat({ x: b.px, y: b.py + b.r * 2.6, s: `crossing ×${fmtX(SK.cross)}`, life: 1, col: '255,207,134' });
+    }
+    b.lastT = T; b.lastId = rp.id; b.ring = 1;
+    let aura = 1;
+    for (const o of S.sea.objs) if (o.pk === 'whirlpool' && Math.hypot(o.px - b.px, o.py - b.py) < 90 * SC) aura *= 2;
+    const g = BELLS[b.bt].value * SK.tune[b.bt] * SK.bell * rp.e * rp.w * SK.tm * cross * aura;
+    seaGain(g, rp.idle);
+    b.pend = (b.pend || 0) + g;
+    bellNote(b, rp.e, cross > 1);
+  }
+
+  function stepSea(dt) {
+    const q = S.sea, sp = 110 * SC, maxR = Math.hypot(rx, ry) * 2.1;
+    for (let i = skipsQ.length - 1; i >= 0; i--) {
+      const s = skipsQ[i]; s.t -= dt;
+      if (s.t <= 0) {
+        skipsQ.splice(i, 1);
+        if (insideBy(s.x, s.y, 3)) { makeRipple(s.x, s.y, s.e, 1, s.idle, 0); if (!lite) rings.push({ x: s.x, y: s.y, r: 2, life: 0.6, col: '220,250,250' }); }
+      }
+    }
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const rp = ripples[i];
+      rp.t += dt; rp.r += sp * dt; rp.e = rp.e0 * Math.exp(-SK.decay * rp.t);
+      if (rp.e < 0.04 || rp.r > maxR) { ripples[i] = ripples[ripples.length - 1]; ripples.pop(); continue; }
+      while (rp.ti < rp.tq.length && rp.tq[rp.ti].d <= rp.r) {
+        const { o, k } = rp.tq[rp.ti++];
+        if (o.dead) continue;
+        if (k === 0) ringBell(o, rp);
+        else if (k === 1) {
+          o.wash = (o.wash || 0) + rp.e * Math.min(rp.w, 4);
+          if (o.wash >= SK.open) {
+            o.wash -= SK.open; o.open = 1;
+            const n = SK.pearl; q.pearls += n; S.stats.pearls += n;
+            pushFloat({ x: o.px, y: o.py - o.r * 1.8, s: `+${fmt(n)} pearl`, life: 1.2, col: '239,230,216' });
+            once('firstPearl');
+          }
+        } else if (rp.gen < 2) {
+          o.ring = 1;
+          makeRipple(o.px, o.py, rp.e * 0.7, rp.w, rp.idle, rp.gen + 1, o);
+        }
+      }
+    }
+  }
+
+  function syncSeaVoices() {
+    const q = S.sea;
+    while (rainTimers.length < q.lv.rain) rainTimers.push(Math.random() * 3);
+    rainTimers.length = q.lv.rain;
+    while (fishTimers.length < q.lv.fish) fishTimers.push(1 + Math.random() * 4);
+    fishTimers.length = q.lv.fish;
+  }
+  function updateSeaVoices(dt) {
+    const q = S.sea;
+    for (let i = 0; i < rainTimers.length; i++) {
+      rainTimers[i] -= dt;
+      if (rainTimers[i] <= 0) {
+        rainTimers[i] = 2.6 + Math.random() * 0.8;
+        const s = randomInside();
+        makeRipple(s.x, s.y, 0.55, 1, true, 0);
+        if (!lite) rings.push({ x: s.x, y: s.y, r: 1, life: 0.4, col: '200,240,250' });
+      }
+    }
+    for (let i = 0; i < fishTimers.length; i++) {
+      fishTimers[i] -= dt;
+      if (fishTimers[i] <= 0) {
+        fishTimers[i] = 5 + Math.random();
+        const a = randomInside(), ang = Math.random() * Math.PI * 2, dist = (60 + Math.random() * 40) * SC;
+        let bx = a.x + Math.cos(ang) * dist, by = a.y + Math.sin(ang) * dist;
+        if (!insideBy(bx, by, 8)) { bx = a.x - Math.cos(ang) * dist; by = a.y - Math.sin(ang) * dist; }
+        if (!insideBy(bx, by, 8)) { bx = cx; by = cy; }
+        jumps.push({ ax: a.x, ay: a.y, bx, by, t: 0, dur: 0.7 });
+        makeRipple(a.x, a.y, 0.9, 1, true, 0);
+      }
+    }
+    for (let i = jumps.length - 1; i >= 0; i--) {
+      const j = jumps[i]; j.t += dt;
+      if (j.t >= j.dur) { makeRipple(j.bx, j.by, 0.9, 1, true, 0); jumps.splice(i, 1); }
+    }
+    if (q.lv.light > 0) {
+      beamA += dt * 0.7;
+      lightT -= dt;
+      if (lightT <= 0) {
+        lightT = Math.max(0.4, 2.2 * Math.pow(0.8, q.lv.light - 1));
+        const L = lighthousePos(), dir = beamDir(L), reach = Math.hypot(cx - L.x, cy - L.y) * (0.35 + Math.random() * 1.2);
+        const x = L.x + Math.cos(dir) * reach, y = L.y + Math.sin(dir) * reach;
+        if (insideBy(x, y, 6)) makeRipple(x, y, 0.8, 1, true, 0);
+      }
+    }
+    for (const o of q.objs) {
+      if (o.pk !== 'raft') continue;
+      o.timer = (o.timer ?? Math.random() * 3) - dt;
+      if (o.timer <= 0) { o.timer = 3; o.ring = 1; makeRipple(o.px, o.py, 1, 1, true, 0); }
+    }
+  }
+  function beamDir(L) { return Math.atan2(cy - L.y, cx - L.x) + Math.sin(beamA) * 0.9; }
+
+  function updateSeaFx(dt) {
+    const q = S.sea;
+    for (const b of q.bells) { b.ring = Math.max(0, (b.ring || 0) - dt * 1.8); b.flash = Math.max(0, (b.flash || 0) - dt * 1.5); }
+    for (const o of q.oysters) o.open = Math.max(0, (o.open || 0) - dt * 0.8);
+    for (const o of q.objs) o.ring = Math.max(0, (o.ring || 0) - dt * 2);
+    floatT += dt;
+    if (floatT > 0.75) {
+      floatT = 0;
+      if (lite) {
+        let sum = 0; for (const b of q.bells) { sum += b.pend || 0; b.pend = 0; }
+        if (sum > 0) pushFloat({ x: cx, y: cy - ry * 0.75, s: '+' + fmt(sum), life: 1, col: '134,216,230' });
+      } else {
+        for (const b of q.bells) if (b.pend > 0) { pushFloat({ x: b.px, y: b.py - b.r * 1.9, s: '+' + fmt(b.pend), life: 1, col: '134,216,230' }); b.pend = 0; }
+      }
+    }
+  }
+
+  function buyBell(t) {
+    const q = S.sea;
+    if (q.bells.length >= bellCap()) { once('bellFull'); return false; }
+    const cost = bellCost(t);
+    if (q.tide < cost) return false;
+    const b = { bt: t, x: 0, y: 0 };
+    if (!placeNew(q.bells, b, 'bellFull')) return false;
+    q.tide -= cost; q.bought[t]++;
+    if (t < 3 && q.bells.filter(o => o.bt === t).length === 2) once('bellTwins');
+    return true;
+  }
+  function buyOyster() {
+    const q = S.sea;
+    if (q.oysters.length >= 6) return false;
+    const cost = oysterCost();
+    if (q.tide < cost) return false;
+    if (!placeNew(q.oysters, { oy: 1, x: 0, y: 0, wash: 0 })) return false;
+    q.tide -= cost; q.oBought++;
+    return true;
+  }
+  function buyPobj(k) {
+    const q = S.sea;
+    if (q.objs.filter(o => o.pk === k).length >= PEARLOBJ[k].max) return false;
+    const cost = pobjCost(k);
+    if (q.pearls < cost) return false;
+    if (!placeNew(q.objs, { pk: k, x: 0, y: 0 })) return false;
+    q.pearls -= cost; q.pBought[k]++;
+    once('first' + (k === 'raft' ? 'Raft' : PEARLOBJ[k].name));
+    return true;
+  }
+
+  // =====================================================================
+  // drawing
+  // =====================================================================
+  const GEM = [[0, -1.35], [0.72, -0.55], [0.72, 0.55], [0, 1.05], [-0.72, 0.55], [-0.72, -0.55]];
+  function gemPath(r) { ctx.beginPath(); GEM.forEach(([a, b], i) => i ? ctx.lineTo(a * r, b * r) : ctx.moveTo(a * r, b * r)); ctx.closePath(); }
+  function drawGem(x, y, r, color, alpha, tint, ring) {
+    ctx.save(); ctx.translate(x, y); ctx.globalAlpha = alpha;
+    gemPath(r); ctx.fillStyle = tint || color; ctx.fill();
+    ctx.fillStyle = 'rgba(10,6,20,.32)';
+    ctx.beginPath(); ctx.moveTo(0, -1.35 * r); ctx.lineTo(0, 1.05 * r); ctx.lineTo(-0.72 * r, 0.55 * r); ctx.lineTo(-0.72 * r, -0.55 * r); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.38)';
+    ctx.beginPath(); ctx.moveTo(0, -1.35 * r); ctx.lineTo(0.72 * r, -0.55 * r); ctx.lineTo(0.18 * r, -0.25 * r); ctx.fill();
+    if (ring > 0) { gemPath(r); ctx.fillStyle = `rgba(255,255,255,${ring * 0.45})`; ctx.fill(); }
+    gemPath(r); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawWonder(o, alpha, tint) {
+    const r = o.r;
+    ctx.save(); ctx.translate(o.px, o.py); ctx.globalAlpha = alpha;
+    if (o.k === 'prism') {
+      const spin = lite ? 0 : T * 0.3;
+      ctx.beginPath();
+      for (let i = 0; i < 3; i++) {
+        const a = -Math.PI / 2 + i * (Math.PI * 2 / 3) + spin;
+        i ? ctx.lineTo(Math.cos(a) * r * 1.2, Math.sin(a) * r * 1.2) : ctx.moveTo(Math.cos(a) * r * 1.2, Math.sin(a) * r * 1.2);
+      }
+      ctx.closePath();
+      const g = ctx.createLinearGradient(-r, -r, r, r);
+      g.addColorStop(0, '#ff9ad5'); g.addColorStop(0.35, '#ffe38a'); g.addColorStop(0.65, '#8ff2e6'); g.addColorStop(1, '#a58bff');
+      ctx.fillStyle = tint || 'rgba(255,255,255,.12)'; ctx.fill();
+      ctx.strokeStyle = g; ctx.lineWidth = 2 + (o.ring || 0) * 2; ctx.stroke();
+    } else if (o.k === 'lodestone') {
+      ctx.strokeStyle = `rgba(165,139,255,${0.08 + (o.ring || 0) * 0.1})`;
+      ctx.setLineDash([3, 6]); ctx.lineDashOffset = lite ? 0 : -T * 12;
+      ctx.beginPath(); ctx.arc(0, 0, 120 * SC, 0, Math.PI * 2); ctx.stroke();
+      if (!lite) { ctx.beginPath(); ctx.arc(0, 0, 70 * SC, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = tint || '#2a2233'; ctx.fill();
+      ctx.strokeStyle = '#8c7aa8'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#b58cff'; ctx.beginPath(); ctx.arc(0, 0, r * 0.3, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+      const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 1, 0, 0, r);
+      g.addColorStop(0, '#f3c27a'); g.addColorStop(1, '#8a5a24');
+      ctx.fillStyle = tint || g; ctx.fill();
+      ctx.strokeStyle = 'rgba(40,20,5,.5)'; ctx.lineWidth = 1;
+      for (const k of [0.4, 0.65, 0.85]) { ctx.beginPath(); ctx.arc(0, 0, r * k, 0, Math.PI * 2); ctx.stroke(); }
+      if (o.ring > 0) { ctx.fillStyle = `rgba(255,240,200,${o.ring * 0.4})`; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); }
+      const fill = Math.min(1, (o.charge || 0) / GONG_CAP);
+      ctx.strokeStyle = 'rgba(255,207,134,.2)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, r + 5, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = '#ffcf86';
+      ctx.beginPath(); ctx.arc(0, 0, r + 5, -Math.PI / 2, -Math.PI / 2 + fill * Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawBat(b) {
+    const s = SC, flap = lite ? 2 * s : Math.sin(T * 17 + b.ph) * 5 * s;
+    ctx.save(); ctx.translate(b.x, b.y);
+    ctx.fillStyle = 'rgba(214,202,236,.85)';
+    ctx.beginPath();
+    ctx.moveTo(0, -2 * s);
+    ctx.quadraticCurveTo(-5 * s, -3 * s - flap, -11 * s, -flap);
+    ctx.quadraticCurveTo(-7 * s, 0, -6 * s, 3 * s);
+    ctx.quadraticCurveTo(-3 * s, 1 * s, 0, 3.5 * s);
+    ctx.quadraticCurveTo(3 * s, 1 * s, 6 * s, 3 * s);
+    ctx.quadraticCurveTo(7 * s, 0, 11 * s, -flap);
+    ctx.quadraticCurveTo(5 * s, -3 * s - flap, 0, -2 * s);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawWorms() {
+    for (const w of worms) {
+      const sway = lite ? 0 : Math.sin(T * 0.9 + w.ph) * 1.5;
+      ctx.strokeStyle = `rgba(127,184,255,${0.18 + w.glow * 0.4})`; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(w.x, w.y0); ctx.lineTo(w.x + sway, w.y1); ctx.stroke();
+      if (!lite) {
+        ctx.fillStyle = `rgba(160,205,255,${0.35 + w.glow * 0.6})`;
+        for (let y = w.y0 + 6; y < w.y1; y += 7 * SC) {
+          const k = (y - w.y0) / (w.y1 - w.y0);
+          ctx.beginPath(); ctx.arc(w.x + sway * k, y, 1.2 * SC, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      const rr = 14 * SC * (1 + w.glow);
+      ctx.globalAlpha = Math.min(1, 0.5 + w.glow * 0.5);
+      ctx.drawImage(glowSprite('#7fb8ff'), w.x + sway - rr, w.y1 - rr, rr * 2, rr * 2);
+      ctx.globalAlpha = 1;
+    }
+  }
+  // Soft glows are painted once into a small sprite and stamped, instead of building a gradient every frame.
+  const glowCache = {};
+  function glowSprite(col) {
+    if (glowCache[col]) return glowCache[col];
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, col); gr.addColorStop(0.4, col + '66'); gr.addColorStop(1, col + '00');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    return (glowCache[col] = c);
+  }
+
+  function drawRings(hue) {
+    for (const r of rings) {
+      ctx.strokeStyle = r.col ? `rgba(${r.col},${r.life * 0.5})` :
+        r.idle ? `hsla(${hue}, 60%, 80%, ${r.life * 0.25})` : `hsla(${hue}, 80%, 82%, ${r.life * 0.55})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  function drawFloats() {
+    ctx.font = `600 ${Math.round(11 * Math.max(1, SC))}px "JetBrains Mono", ui-monospace, monospace`;
+    ctx.textAlign = 'center';
+    for (const f of floats) {
+      ctx.fillStyle = `rgba(${f.col || '255,207,134'},${Math.min(1, f.life * 1.4)})`;
+      ctx.fillText(f.s, f.x, f.y);
+    }
+  }
+
+  const buckets = [[], [], [], []];
+  const BUCKET_A = [0.2, 0.38, 0.62, 0.92];
+  function drawCave() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    ctx.drawImage(bg, 0, 0, W, H);
+
+    ctx.globalCompositeOperation = 'lighter';
+    for (const c of S.crystals) {
+      if (lite && c.ring < 0.3) continue;
+      const rr = c.r * (2.4 + 2.2 * c.ring);
+      ctx.globalAlpha = Math.min(1, 0.14 + 0.5 * c.ring);
+      ctx.drawImage(glowSprite(TIERS[c.t].glow), c.px - rr, c.py - rr, rr * 2, rr * 2);
+    }
+    ctx.globalAlpha = 1;
+    drawWorms();
+
+    const hue = echoHue();
+    for (const b of buckets) b.length = 0;
+    // Busy caves draw a sample of the echoes, each a little brighter, so the screen stays readable.
+    const every = lite === 2 ? Math.ceil(P.length / 300) : 1;
+    for (let i = 0; i < P.length; i += every) {
+      const p = P[i];
+      buckets[p.e > 0.65 ? 3 : p.e > 0.35 ? 2 : p.e > 0.15 ? 1 : 0].push(p);
+    }
+    ctx.lineCap = 'round';
+    const tail = lite ? 0.018 : 0.032;
+    for (let k = 0; k < 4; k++) {
+      const bk = buckets[k]; if (!bk.length) continue;
+      ctx.strokeStyle = `hsla(${hue}, 85%, 74%, ${lite ? BUCKET_A[k] * 0.8 : BUCKET_A[k]})`;
+      ctx.lineWidth = 1.2 + k * 0.35;
+      ctx.beginPath();
+      for (const p of bk) { ctx.moveTo(p.x - p.vx * tail, p.y - p.vy * tail); ctx.lineTo(p.x, p.y); }
+      ctx.stroke();
+    }
+    drawRings(hue);
+    ctx.globalCompositeOperation = 'source-over';
+
+    for (const o of S.wonders) {
+      const lifted = drag && drag.o === o && drag.moved;
+      drawWonder(o, 1, lifted && !validSpot(o.px, o.py, o.r, o) ? 'rgba(255,138,122,.6)' : null);
+    }
+    for (const c of S.crystals) {
+      if (!lite && c.ring > 0.02) {
+        ctx.strokeStyle = TIERS[c.t].glow + hexA(c.ring * 0.5); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(c.px, c.py, c.r * (1.3 + (1 - c.ring) * 2.2), 0, Math.PI * 2); ctx.stroke();
+      }
+      if (K.shards) {
+        const f = Math.min(1, (c.strain || 0) / K.crack);
+        if (f > 0.02) {
+          ctx.strokeStyle = 'rgba(214,168,255,.45)'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(c.px, c.py, c.r * 1.75, Math.PI * 0.5 - f * Math.PI, Math.PI * 0.5 + f * Math.PI); ctx.stroke();
+        }
+        if (!lite && c.crack > 0) {
+          ctx.strokeStyle = `rgba(214,168,255,${c.crack})`; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(c.px, c.py, c.r * (1.6 + (1 - c.crack) * 2), 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+      const lifted = drag && drag.o === c && drag.moved;
+      let tint = null;
+      if (lifted) {
+        const tw = twinOf(c);
+        if (!tw && !validSpot(c.px, c.py, c.r, c)) tint = '#ff8a7a';
+        if (tw) { ctx.strokeStyle = '#ffcf86'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(tw.px, tw.py, tw.r * 1.9, 0, Math.PI * 2); ctx.stroke(); }
+      }
+      drawGem(c.px, c.py, c.r * (lifted ? 1.12 : 1), TIERS[c.t].color, 1, tint, c.ring);
+    }
+
+    ctx.strokeStyle = `hsla(${hue}, 70%, 85%, .85)`; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (const d of drops) { ctx.moveTo(d.x, d.y - Math.min(9, d.vy * 0.012)); ctx.lineTo(d.x, d.y); }
+    ctx.stroke();
+    for (const b of bats) drawBat(b);
+    drawFloats();
+  }
+
+  function drawBell(x, y, r, color, swing, ring, flash, tint) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(16,34,42,.92)';
+    ctx.beginPath(); ctx.ellipse(0, r * 0.95, r * 1.05, r * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(160,220,230,.25)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.rotate(swing);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.85, r * 0.55);
+    ctx.quadraticCurveTo(-r * 0.75, -r * 0.2, -r * 0.45, -r * 0.7);
+    ctx.quadraticCurveTo(0, -r * 1.15, r * 0.45, -r * 0.7);
+    ctx.quadraticCurveTo(r * 0.75, -r * 0.2, r * 0.85, r * 0.55);
+    ctx.closePath();
+    ctx.fillStyle = tint || color; ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.fillRect(-r * 0.85, r * 0.4, r * 1.7, r * 0.15);
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.stroke();
+    if (ring > 0) { ctx.fillStyle = `rgba(255,255,255,${ring * 0.35})`; ctx.fill(); }
+    ctx.fillStyle = 'rgba(20,20,20,.8)'; ctx.beginPath(); ctx.arc(0, r * 0.62, r * 0.16, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    if (flash > 0) {
+      ctx.strokeStyle = `rgba(255,207,134,${flash})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, r * (1.5 + (1 - flash) * 2.5), 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  function drawOyster(o) {
+    const r = o.r, f = Math.min(1, (o.wash || 0) / SK.open), open = Math.max(o.open || 0, f * 0.25);
+    ctx.save(); ctx.translate(o.px, o.py);
+    ctx.fillStyle = '#4a4655';
+    ctx.beginPath(); ctx.ellipse(0, 2, r * 1.15, r * 0.6, 0, 0, Math.PI); ctx.fill();
+    ctx.save(); ctx.rotate(-open * 0.7);
+    ctx.fillStyle = '#6a6577';
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.15, r * 0.7, 0, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1;
+    for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(k * r * 0.4, -r * 0.62); ctx.stroke(); }
+    ctx.restore();
+    if (open > 0.2) { ctx.fillStyle = `rgba(245,240,230,${open})`; ctx.beginPath(); ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2); ctx.fill(); }
+    ctx.strokeStyle = 'rgba(239,230,216,.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.6, Math.PI * 0.5 - f * Math.PI, Math.PI * 0.5 + f * Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+  function drawPobj(o, tint) {
+    const r = o.r;
+    ctx.save(); ctx.translate(o.px, o.py);
+    if (o.pk === 'breakwater') {
+      ctx.fillStyle = tint || '#39414a';
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 1.3, r * 0.75, -0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `rgba(200,240,245,${0.25 + (o.ring || 0) * 0.5})`; ctx.lineWidth = 1.5; ctx.stroke();
+    } else if (o.pk === 'raft') {
+      ctx.rotate(lite ? 0 : Math.sin(T * 1.3 + o.px) * 0.08);
+      ctx.fillStyle = tint || '#7a5a3a'; ctx.fillRect(-r, -r * 0.7, r * 2, r * 1.4);
+      ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
+      for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(k * r * 0.66, -r * 0.7); ctx.lineTo(k * r * 0.66, r * 0.7); ctx.stroke(); }
+      ctx.fillStyle = '#d9c3a0'; ctx.beginPath(); ctx.arc(0, 0, r * 0.5 * (1 + (o.ring || 0) * 0.3), 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.strokeStyle = 'rgba(134,216,230,.12)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(0, 0, 90 * SC, 0, Math.PI * 2); ctx.stroke();
+      const spin = lite ? 0 : -T * 1.2;
+      ctx.strokeStyle = tint || 'rgba(170,235,240,.55)'; ctx.lineWidth = 1.6;
+      for (let arm = 0; arm < 3; arm++) {
+        ctx.beginPath();
+        for (let s = 0; s <= 20; s++) {
+          const a = spin + arm * 2.094 + s * 0.25, rr = r * 0.15 + s * r * 0.07;
+          s ? ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        }
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  function drawSea() {
+    const q = S.sea;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    ctx.drawImage(bg, 0, 0, W, H);
+
+    // lighthouse beam under the ripples
+    if (q.lv.light > 0) {
+      const L = lighthousePos(), dir = beamDir(L), len = Math.max(rx, ry) * 2.2;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(L.x, L.y, 0, L.x, L.y, len);
+      g.addColorStop(0, 'rgba(255,230,170,.18)'); g.addColorStop(1, 'rgba(255,230,170,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(L.x, L.y);
+      ctx.arc(L.x, L.y, len, dir - 0.12, dir + 0.12); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save(); ctx.clip(seaPath);
+    ctx.globalCompositeOperation = 'lighter';
+    for (const b of buckets) b.length = 0;
+    const every = lite === 2 ? Math.ceil(ripples.length / 90) : 1;
+    for (let i = 0; i < ripples.length; i += every) {
+      const rp = ripples[i];
+      buckets[rp.e > 0.65 ? 3 : rp.e > 0.35 ? 2 : rp.e > 0.15 ? 1 : 0].push(rp);
+    }
+    for (let k = 0; k < 4; k++) {
+      const bk = buckets[k]; if (!bk.length) continue;
+      ctx.strokeStyle = `rgba(190,240,240,${BUCKET_A[k] * 0.7})`;
+      ctx.lineWidth = 1.2 + k * 0.4;
+      ctx.beginPath();
+      for (const rp of bk) { ctx.moveTo(rp.x + rp.r, rp.y); ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2); }
+      ctx.stroke();
+      if (!lite && k >= 2) {
+        ctx.strokeStyle = `rgba(190,240,240,${BUCKET_A[k] * 0.2})`;
+        ctx.beginPath();
+        for (const rp of bk) { const r2 = Math.max(0, rp.r - 6 * SC); ctx.moveTo(rp.x + r2, rp.y); ctx.arc(rp.x, rp.y, r2, 0, Math.PI * 2); }
+        ctx.stroke();
+      }
+    }
+    drawRings(185);
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-over';
+
+    for (const o of q.oysters) drawOyster(o);
+    for (const o of q.objs) {
+      const lifted = drag && drag.o === o && drag.moved;
+      drawPobj(o, lifted && !validSpot(o.px, o.py, o.r, o) ? 'rgba(255,138,122,.8)' : null);
+    }
+    for (const b of q.bells) {
+      const lifted = drag && drag.o === b && drag.moved;
+      let tint = null;
+      if (lifted) {
+        const tw = twinOf(b);
+        if (!tw && !validSpot(b.px, b.py, b.r, b)) tint = '#ff8a7a';
+        if (tw) { ctx.strokeStyle = '#ffcf86'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(tw.px, tw.py, tw.r * 1.9, 0, Math.PI * 2); ctx.stroke(); }
+      }
+      const swing = lite ? 0 : Math.sin(T * 14 + b.px) * 0.35 * (b.ring || 0);
+      drawBell(b.px, b.py, b.r * (lifted ? 1.12 : 1), BELLS[b.bt].color, swing, b.ring || 0, lite ? 0 : (b.flash || 0), tint);
+    }
+    for (const j of jumps) {
+      const u = j.t / j.dur, x = j.ax + (j.bx - j.ax) * u, y = j.ay + (j.by - j.ay) * u - Math.sin(u * Math.PI) * 34 * SC;
+      const ang = Math.atan2((j.by - j.ay) - Math.cos(u * Math.PI) * 34 * SC * Math.PI, j.bx - j.ax);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+      ctx.fillStyle = '#a9dbe4';
+      ctx.beginPath(); ctx.ellipse(0, 0, 8 * SC, 3 * SC, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-7 * SC, 0); ctx.lineTo(-12 * SC, -4 * SC); ctx.lineTo(-12 * SC, 4 * SC); ctx.fill();
+      ctx.restore();
+    }
+    if (q.lv.light > 0) {
+      const L = lighthousePos();
+      ctx.fillStyle = '#d9d2c4'; ctx.fillRect(L.x - 4 * SC, L.y - 6 * SC, 8 * SC, 16 * SC);
+      ctx.fillStyle = '#b54848'; ctx.fillRect(L.x - 4 * SC, L.y - 1 * SC, 8 * SC, 3 * SC);
+      ctx.fillStyle = '#ffe6aa'; ctx.beginPath(); ctx.arc(L.x, L.y - 9 * SC, 4 * SC, 0, Math.PI * 2); ctx.fill();
+    }
+    drawFloats();
+  }
+  function hexA(a) { return Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, '0'); }
+
+  function updateSharedFx(dt) {
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const r = rings[i]; r.r += 160 * SC * dt; r.life -= dt * 1.4;
+      if (r.life <= 0) rings.splice(i, 1);
+    }
+    if (rings.length > (lite ? 24 : 60)) rings.splice(0, rings.length - (lite ? 24 : 60));
+    if (floats.length > 30) floats.splice(0, floats.length - 30);
+    for (let i = floats.length - 1; i >= 0; i--) {
+      const f = floats[i]; f.y -= 22 * dt; f.life -= dt * 0.9;
+      if (f.life <= 0) floats.splice(i, 1);
+    }
+  }
+
+  // =====================================================================
+  // sound
+  // =====================================================================
+  let AC = null, master = null, noteBudget = 8;
+  function makeImpulse(sec) {
+    const len = Math.floor(AC.sampleRate * sec), buf = AC.createBuffer(2, len, AC.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+    }
+    return buf;
+  }
+  function initAudio() {
+    if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = S.muted ? 0 : 0.55;
+      const dry = AC.createGain(); dry.gain.value = 0.55;
+      const wet = AC.createGain(); wet.gain.value = 0.6;
+      const verb = AC.createConvolver(); verb.buffer = makeImpulse(3.4);
+      master.connect(dry); dry.connect(AC.destination);
+      master.connect(verb); verb.connect(wet); wet.connect(AC.destination);
+    } catch (e) { AC = null; }
+  }
+  const audible = () => AC && !S.muted && AC.state === 'running';
+  function freqFor(y, tier, base, mode) {
+    const steps = MODES[mode % MODES.length].steps;
+    const deg = Math.max(0, Math.round(((1 - y) / 2) * 9)) + tier * 2;
+    const midi = base + Math.floor(deg / steps.length) * 12 + steps[deg % steps.length];
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+  // Every note is two oscillators; cap how many can ring at once so fast play can't flood the audio thread.
+  let liveOsc = 0;
+  const oscCap = () => S.fx === 'calm' ? 16 : lite ? 28 : 48;
+  function tone(freq, vol, dur, partial, pg = 0.22) {
+    if (liveOsc >= oscCap()) return;
+    liveOsc += 2;
+    const now = AC.currentTime;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(vol, now + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    g.connect(master);
+    const o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = freq;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * partial;
+    const g2 = AC.createGain(); g2.gain.value = pg;
+    o1.connect(g); o2.connect(g2); g2.connect(g);
+    o1.onended = () => { liveOsc -= 2; g.disconnect(); };
+    o1.start(now); o2.start(now); o1.stop(now + dur + 0.1); o2.stop(now + dur + 0.1);
+  }
+  function note(y, tier, e, o) {
+    if (!audible()) return;
+    const now = AC.currentTime;
+    if (now - (o.lastNote || 0) < 0.13 || noteBudget < 1) return;
+    noteBudget -= 1; o.lastNote = now;
+    tone(freqFor(y, tier, 50, S.depth), 0.05 * (0.25 + 0.75 * e), 1.6, 2.76);
+  }
+  function bellNote(b, e, crossed) {
+    if (!audible()) return;
+    const now = AC.currentTime;
+    if (now - (b.lastNote || 0) < 0.15 || noteBudget < 1) return;
+    noteBudget -= 1; b.lastNote = now;
+    const f = freqFor(b.y, b.bt, 45, S.sea.soundings + 1);
+    tone(f, 0.055 * (0.25 + 0.75 * e), 2.6, 2.0, 0.3);
+    if (crossed) tone(f * 2, 0.04, 1.4, 1.5);
+  }
+  function boomSound() {
+    if (!audible()) return;
+    const root = 440 * Math.pow(2, (38 - 69) / 12);
+    tone(root, 0.14, 3.2, 1.5); tone(root * 1.5, 0.06, 2.4, 2.2);
+  }
+  function chordSound() {
+    if (!audible()) return;
+    const seen = new Set();
+    for (const c of S.crystals) {
+      const f = Math.round(freqFor(c.y, c.t, 50, S.depth));
+      if (seen.has(f) || seen.size >= 8) continue;
+      seen.add(f); tone(f, 0.06, 3.5, 2.76);
+    }
+  }
+  function waterSound() {
+    if (!audible()) return;
+    const len = AC.sampleRate * 3, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+    const src = AC.createBufferSource(); src.buffer = buf;
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+    const g = AC.createGain(); g.gain.value = 0.25;
+    src.connect(lp); lp.connect(g); g.connect(master); src.start();
+  }
+  function setMuted(m) {
+    S.muted = m;
+    if (master) master.gain.value = m ? 0 : 0.55;
+    const b = $('soundBtn');
+    b.textContent = m ? 'Sound off' : 'Sound on';
+    b.setAttribute('aria-pressed', String(!m));
+  }
+
+  // =====================================================================
+  // input
+  // =====================================================================
+  let drag = null, cinematic = false;
+  function ptr(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function tap(x, y, fromObj) { if (S.world === 'sea') throwStone(x, y, fromObj); else shout(x, y, fromObj); }
+
+  cv.addEventListener('pointerdown', e => {
+    initAudio();
+    if (cinematic || sceneOpen) return;
+    const p = ptr(e);
+    const o = objAt(p.x, p.y);
+    if (o) {
+      drag = { o, sx: p.x, sy: p.y, ox: o.x, oy: o.y, moved: false };
+      try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+    tap(p.x, p.y, null);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const p = ptr(e);
+    if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 5) drag.moved = true;
+    if (drag.moved) setObjPx(drag.o, p.x, p.y);
+  });
+  cv.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const o = drag.o;
+    if (!drag.moved) tap(o.px, o.py, o);
+    else {
+      const tw = twinOf(o);
+      if (tw) fuse(o, tw);
+      else if (!validSpot(o.px, o.py, o.r, o)) { o.x = drag.ox; o.y = drag.oy; placeObj(o); }
+    }
+    drag = null;
+  });
+  cv.addEventListener('pointercancel', () => {
+    if (drag) { drag.o.x = drag.ox; drag.o.y = drag.oy; placeObj(drag.o); drag = null; }
+  });
+
+  function fuse(c, into) {
+    const isBell = c.bt != null;
+    const list = isBell ? S.sea.bells : S.crystals, key = isBell ? 'bt' : 't';
+    const i = list.indexOf(c);
+    if (i < 0) return;
+    list.splice(i, 1);
+    c.dead = true; S.stats.fuses++;
+    into[key] += 1; placeObj(into); into.ring = 1;
+    into.strain = (into.strain || 0) + (c.strain || 0);
+    rings.push({ x: into.px, y: into.py, r: into.r, life: 1 });
+    if (isBell) once('firstBellFuse');
+    else { once('firstFuse'); tierWhisper(into.t); }
+  }
+  $('soundBtn').addEventListener('click', () => { initAudio(); setMuted(!S.muted); });
+  const FX_ORDER = ['auto', 'full', 'calm'];
+  $('fxBtn').addEventListener('click', () => {
+    S.fx = FX_ORDER[(FX_ORDER.indexOf(S.fx) + 1) % 3];
+    capP = Math.min(capP, fxLimits().p); capR = Math.min(capR, fxLimits().r);
+    updateLite(); resize(); updateUI();
+  });
+
+  // =====================================================================
+  // shop
+  // =====================================================================
+  const ICONS = {
+    gem: c => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><polygon points="15,2 24,9 24,20 15,27 6,20 6,9" fill="${c}"/><polygon points="15,2 15,27 6,20 6,9" fill="rgba(10,6,20,.32)"/><polygon points="15,2 24,9 17,12" fill="rgba(255,255,255,.4)"/></svg>`,
+    tune: (c, ring = '#d6a8ff') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><polygon points="15,5 21,10 21,18 15,23 9,18 9,10" fill="${c}"/><circle cx="15" cy="14" r="12.5" fill="none" stroke="${ring}" stroke-width="1.2" stroke-dasharray="2 3"/></svg>`,
+    bell: c => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M6 21Q7 12 10 8Q15 3 20 8Q23 12 24 21Z" fill="${c}"/><rect x="5" y="20" width="20" height="3" rx="1" fill="${c}" opacity=".7"/><circle cx="15" cy="25" r="2" fill="#222"/></svg>`,
+    lungs: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="3" fill="#8ff2e6"/><circle cx="15" cy="15" r="8" fill="none" stroke="#8ff2e6" stroke-width="1.5" opacity=".7"/><circle cx="15" cy="15" r="13" fill="none" stroke="#8ff2e6" stroke-width="1.2" opacity=".35"/></svg>`,
+    drip: (c = '#86c9ff') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 3C15 3 7 13 7 18a8 8 0 0 0 16 0C23 13 15 3 15 3Z" fill="${c}"/><path d="M11 18a4 4 0 0 0 4 4" stroke="#fff" stroke-width="1.5" fill="none" opacity=".6"/></svg>`,
+    bat: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 12Q10 9 3 12Q7 14 7 18Q11 16 15 19Q19 16 23 18Q23 14 27 12Q20 9 15 12Z" fill="#d6caec"/></svg>`,
+    wave: (c = '#8ff2e6') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M2 15q3.25-9 6.5 0t6.5 0 6.5 0 6.5 0" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/></svg>`,
+    spark: (c = '#ffcf86') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 2L17.5 12.5L28 15L17.5 17.5L15 28L12.5 17.5L2 15L12.5 12.5Z" fill="${c}"/></svg>`,
+    fork: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M10 3v11a5 5 0 0 0 10 0V3" fill="none" stroke="#b58cff" stroke-width="2.2" stroke-linecap="round"/><path d="M15 19v9" stroke="#b58cff" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+    chisel: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M6 24L18 12M18 12l4-4 3 3-4 4z" fill="none" stroke="#e3edf5" stroke-width="2" stroke-linecap="round"/><path d="M4 26l3-1-1-1z" fill="#e3edf5"/></svg>`,
+    prism: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9ad5"/><stop offset=".4" stop-color="#ffe38a"/><stop offset=".7" stop-color="#8ff2e6"/><stop offset="1" stop-color="#a58bff"/></linearGradient></defs><polygon points="15,3 27,25 3,25" fill="rgba(255,255,255,.1)" stroke="url(#pg)" stroke-width="2.2" stroke-linejoin="round"/></svg>`,
+    lode: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="#8c7aa8" stroke-dasharray="2 3"/><circle cx="15" cy="15" r="7" fill="#2a2233" stroke="#8c7aa8" stroke-width="1.5"/><circle cx="15" cy="15" r="2.4" fill="#b58cff"/></svg>`,
+    gong: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="#c98f45"/><circle cx="15" cy="15" r="8" fill="none" stroke="rgba(40,20,5,.5)"/><circle cx="15" cy="15" r="4.5" fill="none" stroke="rgba(40,20,5,.5)"/></svg>`,
+    bone: (c = '#e8d5b0') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 4a11 11 0 1 0 0.01 0M15 9a6 6 0 1 1-0.01 0M15 13a2 2 0 1 0 0.01 0" fill="none" stroke="${c}" stroke-width="1.8"/></svg>`,
+    layers: (c = '#e8d5b0') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M3 9q6-3 12 0t12 0M3 15q6-3 12 0t12 0M3 21q6-3 12 0t12 0" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    widen: (c = '#e8d5b0') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 15h22M4 15l5-5M4 15l5 5M26 15l-5-5M26 15l-5 5" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    crack: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><polygon points="15,3 24,9 24,20 15,27 6,20 6,9" fill="none" stroke="#e8d5b0" stroke-width="1.5"/><path d="M15 6l-3 7 5 3-4 8" fill="none" stroke="#d6a8ff" stroke-width="1.8"/></svg>`,
+    worm: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 2v20" stroke="#7fb8ff" stroke-width="1" opacity=".6"/><circle cx="15" cy="7" r="1.3" fill="#a0cdff"/><circle cx="15" cy="12" r="1.3" fill="#a0cdff"/><circle cx="15" cy="17" r="1.3" fill="#a0cdff"/><circle cx="15" cy="24" r="4.5" fill="#7fb8ff"/></svg>`,
+    firefly: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="9" fill="rgba(255,220,140,.18)"/><circle cx="15" cy="15" r="4" fill="#ffdc8c"/><path d="M8 9l3 3M22 9l-3 3" stroke="#ffdc8c" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    lantern: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><rect x="9" y="8" width="12" height="16" rx="3" fill="none" stroke="#7fb8ff" stroke-width="1.8"/><circle cx="15" cy="16" r="3.5" fill="#ffcf86"/><path d="M12 8V5h6v3" fill="none" stroke="#7fb8ff" stroke-width="1.8"/></svg>`,
+    silk: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 3v24M5 8l20 14M25 8L5 22" stroke="#7fb8ff" stroke-width="1.2"/><circle cx="15" cy="15" r="6" fill="none" stroke="#7fb8ff" stroke-width="1.2"/><circle cx="15" cy="15" r="10" fill="none" stroke="#7fb8ff" stroke-width="1" opacity=".6"/></svg>`,
+    gear: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="6" fill="none" stroke="#7fb8ff" stroke-width="2"/><path d="M15 3v5M15 22v5M3 15h5M22 15h5M6.5 6.5l3.5 3.5M20 20l3.5 3.5M6.5 23.5l3.5-3.5M20 10l3.5-3.5" stroke="#7fb8ff" stroke-width="2" stroke-linecap="round"/></svg>`,
+    down: (c = '#7fb8ff') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 4v18M8 15l7 7 7-7" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/><path d="M5 27h20" stroke="#e8d5b0" stroke-width="2" stroke-linecap="round"/></svg>`,
+    chest: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><polygon points="15,4 26,24 4,24" fill="none" stroke="#7fb8ff" stroke-width="1.8"/><circle cx="15" cy="18" r="3" fill="#c98f45"/></svg>`,
+    stone: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><ellipse cx="9" cy="18" rx="5" ry="3" fill="#8a96a0"/><circle cx="17" cy="18" r="2.5" fill="none" stroke="#86d8e6"/><circle cx="24" cy="18" r="2" fill="none" stroke="#86d8e6" opacity=".6"/></svg>`,
+    fish: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M5 20Q15 4 25 14" fill="none" stroke="#86d8e6" stroke-width="1" stroke-dasharray="2 2"/><ellipse cx="14" cy="11" rx="6" ry="2.6" fill="#a9dbe4" transform="rotate(-25 14 11)"/></svg>`,
+    lighthouse: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M12 27l1.5-16h3L18 27z" fill="#d9d2c4"/><rect x="12.5" y="17" width="5" height="2.5" fill="#b54848"/><circle cx="15" cy="8" r="3" fill="#ffe6aa"/><path d="M18 8L29 4v8z" fill="rgba(255,230,170,.35)"/></svg>`,
+    cross: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><circle cx="11" cy="15" r="8" fill="none" stroke="#86d8e6" stroke-width="1.5"/><circle cx="19" cy="15" r="8" fill="none" stroke="#86d8e6" stroke-width="1.5"/><circle cx="15" cy="9" r="2.2" fill="#ffcf86"/><circle cx="15" cy="21" r="2.2" fill="#ffcf86"/></svg>`,
+    buoy: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M2 20h26" stroke="#86d8e6" stroke-width="1.2" stroke-dasharray="3 3"/><circle cx="8" cy="18" r="3" fill="#c96a5a"/><circle cx="22" cy="18" r="3" fill="#c96a5a"/></svg>`,
+    oyster: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 17a11 7 0 0 0 22 0z" fill="#4a4655"/><path d="M4 16a11 8 0 0 1 22 0z" fill="#6a6577" transform="rotate(-12 15 16)"/><circle cx="15" cy="16" r="3" fill="#f5f0e6"/></svg>`,
+    breakwater: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><ellipse cx="15" cy="16" rx="11" ry="6" fill="#39414a" stroke="#a9dbe4" stroke-width="1"/><path d="M3 24q3-3 6 0t6 0 6 0 6 0" fill="none" stroke="#86d8e6" stroke-width="1.2"/></svg>`,
+    raft: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><rect x="5" y="9" width="20" height="13" fill="#7a5a3a"/><circle cx="15" cy="15.5" r="5" fill="#d9c3a0"/></svg>`,
+    whirl: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 15m-2 0a2 2 0 1 1 4 0a5 5 0 1 1-9 0a8 8 0 1 1 15 2" fill="none" stroke="#86d8e6" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    horn: (c = '#ff8fa3') => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 25C5 13 13 5 26 4C21 8 15 14 11 25Z" fill="${c}"/><path d="M8 20l4 1M10 15l4 1.5M14 10l3 2" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/></svg>`,
+    rack: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 8h22" stroke="#f6efe2" stroke-width="2"/><path d="M8 8v14M15 8v14M22 8v14" stroke="#f6efe2" stroke-width="1.2" opacity=".7"/></svg>`,
+    ear: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="11" fill="none" stroke="#f6efe2" stroke-width="1.6"/><path d="M15 8v7l5 3" stroke="#f6efe2" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>`,
+    whet: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><rect x="4" y="17" width="22" height="7" rx="2" fill="#8a8494"/><path d="M8 14L22 6" stroke="#f6efe2" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+    branch: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M8 27C9 18 12 11 20 5M12 16C15 14 19 13 25 13" fill="none" stroke="#f6efe2" stroke-width="2" stroke-linecap="round"/></svg>`,
+    choir: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M3 12h24" stroke="#86d8e6" stroke-width="1" opacity=".5"/><polygon points="10,2 13,5 13,9 10,11 7,9 7,5" fill="#b58cff"/><polygon points="20,3 22,5 22,8 20,10 18,8 18,5" fill="#e3edf5"/><path d="M4 22q3-3 6 0t6 0 6 0 6 0" fill="none" stroke="#86d8e6" stroke-width="1.5"/></svg>`,
+    stones: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><ellipse cx="10" cy="20" rx="6" ry="4" fill="#5b5566"/><ellipse cx="20" cy="19" rx="5" ry="3.5" fill="#6a6577"/><path d="M15 4v8M11 8l4 4 4-4" stroke="#ffcf86" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
+  };
+  const UNIT_LABEL = { hum: '', tide: '', shard: ' shards', fossil: ' fossils', lumen: ' lumen', pearl: ' pearls', fathom: ' fathoms', ivory: ' ivory' };
+
+  const shopEls = [];
+  // spec: { parent, icon, unit | unit(), name(), cost() -> number|null, desc(), show(), buy() -> bool, state()?, blocked()? }
+  function addItem(spec) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'item';
+    b.innerHTML = `${spec.icon}<span class="nm"></span><span class="cs"></span><span class="ds"></span>`;
+    const nm = b.querySelector('.nm'), cs = b.querySelector('.cs'), ds = b.querySelector('.ds');
+    b.addEventListener('click', () => {
+      initAudio();
+      if (spec.buy()) {
+        refreshAll(); syncVoices();
+        b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse');
+        updateUI();
+      }
+    });
+    $(spec.parent).appendChild(b);
+    const panel = $(spec.parent).closest ? $(spec.parent).closest('.panel') : null;
+    // Only touch the DOM when something actually changed; skip rows on hidden tabs entirely.
+    const last = {};
+    const put = (key, v, apply) => { if (last[key] !== v) { last[key] = v; apply(v); } };
+    shopEls.push({
+      update() {
+        if (panel && panel.hidden) return;
+        const shown = spec.show ? spec.show() : true;
+        put('hidden', !shown, v => { b.hidden = v; });
+        if (!shown) return;
+        const unit = typeof spec.unit === 'function' ? spec.unit() : spec.unit;
+        put('nm', spec.name(), v => { nm.innerHTML = v; });
+        put('ds', spec.desc(), v => { ds.textContent = v; });
+        const st = spec.state ? spec.state() : null;
+        const cost = st ? null : spec.cost();
+        let csHtml, csCls, maxed = false;
+        if (st === 'on' || st === 'off') { csHtml = st === 'on' ? 'On' : 'Off'; csCls = 'cs state' + (st === 'off' ? ' off' : ''); }
+        else if (cost == null) { csHtml = 'Max'; csCls = 'cs state off'; maxed = true; }
+        else { csHtml = fmt(cost) + (UNIT_LABEL[unit] ? `<small>${UNIT_LABEL[unit]}</small>` : ''); csCls = 'cs' + (unit !== 'hum' ? ' ' + unit : ''); }
+        put('csH', csHtml, v => { cs.innerHTML = v; });
+        put('csC', csCls, v => { cs.className = v; });
+        put('max', maxed, v => { b.classList.toggle('maxed', v); });
+        put('poor', !st && cost != null && (have(unit) < cost || !!(spec.blocked && spec.blocked())), v => { b.classList.toggle('poor', v); });
+      },
+    });
+  }
+  const lvl = (label, n, pre = 'Lv ') => `${label}<span class="lv">${pre}${n}</span>`;
+  // A levelled upgrade. o: parent, icon, unit, name, get(), inc(), base, g, max, desc(l), show(), gate, pre, single, onBuy
+  function lvItem(o) {
+    const costOf = () => Math.ceil(o.base * Math.pow(o.g, o.get()));
+    const max = o.max ?? 1e9;
+    addItem({
+      parent: o.parent, icon: o.icon, unit: o.unit,
+      show: () => {
+        if (!o.gate) return o.show ? o.show() : true;
+        if (o.get() > 0 || S.seen[o.gate]) return true;
+        if (o.show()) { S.seen[o.gate] = 1; return true; }
+        return false;
+      },
+      name: () => o.single ? o.name : lvl(o.name, o.get(), o.pre || 'Lv '),
+      cost: () => o.get() >= max ? null : costOf(),
+      desc: () => o.desc(o.get()),
+      buy: () => {
+        if (o.get() >= max) return false;
+        if (!spend(o.unit, costOf())) return false;
+        o.inc(); if (o.onBuy) o.onBuy();
+        return true;
+      },
+    });
+  }
+
+  function buildShop() {
+    // ------------------------------- cave: crystals, voices, tuning (hum)
+    TIERS.forEach((tier, t) => addItem({
+      parent: 'shopCrystals', icon: ICONS.gem(tier.color), unit: 'hum',
+      show: () => t === 0 || S.crystals.some(c => c.t === t) || S.bought[t] > 0 || S.run >= tier.base * 0.4,
+      name: () => lvl(tier.name, S.crystals.filter(c => c.t === t).length, '×'),
+      cost: () => crystalCost(t),
+      blocked: () => S.crystals.length >= maxCrystals(),
+      desc: () => S.crystals.length >= maxCrystals() ? 'The cave is full. Fuse twins, or chisel out more room.' :
+        `Rings for ${fmt(tier.value * K.att[t] * K.crys * K.pol * K.dm)} hum per echo`,
+      buy: () => buyCrystal(t),
+    }));
+    const cv_ = (parent, k, name, icon, base, g, show, desc, extra = {}) => lvItem({
+      parent, icon, unit: 'hum', name, base, g, show, desc, gate: 'u_' + k,
+      get: () => S.lv[k], inc: () => { S.lv[k]++; }, ...extra,
+    });
+    cv_('shopVoices', 'lungs', 'Lungs', ICONS.lungs(), 25, 1.55, () => true, l => `Each shout: ${shoutN(l)} → ${shoutN(l + 1)} echoes`);
+    cv_('shopVoices', 'drips', 'Drip', ICONS.drip(), 40, 1.42, () => S.run >= 12, () => 'Water falls every ~3s and splashes 4 echoes. Rings any crystal it lands on.', { pre: '×', onBuy: () => once('firstDrip') });
+    cv_('shopVoices', 'bats', 'Bat', ICONS.bat(), 700, 1.45, () => S.run >= 250, () => 'Flutters through the dark, shouting every ~5s with your lungs.', { pre: '×', onBuy: () => once('firstBat') });
+    cv_('shopTuning', 'chisel', 'Chisel', ICONS.chisel(), 400, 2.4, () => S.run >= 100 || S.crystals.length >= 6, l => `Room for ${maxCrystals()} → ${maxCrystals() + 1} crystals`, { max: 12 });
+    cv_('shopTuning', 'resonance', 'Resonance', ICONS.wave(), 60, 2.1, () => S.run >= 20, l => `Echoes keep ${pct(retainAt(l))} → ${pct(retainAt(l + 1))} of their voice per bounce`);
+    cv_('shopTuning', 'polish', 'Polish', ICONS.spark(), 250, 3, () => S.run >= 120, l => `Crystals ring ×${fmt(polishAt(l))} → ×${fmt(polishAt(l + 1))}`);
+    cv_('shopTuning', 'harmony', 'Harmony', ICONS.fork(), 1800, 3.4, () => S.run >= 900 && S.crystals.length >= 3, l => `+${20 * (l + 1)}% hum for every extra crystal ringing in the same breath`, { onBuy: () => once('firstHarmony') });
+
+    // ------------------------------- cave: wonders & attunement (shards)
+    const wIcon = { prism: ICONS.prism(), lodestone: ICONS.lode(), gong: ICONS.gong() };
+    for (const k of Object.keys(WONDERS)) {
+      const wd = WONDERS[k];
+      addItem({
+        parent: 'shopWonders', icon: wIcon[k], unit: 'shard',
+        name: () => lvl(wd.name, `${S.wonders.filter(o => o.k === k).length}/${wd.max}`, ''),
+        cost: () => S.wonders.filter(o => o.k === k).length >= wd.max ? null : wonderCost(k),
+        desc: () => wd.desc,
+        buy: () => buyWonder(k),
+      });
+    }
+    TIERS.forEach((tier, t) => lvItem({
+      parent: 'shopAttune', icon: ICONS.tune(tier.color), unit: 'shard', name: `Attune ${tier.name}`,
+      get: () => S.attune[t], inc: () => { S.attune[t]++; }, base: 4 * (t + 1), g: 2.1,
+      show: () => t === 0 || S.attune[t] > 0 || S.crystals.some(c => c.t === t),
+      desc: l => `Every ${tier.name.toLowerCase()} rings ×${fmt(Math.pow(2, l))} → ×${fmt(Math.pow(2, l + 1))}`,
+    }));
+
+    // ------------------------------- cave: strata (fossils)
+    const st = (k, name, icon, base, g, max, desc, show, extra = {}) => lvItem({
+      parent: 'shopStrata', icon, unit: 'fossil', name, base, g, max, desc, show,
+      get: () => S.strata[k], inc: () => { S.strata[k]++; }, ...extra,
+    });
+    st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
+    st('lungs', 'Deep Lungs', ICONS.lungs(), 2, 1.7, 1e9, l => `Every descent starts with Lungs Lv ${2 * l} → ${2 * (l + 1)}`);
+    st('water', 'Old Water', ICONS.drip(), 2, 1.7, 1e9, l => `Every descent starts with ${2 * l} → ${2 * (l + 1)} extra drips`);
+    st('seed', 'Seed Crystals', ICONS.gem('#b58cff'), 4, 2, 6, l => `Every descent starts with ${l} → ${l + 1} amethyst already placed`);
+    st('wide', 'Wide Cavern', ICONS.widen(), 5, 2.4, 6, l => `Room for 4 more crystals (+${4 * l} → +${4 * (l + 1)})`);
+    st('fault', 'Fault Lines', ICONS.crack(), 4, 2, 12, l => `Crystals crack after ${fmt(40 * Math.pow(0.8, l))} → ${fmt(40 * Math.pow(0.8, l + 1))} ringing, shedding shards sooner`);
+    st('record', 'Fossil Record', ICONS.bone(), 6, 2.3, 1e9, l => `Fossils from each descent ×${fmt(Math.pow(1.25, l))} → ×${fmt(Math.pow(1.25, l + 1))}`);
+    st('nest', 'Glowworm Nest', ICONS.worm(), 15, 1, 1,
+      l => l ? 'Glowworms hang from the ceiling of every cave. Opens the Glow ledger.' : 'A glowworm moves in. It eats echoes and turns them into lumen. Opens the Glow ledger, and the road to the Heartstone.',
+      () => S.strata.nest > 0 || S.depth >= 2 || S.fossilsTotal >= 8, { single: true, onBuy: () => { once('nest'); buildWorms(); } });
+    st('worm', 'Glowworm', ICONS.worm(), 6, 1.8, 19, l => `${1 + l} → ${2 + l} glowworms on the ceiling`, () => S.strata.nest > 0, { onBuy: () => buildWorms() });
+
+    // ------------------------------- cave: illuminations (lumen)
+    const il = (k, name, icon, base, g, max, desc, extra = {}) => lvItem({
+      parent: 'shopGlow', icon, unit: 'lumen', name, base, g, max, desc,
+      get: () => S.illum[k], inc: () => { S.illum[k]++; }, ...extra,
+    });
+    const toggle = (k, name, icon, cost, desc) => addItem({
+      parent: 'shopGlow', icon, unit: 'lumen', name: () => name,
+      state: () => S.illum[k] ? (S.toggles[k] ? 'on' : 'off') : null,
+      cost: () => cost,
+      desc: () => S.illum[k] ? `${desc} Click to turn ${S.toggles[k] ? 'off' : 'on'}.` : desc,
+      buy: () => {
+        if (S.illum[k]) { S.toggles[k] = S.toggles[k] ? 0 : 1; return true; }
+        if (!spend('lumen', cost)) return false;
+        S.illum[k] = 1; S.toggles[k] = 1;
+        return true;
+      },
+    });
+    il('firefly', 'Firefly Hands', ICONS.firefly(), 4, 2, 15, l => l ? `Shouts somewhere random every ${Math.max(0.3, 3 * Math.pow(0.8, l - 1)).toFixed(1)}s → ${Math.max(0.3, 3 * Math.pow(0.8, l)).toFixed(1)}s` : 'Something shouts for you every 3s, even while you’re away.', { onBuy: () => once('firstFirefly') });
+    il('lantern', 'Lantern', ICONS.lantern(), 8, 2.3, 1e9, l => `All hum ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
+    il('silk', 'Silk Threads', ICONS.silk(), 12, 2.0, 1e9, l => `Glowworms make lumen ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
+    toggle('autofuse', 'Patient Hands', ICONS.gear(), 20, 'Fuses twin crystals for you.');
+    toggle('autobuy', 'Crystal Seeker', ICONS.gear(), 40, 'Buys the best crystal you can afford.');
+    il('carry', 'Carry Wonders', ICONS.chest(), 60, 1, 1, l => l ? 'Your wonders come with you when you descend.' : 'Wonders come down with you when you descend, instead of being lost.', { single: true });
+    toggle('autodescend', 'Sinking Stone', ICONS.down(), 90, 'Descends on its own once you’ve sung twice what the floor needs.');
+
+    // ------------------------------- sea: bells, voices, tuning (tide)
+    BELLS.forEach((bell, t) => addItem({
+      parent: 'shopBells', icon: ICONS.bell(bell.color), unit: 'tide',
+      show: () => t === 0 || S.sea.bells.some(b => b.bt === t) || S.sea.bought[t] > 0 || S.sea.run >= bell.base * 0.4,
+      name: () => lvl(bell.name, S.sea.bells.filter(b => b.bt === t).length, '×'),
+      cost: () => bellCost(t),
+      blocked: () => S.sea.bells.length >= bellCap(),
+      desc: () => S.sea.bells.length >= bellCap() ? 'No room for another bell. Fuse twins, or lay more buoy line.' :
+        `Rings for ${fmt(bell.value * SK.tune[t] * SK.bell * SK.tm)} tide per ripple`,
+      buy: () => buyBell(t),
+    }));
+    const sv = (parent, k, name, icon, base, g, show, desc, extra = {}) => lvItem({
+      parent, icon, unit: 'tide', name, base, g, show, desc, gate: 'v_' + k,
+      get: () => S.sea.lv[k], inc: () => { S.sea.lv[k]++; }, ...extra,
+    });
+    sv('shopSeaVoices', 'skips', 'Skipping Stones', ICONS.stone(), 25, 1.6, () => true, l => `Each throw skips ${skipsN(l)} → ${skipsN(l + 1)} times across the water`);
+    sv('shopSeaVoices', 'rain', 'Rain', ICONS.drip('#a9dbe4'), 40, 1.42, () => S.sea.run >= 12, () => 'A drop lands somewhere every ~3s and makes a small ripple.', { pre: '×', onBuy: () => once('firstRain') });
+    sv('shopSeaVoices', 'fish', 'Leaping Fish', ICONS.fish(), 700, 1.45, () => S.sea.run >= 250, () => 'Jumps every ~5s: a ripple where it leaves and another where it lands. They often cross.', { pre: '×', onBuy: () => once('firstFish') });
+    sv('shopSeaVoices', 'light', 'Lighthouse', ICONS.lighthouse(), 5000, 2.6, () => S.sea.run >= 2500,
+      l => l ? `Its beam starts a ripple every ${Math.max(0.4, 2.2 * Math.pow(0.8, l - 1)).toFixed(1)}s → ${Math.max(0.4, 2.2 * Math.pow(0.8, l)).toFixed(1)}s` : 'A sweeping beam that starts ripples wherever it falls.', { max: 8, onBuy: () => once('firstLight') });
+    sv('shopSeaTuning', 'line', 'Buoy Line', ICONS.buoy(), 400, 2.4, () => S.sea.run >= 100 || S.sea.bells.length >= 6, () => `Room for ${bellCap()} → ${bellCap() + 1} bells`, { max: 12 });
+    sv('shopSeaTuning', 'still', 'Stillness', ICONS.wave('#86d8e6'), 60, 2.1, () => S.sea.run >= 20, l => `Ripples fade ${pct(1 - seaDecayAt(l + 1) / seaDecayAt(l))} slower (lasting ~${Math.round(Math.log(25) / seaDecayAt(l))}s → ~${Math.round(Math.log(25) / seaDecayAt(l + 1))}s)`);
+    sv('shopSeaTuning', 'bronze', 'Bronze Casting', ICONS.spark('#d0955a'), 250, 3, () => S.sea.run >= 120, l => `Bells ring ×${fmt(Math.pow(1.6, l))} → ×${fmt(Math.pow(1.6, l + 1))}`);
+    sv('shopSeaTuning', 'interf', 'Crossing Waves', ICONS.cross(), 1800, 3.4, () => S.sea.run >= 900 && S.sea.bells.length >= 2, l => `When two ripples cross at a bell it rings ×${fmtX(crossAt(l))} → ×${fmtX(crossAt(l + 1))}`);
+
+    // ------------------------------- sea: pearls
+    addItem({
+      parent: 'shopOysters', icon: ICONS.oyster(), unit: 'tide',
+      name: () => lvl('Oyster', `${S.sea.oysters.length}/6`, ''),
+      cost: () => S.sea.oysters.length >= 6 ? null : oysterCost(),
+      desc: () => `Opens after ${fmt(SK.open)} ripples' worth of washing and gives up ${fmt(SK.pearl)} pearl${SK.pearl >= 2 ? 's' : ''}.`,
+      buy: () => buyOyster(),
+    });
+    const pIcon = { breakwater: ICONS.breakwater(), raft: ICONS.raft(), whirlpool: ICONS.whirl() };
+    for (const k of Object.keys(PEARLOBJ)) {
+      const po = PEARLOBJ[k];
+      addItem({
+        parent: 'shopPearlObjs', icon: pIcon[k], unit: 'pearl',
+        name: () => lvl(po.name, `${S.sea.objs.filter(o => o.pk === k).length}/${po.max}`, ''),
+        cost: () => S.sea.objs.filter(o => o.pk === k).length >= po.max ? null : pobjCost(k),
+        desc: () => po.desc,
+        buy: () => buyPobj(k),
+      });
+    }
+    BELLS.forEach((bell, t) => lvItem({
+      parent: 'shopBellTune', icon: ICONS.tune(bell.color, '#efe6d8'), unit: 'pearl', name: `Recast ${bell.name}s`,
+      get: () => S.sea.tune[t], inc: () => { S.sea.tune[t]++; }, base: 4 * (t + 1), g: 2.1,
+      show: () => t === 0 || S.sea.tune[t] > 0 || S.sea.bells.some(b => b.bt === t),
+      desc: l => `Every ${bell.name.toLowerCase()} rings ×${fmt(Math.pow(2, l))} → ×${fmt(Math.pow(2, l + 1))}`,
+    }));
+
+    // ------------------------------- sea: the deep (fathoms)
+    const dp = (k, name, icon, base, g, max, desc, extra = {}) => lvItem({
+      parent: 'shopDeep', icon, unit: 'fathom', name, base, g, max, desc,
+      get: () => S.sea.deep[k], inc: () => { S.sea.deep[k]++; }, ...extra,
+    });
+    dp('current', 'Deep Current', ICONS.layers('#9aa7ff'), 2, 1.9, 1e9, l => `All tide ×${fmt(Math.pow(1.5, l))} → ×${fmt(Math.pow(1.5, l + 1))}`);
+    dp('rain', 'Old Rain', ICONS.drip('#9aa7ff'), 2, 1.7, 1e9, l => `Every sounding starts with ${2 * l} → ${2 * (l + 1)} extra rain`);
+    dp('buoys', 'Long Moorings', ICONS.widen('#9aa7ff'), 5, 2.4, 6, l => `Room for 2 more bells (+${2 * l} → +${2 * (l + 1)})`);
+    dp('beds', 'Pearl Beds', ICONS.oyster(), 4, 2, 12, l => `Oysters open after ${fmt(30 * Math.pow(0.8, l))} → ${fmt(30 * Math.pow(0.8, l + 1))} washing`);
+    dp('record', 'Plumb Line', ICONS.down('#9aa7ff'), 6, 2.3, 1e9, l => `Fathoms from each sounding ×${fmt(Math.pow(1.25, l))} → ×${fmt(Math.pow(1.25, l + 1))}`);
+    dp('light', 'Pale Lighthouse', ICONS.lighthouse(), 8, 1, 1, l => l ? 'Every sounding starts with a lighthouse already lit.' : 'Every sounding starts with a lighthouse already lit.', { single: true });
+
+    // ------------------------------- sea: the choir above (tide, never resets)
+    lvItem({
+      parent: 'shopChoir', icon: ICONS.choir(), unit: 'tide', name: 'Open the Ceiling', base: 500, g: 3,
+      get: () => S.sea.choir.open, inc: () => { S.sea.choir.open++; },
+      desc: l => `The cave's song lifts tide by ${fmtX(0.1 * (1 + l))} → ${fmtX(0.1 * (2 + l))} per power of ten of its hum/s`,
+    });
+    lvItem({
+      parent: 'shopChoir', icon: ICONS.stones(), unit: 'tide', name: 'Listening Stones', base: 2000, g: 3.2, max: 5,
+      get: () => S.sea.choir.listen, inc: () => { S.sea.choir.listen++; },
+      desc: l => `The world you're not in keeps earning ${pct(0.25 + 0.1 * l)} → ${pct(0.35 + 0.1 * l)} of its idle rate`,
+    });
+
+    // ------------------------------- horns (ivory, fossils/fathoms)
+    addItem({
+      parent: 'shopHorns', icon: ICONS.horn('#ffcf86'), unit: () => S.world === 'sea' ? 'fathom' : 'fossil',
+      name: () => 'Sound the Horn Call',
+      cost: () => hornRollCost(),
+      desc: () => 'Find a new random horn right now.',
+      buy: () => {
+        const u = S.world === 'sea' ? 'fathom' : 'fossil';
+        if (!spend(u, hornRollCost())) return false;
+        S.hornBuys++;
+        const h = gainHorn(0);
+        whisper(hornMsg(h));
+        return true;
+      },
+    });
+    const hu = (k, name, icon, base, g, max, desc) => lvItem({
+      parent: 'shopHorns', icon, unit: 'ivory', name, base, g, max, desc,
+      get: () => S.hornUp[k], inc: () => { S.hornUp[k]++; },
+    });
+    hu('rack', 'Horn Rack', ICONS.rack(), 15, 6, 2, l => `Wear ${1 + l} → ${2 + l} horns at once`);
+    hu('ear', 'Keen Ear', ICONS.ear(), 5, 1.7, 12, l => `A horn turns up every ${mmss(360 * Math.pow(0.85, l))} → ${mmss(360 * Math.pow(0.85, l + 1))}`);
+    hu('whet', 'Whetstone', ICONS.whet(), 8, 1.8, 15, l => `Horn bonuses +${Math.round(l * 8)}% → +${Math.round((l + 1) * 8)}% stronger, and rarer horns gain up to 3× as much`);
+    hu('branch', 'Branching', ICONS.branch(), 10, 2.2, 5, l => `New horns have a ${l * 20}% → ${(l + 1) * 20}% chance of one extra stat`);
+  }
+  const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  // =====================================================================
+  // horns
+  // =====================================================================
+  let hornsDirty = true;
+  function rollLine(stat, R) {
+    const st = HSTATS[stat], u = Math.random();
+    if (st.kind === 'scale') {
+      if (R.mult && Math.random() < R.multP) return { stat, kind: 'mult', v: +(R.mult[0] + (R.mult[1] - R.mult[0]) * u).toFixed(2) };
+      return { stat, kind: 'pct', v: Math.round(R.pct[0] + (R.pct[1] - R.pct[0]) * u) };
+    }
+    return { stat, kind: st.kind, v: Math.max(1, Math.round(st.per * R.flatK * (0.6 + 0.8 * u))) };
+  }
+  function gainHorn(minR) {
+    let x = Math.random(), ri = 0;
+    for (; ri < RARITY.length - 1; ri++) { if (x < RARITY[ri].p) break; x -= RARITY[ri].p; }
+    ri = Math.max(ri, minR || 0);
+    const R = RARITY[ri];
+    let n = R.lines + (Math.random() < S.hornUp.branch * 0.2 ? 1 : 0);
+    n = Math.min(4, n);
+    const keys = Object.keys(HSTATS), used = new Set(), lines = [];
+    while (lines.length < n) {
+      const s = pick(keys); if (used.has(s)) continue;
+      used.add(s); lines.push(rollLine(s, R));
+    }
+    const h = { id: ++S.hornSeq, r: ri, name: `${pick(ADJ[ri])} ${pick(ANIMALS)} Horn of ${HSTATS[lines[0].stat].of}`, lines };
+    S.hornsOn = true;
+    S.stats.hornsFound++; S.stats.bestHorn = Math.max(S.stats.bestHorn, ri);
+    if (S.horns.length >= HORN_CAP) {
+      S.ivory += RARITY[ri].ivory;
+      h.salvaged = true;
+    } else {
+      S.horns.push(h);
+      if (S.equipped.length < hornSlots()) S.equipped.push(h.id);
+    }
+    delete S.seen.tab_horns;
+    hornsDirty = true;
+    refreshAll();
+    return h;
+  }
+  function hornMsg(h) {
+    const rn = RARITY[h.r].name.toLowerCase();
+    const base = `${/^[aeiou]/.test(rn) ? 'An' : 'A'} ${rn} horn: the ${h.name}.`;
+    if (h.salvaged) return `${base} Your rack is full, so it became ${RARITY[h.r].ivory} ivory.`;
+    return S.equipped.includes(h.id) ? `${base} You're wearing it.` : `${base} Equip it in the Horns tab.`;
+  }
+  function lineText(h, l) {
+    const st = HSTATS[l.stat], v = lineVal(h, l);
+    if (l.kind === 'mult') return `${st.label} <b>×${fmtX(v)}</b>`;
+    if (l.kind === 'pct') return `${st.label} <b>+${Math.round(v)}%</b>`;
+    if (st.kind === 'flat') return `${st.label} <b>+${Math.round(v)}</b>`;
+    if (st.kind === 'flatpct') return `${st.label} <b>+${Math.round(v)}%</b>`;
+    return `${st.label} <b>−${Math.round(v)}%</b>`;
+  }
+  function renderHorns() {
+    hornsDirty = false;
+    const eq = new Set(S.equipped);
+    const sorted = [...S.horns].sort((a, b) => (eq.has(b.id) - eq.has(a.id)) || (b.r - a.r) || (b.id - a.id));
+    $('hornList').innerHTML = sorted.map(h => {
+      const on = eq.has(h.id);
+      return `<div class="horn${on ? ' on' : ''}" style="--rc:${RARITY[h.r].col}">
+        <span class="dot"></span>
+        <div class="hh"><span class="hn">${h.name}</span><span class="hr">${RARITY[h.r].name}${on ? ' · worn' : ''}</span></div>
+        <ul>${h.lines.map(l => `<li>${lineText(h, l)}</li>`).join('')}</ul>
+        <div class="hb"><button type="button" data-act="eq" data-id="${h.id}">${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${h.id}">Salvage for ${RARITY[h.r].ivory} ivory</button></div>
+      </div>`;
+    }).join('') || '<p class="note">No horns yet.</p>';
+    // summary of worn bonuses
+    const parts = [];
+    for (const k of Object.keys(HSTATS)) {
+      const st = HSTATS[k];
+      if (st.kind === 'scale' && Math.abs(HB[k] - 1) > 1e-6) parts.push(`<span>${st.label}</span><b>×${fmtX(HB[k])}</b>`);
+    }
+    if (HB.lungs) parts.push(`<span>Echoes per shout</span><b>+${HB.lungs}</b>`);
+    if (HB.skips) parts.push(`<span>Stone skips</span><b>+${HB.skips}</b>`);
+    if (HB.offline) parts.push(`<span>Away earnings</span><b>+${Math.round(HB.offline * 100)}%</b>`);
+    if (HB.cost) parts.push(`<span>Prices</span><b>−${Math.round(HB.cost * 100)}%</b>`);
+    $('hornSum').innerHTML = parts.length ? parts.map(p => `<div>${p}</div>`).join('') : '<div class="empty">Wear a horn to feel its bonus here.</div>';
+  }
+  const salvageArmed = {};
+  $('hornList').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = +btn.dataset.id, h = S.horns.find(x => x.id === id);
+    if (!h) return;
+    if (btn.dataset.act === 'eq') {
+      const i = S.equipped.indexOf(id);
+      if (i >= 0) S.equipped.splice(i, 1);
+      else if (S.equipped.length >= hornSlots()) { whisper(`You can only wear ${hornSlots()} horn${hornSlots() > 1 ? 's' : ''}. Take one off first, or build a bigger rack.`); return; }
+      else S.equipped.push(id);
+    } else {
+      if (!salvageArmed[id] || Date.now() - salvageArmed[id] > 3000) { salvageArmed[id] = Date.now(); btn.textContent = 'Click again to salvage'; return; }
+      S.horns.splice(S.horns.indexOf(h), 1);
+      const i = S.equipped.indexOf(id); if (i >= 0) S.equipped.splice(i, 1);
+      S.ivory += RARITY[h.r].ivory;
+    }
+    refreshAll(); hornsDirty = true; updateUI();
+  });
+
+  // =====================================================================
+  // tabs
+  // =====================================================================
+  const TABDEF = {
+    cave:    { world: 'cave', open: () => true },
+    wonders: { world: 'cave', open: () => shardsOn() },
+    strata:  { world: 'cave', open: () => S.depth >= 1 || S.fossilsTotal > 0 },
+    glow:    { world: 'cave', open: () => S.strata.nest > 0 },
+    sea:     { world: 'sea',  open: () => true },
+    pearls:  { world: 'sea',  open: () => pearlsOn() },
+    deep:    { world: 'sea',  open: () => S.sea.soundings >= 1 || S.sea.fathomsTotal > 0 },
+    choir:   { world: 'sea',  open: () => true },
+    horns:   { world: 'both', open: () => S.hornsOn },
+  };
+  const TABS = Object.keys(TABDEF);
+  const tabVisible = t => (TABDEF[t].world === 'both' || TABDEF[t].world === S.world) && TABDEF[t].open();
+  function setTab(name) {
+    if (!tabVisible(name)) name = S.world;
+    S.tab = name;
+    S.seen['tab_' + name] = 1;
+    for (const t of TABS) {
+      $('tab-' + t).setAttribute('aria-selected', String(t === name));
+      $('panel-' + t).hidden = t !== name;
+    }
+    if (name === 'horns') hornsDirty = true;
+  }
+  for (const t of TABS) $('tab-' + t).addEventListener('click', () => { setTab(t); updateUI(); });
+
+  // =====================================================================
+  // worlds
+  // =====================================================================
+  function setWorld(w) {
+    if (w === S.world || cinematic) return;
+    if (w === 'sea' && !S.sea.unlocked) return;
+    S.world = w; S.tab = w;
+    drag = null;
+    afterStateChange();
+    whisper(w === 'sea' ? 'Down to the sunless sea. Up above, the cave keeps singing quietly.' : 'Back up to the cave. Below, the sea keeps rolling quietly.');
+  }
+  $('wCave').addEventListener('click', () => setWorld('cave'));
+  $('wSea').addEventListener('click', () => setWorld('sea'));
+
+  // =====================================================================
+  // prestige: descend, sound, kindle
+  // =====================================================================
+  let descArmed = 0, resetArmed = 0;
+  $('descBtn').addEventListener('click', () => {
+    const ready = S.world === 'sea' ? fathomGain() > 0 : fossilGain() > 0;
+    if (!ready) return;
+    if (Date.now() - descArmed > 3000) { descArmed = Date.now(); $('descBtn').textContent = S.world === 'sea' ? 'Click again to sound' : 'Click again to descend'; return; }
+    descArmed = 0;
+    if (S.world === 'sea') sound(); else descend();
+  });
+  $('resetBtn').addEventListener('click', () => {
+    if (Date.now() - resetArmed > 3000) { resetArmed = Date.now(); $('resetBtn').textContent = 'Click again to forget'; return; }
+    resetArmed = 0;
+    const muted = S.muted, fx = S.fx;
+    S = fresh(); S.muted = muted; S.fx = fx; S.lore.prologue = 1;
+    try { localStorage.removeItem(KEY); } catch (_) {}
+    refreshAll();
+    afterStateChange();
+    $('hint').hidden = false;
+    hornsDirty = true;
+    whisper('The cave forgets you. Shout again.');
+  });
+
+  function descend() {
+    const got = fossilGain();
+    if (got <= 0) return;
+    const carry = S.illum.carry;
+    const oldWonders = S.wonders.map(o => ({ k: o.k, x: o.x, y: o.y, charge: 0 })), oldWB = S.wBought;
+    const keep = {
+      depth: S.depth + 1, fossils: S.fossils + got, fossilsTotal: S.fossilsTotal + got, strata: S.strata,
+      lumen: S.lumen, lumenTotal: S.lumenTotal, illum: S.illum, toggles: S.toggles, idleRate: S.idleRate, lumenIdle: S.lumenIdle,
+    };
+    Object.assign(S, freshCave(), keep);
+    if (carry) { S.wonders = oldWonders; S.wBought = oldWB; }
+    S.stats.maxDepth = Math.max(S.stats.maxDepth, S.depth);
+    S.lv.lungs = 2 * S.strata.lungs;
+    S.lv.drips = S.depth + 2 * S.strata.water;
+    for (const k of Object.keys(S.seen)) if (k.startsWith('u_') || k === 'canDescend') delete S.seen[k];
+    refreshAll();
+    afterStateChange();
+    for (let i = 0; i < S.strata.seed; i++) {
+      const spot = randomSpot(TIERS[1].r * SC);
+      if (!spot) break;
+      const c = { t: 1, x: 0, y: 0 }; setObjPx(c, spot.x, spot.y);
+      S.crystals.push(c);
+    }
+    let msg = `Depth ${S.depth}. You carry ${got} fossil${got > 1 ? 's' : ''} down. The cave now sings in ${MODES[S.depth % MODES.length].name.toLowerCase()}.`;
+    if (!S.hornsOn || Math.random() < 0.4) { const h = gainHorn(0); msg += ' ' + hornMsg(h); }
+    whisper(msg);
+    save();
+  }
+
+  function sound() {
+    const q = S.sea, got = fathomGain();
+    if (got <= 0) return;
+    const keep = {
+      unlocked: true, soundings: q.soundings + 1, fathoms: q.fathoms + got, fathomsTotal: q.fathomsTotal + got,
+      deep: q.deep, choir: q.choir, total: q.total, idleRate: q.idleRate, throws: q.throws,
+    };
+    S.sea = Object.assign(freshSea(), keep);
+    S.sea.lv.rain = S.sea.soundings + 2 * S.sea.deep.rain;
+    S.sea.lv.light = S.sea.deep.light ? 1 : 0;
+    for (const k of Object.keys(S.seen)) if (k.startsWith('v_') || k === 'canSound') delete S.seen[k];
+    refreshAll();
+    afterStateChange();
+    const h = gainHorn(0);
+    whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}`);
+    save();
+  }
+
+  // ---------- the Heartstone: press and hold ----------
+  let holding = false, holdT = 0;
+  const heartBtn = $('heartBtn');
+  const startHold = () => { if (S.lumen >= heartCost() && !cinematic) { initAudio(); holding = true; } };
+  const stopHold = () => { holding = false; };
+  heartBtn.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
+  heartBtn.addEventListener('pointerup', stopHold);
+  heartBtn.addEventListener('pointerleave', stopHold);
+  heartBtn.addEventListener('pointercancel', stopHold);
+  heartBtn.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); startHold(); } });
+  heartBtn.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') stopHold(); });
+  heartBtn.addEventListener('contextmenu', e => e.preventDefault());
+
+  function kindle() {
+    if (S.lumen < heartCost() || cinematic) return;
+    cinematic = true;
+    for (const c of S.crystals) { c.ring = 1; spawn(c.px, c.py, 10, 1, false, null, 0, c.r + 2); }
+    chordSound();
+    whisper('The Heartstone wakes. Every crystal sings at once, and then the floor gives way.');
+    $('veil').classList.add('on');
+    setTimeout(() => {
+      const keep = {
+        total: S.total, world: 'sea', hearts: S.hearts + 1,
+        horns: S.horns, equipped: S.equipped, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
+        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, shouts: S.shouts, tab: 'sea',
+        lore: S.lore, feats: S.feats, stats: S.stats,
+      };
+      keep.sea.unlocked = true;
+      S = Object.assign(fresh(), keep);
+      for (const k of Object.keys(S.seen)) if (k.startsWith('u_') || k === 'canDescend') delete S.seen[k];
+      const h = gainHorn(2);
+      refreshAll();
+      afterStateChange();
+      waterSound();
+      save();
+      const wake = () => {
+        $('veil').classList.remove('on');
+        cinematic = false;
+        whisper(`Heartstone ${S.hearts}. All hum and tide are now ×${fmt(Math.pow(3, S.hearts))}. ${hornMsg(h)}`);
+        $('hint').hidden = S.sea.throws >= 3;
+      };
+      // The first kindling is told as a scene over the dark; later ones just wake you.
+      if (!S.lore.heart1) { S.lore.heart1 = 1; S.seen.chron = 0; setTimeout(() => playScene('heart1', wake), 300); }
+      else setTimeout(wake, 400);
+    }, 1900);
+  }
+
+  function syncVoices() { syncCaveVoices(); syncSeaVoices(); }
+  function afterStateChange() {
+    buildShape(); refreshAll();
+    bats = []; dripTimers = []; rainTimers = []; fishTimers = [];
+    resize(); syncVoices();
+    rings.length = 0; floats.length = 0;
+    setTab(S.tab);
+    $('hint').textContent = S.world === 'sea' ? 'Click the water to skip a stone.' : 'Click the dark to shout.';
+    $('hint').hidden = S.world === 'sea' ? S.sea.throws >= 3 : S.shouts >= 3;
+    cv.setAttribute('aria-label', S.world === 'sea'
+      ? 'The sunless sea. Click or tap to skip a stone; drag bells to move or fuse them.'
+      : 'The cave. Click or tap to shout; drag crystals to move or fuse them.');
+    updateUI();
+  }
+
+  // =====================================================================
+  // STORY: the Chronicle, cutscenes, feats
+  // =====================================================================
+  const CHAPTERS = ['The Long Quiet', 'The Floor of the World', 'The Lamplighters', 'The Heartstone', 'The Sunless Sea', 'The Undersong'];
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+  // Each page unlocks when `when` turns true. Pages with cards play as a cutscene the first time.
+  const LORE = [
+    { id: 'prologue', ch: 0, title: 'Hollowmere', when: () => true, cards: [
+      ['Hollowmere', 'There was a town called Hollowmere, built into the side of a singing mountain. Its people cut crystal by day and sang to it by night, because crystal that has been sung to keeps the song.'],
+      ['The Long Quiet', 'One winter the mountain closed its mouth. No rockfall, no thunder. It simply swallowed the town, the way a held breath swallows a word. Nobody heard it happen. That was the worst part.'],
+      ['The Listener', 'You were in the deepest gallery, listening for flaws in the stone. You are still there. It is dark, and you have one thing left: your voice.'],
+      ['', 'Shout. See what answers.'],
+    ] },
+    { id: 'quartz', ch: 0, title: 'What the Quartz Remembers', when: () => S.bought[0] > 0 || S.stats.maxDepth > 0 || S.hearts > 0,
+      text: 'Hold a piece of Hollowmere quartz to your ear and you will hear a street: carts, a dog, someone laughing at the well. The crystals down here are not stones. They are the town, remembering itself one note at a time.' },
+    { id: 'fuse', ch: 0, title: 'Two Voices, One Stone', when: () => S.stats.fuses > 0,
+      text: 'The old cutters had a saying: two songs sung together are older than either. Press twin crystals together and they do not break. They agree.' },
+    { id: 'descend1', ch: 1, title: 'The Floor Gives Way', when: () => S.stats.maxDepth >= 1, cards: [
+      ['The floor gives', 'The gallery floor was never a floor. It was a lid. Under it lies a second cave, older, its walls ribbed with bone.'],
+      ['Fossils', 'Not animal bones. Singers’. Hollowmere was not the first town the mountain kept. Their ribs still hold the shape of the last breath they took, and the stone around them remembers every note.'],
+      ['Deeper', 'Every floor you break is an older choir, and every one makes your voice carry further. Keep going down.'],
+    ] },
+    { id: 'shard', ch: 1, title: 'Why Stones Crack', when: () => S.stats.shards > 0,
+      text: 'A crystal can only hold so much singing before it has to let some go. What falls away is sharp and bright and still humming. The foundry masters called these shards overflow, and built their strangest instruments from them.' },
+    { id: 'depth3', ch: 1, title: 'The Choirs Below', when: () => S.stats.maxDepth >= 3,
+      text: 'On the third floor down there are rows of stone benches facing nothing, and a conductor’s rail worn smooth by hands. Someone led a choir here while the mountain closed over them. They did not stop.' },
+    { id: 'horn', ch: 1, title: 'Herders’ Horns', when: () => S.stats.hornsFound > 0,
+      text: 'Above the town, herders called their goats off the cliffs with horns carved from the animals themselves. The horns are turning up down here now, one at a time, as if something were handing them back. Each still carries the call it was made for.' },
+    { id: 'nest', ch: 2, title: 'The Lamplighters', when: () => S.strata.nest > 0, cards: [
+      ['Lights in the ceiling', 'Hollowmere kept lamplighters, children mostly, who walked the galleries at dusk. When the mountain closed, the lamplighters were in the high tunnels.'],
+      ['Glowworms', 'They are small now, and patient, and they hang from the ceiling on threads of light. They drink the echoes you make. It is the only warmth left down here, and they turn it into lumen.'],
+      ['A trade', 'Every echo they eat is hum you will not ring. But lumen does not fade when you descend. They are saving it for something.'],
+    ] },
+    { id: 'heartseen', ch: 2, title: 'A Beat in the Stone', when: () => S.lumenTotal >= 1e4 || S.hearts > 0,
+      text: 'Past a certain depth you can feel it through your feet: a slow pulse, very far below. The lamplighters’ light bends toward it. Lumen, it turns out, is fuel.' },
+    { id: 'heart1', ch: 3, title: 'Kindling the Heartstone', when: () => S.hearts >= 1, cards: [
+      ['The Heartstone', 'At the root of the mountain sits a stone the size of a house, and it is warm. For a hundred years it has held one chord: the last one Hollowmere sang before the Quiet.'],
+      ['Kindling', 'You pour the lumen in. The chord breaks loose. Every crystal in every cave rings it back at once, and the mountain, for the first time in a century, opens its mouth.'],
+      ['Water', 'It is not air that rushes in. It is the sea, the one that has been lying under the town all along. When the ringing stops you are standing on a black shore.'],
+    ] },
+    { id: 'heart2', ch: 3, title: 'Again, the Fire', when: () => S.hearts >= 2,
+      text: 'You climb back to the caves and find they have healed shut, as caves do. But you remember the chord now. Kindling it a second time is easier to decide and harder to do.' },
+    { id: 'heart3', ch: 3, title: 'What the Mountain Wants', when: () => S.hearts >= 3,
+      text: 'After the third kindling you understand. The mountain did not swallow Hollowmere out of spite. It was cold and it was lonely, and a town full of singers is warm. Every Heartstone you light gives a little of that warmth back.' },
+    { id: 'sea', ch: 4, title: 'The Sunless Sea', when: () => S.sea.unlocked && S.world === 'sea',
+      text: 'Lower Hollowmere drowned long before the Quiet: the foundry quarter, where they cast the bells. The bells are still here, floating on their buoys, waiting to be struck. Stone will not carry your voice across water, so you skip stones instead.' },
+    { id: 'cross', ch: 4, title: 'Crossing Songs', when: () => S.stats.crossings > 0,
+      text: 'Foundry apprentices were taught to strike two bells so that their notes met in the air. Where they met, the sound doubled. The sea still remembers the lesson.' },
+    { id: 'pearl', ch: 4, title: 'Foundry Pearls', when: () => S.stats.pearls > 0,
+      text: 'The oysters grew on slag from the bell furnaces. Their pearls come out warm, and each one hums a single low note.' },
+    { id: 'sound1', ch: 4, title: 'The Drowned Tower', when: () => S.sea.soundings >= 1, cards: [
+      ['Sounding', 'You drop a plumb line off the shore. It keeps going. Far down it knocks against something that rings: the bell tower of Hollowmere, standing on the sea floor, still upright.'],
+      ['Fathoms', 'Every fathom of line you haul back up is wet with an older song. The deeper you sound, the more of it you bring up.'],
+    ] },
+    { id: 'undersong', ch: 5, title: 'The Undersong', when: () => S.sea.soundings >= 3,
+      text: 'Below the tower the line goes slack, as if it had reached open air. Then it pulls back, gently, three times, like someone on the other end is testing it. Something under the sea is singing, and it has noticed you.' },
+    { id: 'listener', ch: 5, title: 'The Listener’s Name', when: () => Object.keys(S.feats).length >= 12,
+      text: 'On one of the stone benches in the old choir you find a name cut among the others. It is yours. You do not remember sitting there. Perhaps everyone who listens long enough ends up singing.' },
+  ];
+  const LORE_BY_ID = Object.fromEntries(LORE.map(l => [l.id, l]));
+
+  const FEATS = [
+    { id: 'shout', name: 'First Word', desc: 'Shout into the dark.', check: () => S.shouts >= 1 },
+    { id: 'hoarse', name: 'Hoarse', desc: 'Shout or skip a stone 1,000 times.', check: () => S.shouts + S.sea.throws >= 1000 },
+    { id: 'hum3', name: 'Murmur', desc: 'Sing 1K hum, all told.', check: () => S.total >= 1e3 },
+    { id: 'hum6', name: 'Chorus', desc: 'Sing 1M hum, all told.', check: () => S.total >= 1e6 },
+    { id: 'hum9', name: 'Cathedral', desc: 'Sing 1B hum, all told.', check: () => S.total >= 1e9 },
+    { id: 'hum12', name: 'Mountain Song', desc: 'Sing 1T hum, all told.', check: () => S.total >= 1e12 },
+    { id: 'fuse', name: 'Two Become One', desc: 'Fuse two crystals or bells.', check: () => S.stats.fuses >= 1 },
+    { id: 'moon', name: 'Moonlit', desc: 'Own a moonstone.', check: () => S.crystals.some(c => c.t === 3) },
+    { id: 'full', name: 'Crowded Dark', desc: 'Fill every crystal slot in a cave.', check: () => S.crystals.length >= maxCrystals() },
+    { id: 'chord8', name: 'Eightfold', desc: 'Ring 8 crystals in the same breath.', check: () => S.stats.maxChord >= 8 },
+    { id: 'depth1', name: 'Breaking Ground', desc: 'Descend for the first time.', check: () => S.stats.maxDepth >= 1 },
+    { id: 'depth5', name: 'Deeper Still', desc: 'Reach depth 5.', check: () => S.stats.maxDepth >= 5 },
+    { id: 'depth10', name: 'The Bottomless', desc: 'Reach depth 10.', check: () => S.stats.maxDepth >= 10 },
+    { id: 'shard', name: 'Cracked Open', desc: 'Make a crystal shed shards.', check: () => S.stats.shards > 0 },
+    { id: 'boom', name: 'Thunder Below', desc: 'Make a gong boom.', check: () => S.stats.booms >= 1 },
+    { id: 'prisms', name: 'Split Light', desc: 'Place 4 prisms in one cave.', check: () => S.wonders.filter(o => o.k === 'prism').length >= 4 },
+    { id: 'lumen3', name: 'Kindling', desc: 'Gather 1K lumen in one cave.', check: () => S.lumenTotal >= 1e3 },
+    { id: 'lumen6', name: 'Lantern Bearer', desc: 'Gather 1M lumen in one cave.', check: () => S.lumenTotal >= 1e6 },
+    { id: 'hands', name: 'Many Hands', desc: 'Own all three automations at once.', check: () => !!(S.illum.autofuse && S.illum.autobuy && S.illum.autodescend) },
+    { id: 'heart1', name: 'Heartfire', desc: 'Kindle a Heartstone.', check: () => S.hearts >= 1 },
+    { id: 'heart3', name: 'Thrice Kindled', desc: 'Kindle three Heartstones.', check: () => S.hearts >= 3 },
+    { id: 'cross', name: 'Crossing', desc: 'Ring a bell with crossing ripples.', check: () => S.stats.crossings >= 1 },
+    { id: 'cross1k', name: 'Tidecaller', desc: 'Ring 1,000 crossings.', check: () => S.stats.crossings >= 1000 },
+    { id: 'pearl', name: 'Pale Moon', desc: 'Open an oyster.', check: () => S.stats.pearls > 0 },
+    { id: 'abyss', name: 'Abyssal', desc: 'Own an abyssal bell.', check: () => S.sea.bells.some(b => b.bt === 3) },
+    { id: 'sound1', name: 'Plumb Line', desc: 'Sound the depths.', check: () => S.sea.soundings >= 1 },
+    { id: 'sound5', name: 'Fathomless', desc: 'Reach sounding 5.', check: () => S.sea.soundings >= 5 },
+    { id: 'tide9', name: 'Spring Tide', desc: 'Ring 1B tide, all told.', check: () => S.sea.total >= 1e9 },
+    { id: 'horn', name: 'Horned', desc: 'Find a horn.', check: () => S.stats.hornsFound >= 1 },
+    { id: 'legend', name: 'Gilded', desc: 'Find a legendary horn.', check: () => S.stats.bestHorn >= 3 },
+    { id: 'mythic', name: 'Worldsong', desc: 'Find a mythic horn.', check: () => S.stats.bestHorn >= 4 },
+    { id: 'rack', name: 'Full Rack', desc: 'Wear three horns at once.', check: () => S.equipped.length >= 3 },
+    { id: 'dream', name: 'Dreamer', desc: 'Come back after an hour away to find the world still singing.', check: () => S.stats.longAway >= 1 },
+  ];
+
+  // ---------- toasts ----------
+  function toast(kind, text, cls) {
+    const box = $('toasts');
+    while (box.children.length >= 3) box.removeChild(box.firstChild);
+    const t = document.createElement('div');
+    t.className = 'toast' + (cls ? ' ' + cls : '');
+    t.innerHTML = `<span class="k">${kind}</span><span>${text}</span>`;
+    box.appendChild(t);
+    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 4300);
+  }
+
+  // ---------- unlocking ----------
+  function checkStory(silent) {
+    const caught = { lore: 0, feats: 0 };
+    if (!silent && (cinematic || sceneOpen)) return caught;
+    let changed = false;
+    for (const f of FEATS) {
+      if (S.feats[f.id] || !f.check()) continue;
+      S.feats[f.id] = 1; caught.feats++; changed = true;
+      if (!silent) toast('Feat', `<b>${f.name}</b> · hum &amp; tide +2%`);
+    }
+    for (const l of LORE) {
+      if (S.lore[l.id] || !l.when()) continue;
+      S.lore[l.id] = 1; caught.lore++;
+      if (silent) continue;
+      if (l.cards) { playScene(l.id); break; }   // one cutscene at a time; anything after it waits for the next check
+      toast('Chronicle', `A new page: <b>${l.title}</b>`, 'lore');
+    }
+    if (caught.lore || caught.feats) S.seen.chron = 0;
+    if (changed) refreshAll();
+    if (chronOpen) renderChronicle();
+    return caught;
+  }
+
+  // ---------- cutscenes ----------
+  let sceneOpen = false, sceneCards = [], sceneIdx = 0, sceneDone = null, sceneId = '';
+  const sceneEl = $('scene');
+  function playScene(id, onDone) {
+    const l = LORE_BY_ID[id];
+    if (!l || !l.cards) { if (onDone) onDone(); return; }
+    sceneOpen = true; sceneCards = l.cards; sceneIdx = 0; sceneDone = onDone || null; sceneId = id;
+    $('sceneEyebrow').textContent = `Chapter ${ROMAN[l.ch]} · ${CHAPTERS[l.ch]}`;
+    $('sceneDots').innerHTML = '<i></i>'.repeat(sceneCards.length);
+    sceneEl.hidden = false;
+    drag = null; holding = false;
+    showCard();
+    if (audible()) tone(110, 0.05, 4, 1.5, 0.3);
+  }
+  function showCard() {
+    const [title, text] = sceneCards[sceneIdx];
+    $('sceneTitle').textContent = title;
+    $('sceneTitle').hidden = !title;
+    $('sceneText').textContent = text;
+    const card = $('sceneCard');
+    card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+    const dots = $('sceneDots').children;
+    for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i === sceneIdx);
+    const last = sceneIdx === sceneCards.length - 1;
+    $('sceneNext').textContent = last ? (sceneId === 'prologue' ? 'Begin' : 'Close') : 'Continue';
+    $('sceneSkip').hidden = last;
+    $('sceneNext').focus();
+  }
+  function nextCard() {
+    if (!sceneOpen) return;
+    if (sceneIdx < sceneCards.length - 1) { sceneIdx++; showCard(); if (audible()) tone(165, 0.03, 2.5, 2, 0.2); }
+    else endScene();
+  }
+  function endScene() {
+    if (!sceneOpen) return;
+    sceneOpen = false; sceneEl.hidden = true;
+    const cb = sceneDone; sceneDone = null;
+    if (cb) cb();
+  }
+  sceneEl.addEventListener('click', e => { initAudio(); if (e.target.closest('#sceneSkip')) return; nextCard(); });
+  $('sceneSkip').addEventListener('click', e => { e.stopPropagation(); endScene(); });
+  window.addEventListener('keydown', e => {
+    if (sceneOpen) {
+      if (e.key === 'Escape') { e.preventDefault(); endScene(); }
+      else if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); nextCard(); }
+      return;
+    }
+    if (chronOpen && e.key === 'Escape') closeChronicle();
+  });
+
+  // ---------- the Chronicle ----------
+  let chronOpen = false;
+  function openChronicle() {
+    chronOpen = true; S.seen.chron = 1;
+    $('chron').hidden = false;
+    renderChronicle();
+    $('chronClose').focus();
+  }
+  function closeChronicle() { chronOpen = false; $('chron').hidden = true; $('chronBtn').focus(); }
+  function setChronTab(t) {
+    $('ctab-story').setAttribute('aria-selected', String(t === 'story'));
+    $('ctab-feats').setAttribute('aria-selected', String(t === 'feats'));
+    $('chronStory').hidden = t !== 'story';
+    $('chronFeats').hidden = t !== 'feats';
+  }
+  function renderChronicle() {
+    const got = Object.keys(S.feats).length, pages = LORE.filter(l => S.lore[l.id]).length;
+    $('chronSub').textContent = `${pages} of ${LORE.length} pages · ${got} of ${FEATS.length} feats (hum & tide ×${fmtX(featMult())})`;
+    let html = '';
+    CHAPTERS.forEach((name, ch) => {
+      const entries = LORE.filter(l => l.ch === ch);
+      // Hide chapters the story hasn't reached yet, but show the next one as a row of empty pages.
+      const reached = entries.some(l => S.lore[l.id]) || LORE.some(l => l.ch === ch - 1 && S.lore[l.id]);
+      if (!reached) return;
+      html += `<div class="chapter"><div class="chapter-name">Chapter ${ROMAN[ch]} · ${name}</div>`;
+      for (const l of entries) {
+        if (!S.lore[l.id]) { html += '<div class="page locked"><p>A page not yet found.</p></div>'; continue; }
+        const paras = l.cards ? l.cards.map(c => c[1]) : [l.text];
+        html += `<div class="page"><h3>${l.title}</h3>${paras.map(t => `<p>${t}</p>`).join('')}${l.cards ? `<button type="button" data-replay="${l.id}">Replay scene</button>` : ''}</div>`;
+      }
+      html += '</div>';
+    });
+    $('chronStory').innerHTML = html;
+    $('featGrid').innerHTML = FEATS.map(f => `<div class="feat${S.feats[f.id] ? ' got' : ''}"><b>${S.feats[f.id] ? f.name : 'Unfound feat'}</b><span>${f.desc}</span></div>`).join('');
+  }
+  $('chronBtn').addEventListener('click', () => { initAudio(); chronOpen ? closeChronicle() : openChronicle(); });
+  $('chronClose').addEventListener('click', closeChronicle);
+  $('chron').addEventListener('click', e => { if (e.target === $('chron')) closeChronicle(); });
+  $('ctab-story').addEventListener('click', () => setChronTab('story'));
+  $('ctab-feats').addEventListener('click', () => setChronTab('feats'));
+  $('chronStory').addEventListener('click', e => {
+    const b = e.target.closest('button[data-replay]');
+    if (!b) return;
+    closeChronicle();
+    playScene(b.dataset.replay);
+  });
+
+  // =====================================================================
+  // HUD
+  // =====================================================================
+  const chordDots = $('chord').querySelector('.dots');
+  chordDots.innerHTML = '<i></i>'.repeat(8);
+  // Cached DOM writes: the ledger refreshes ~8x a second but only touches what changed.
+  function setT(id, v) { const e = $(id); v = String(v); if (e._t !== v) { e._t = v; e.textContent = v; } }
+  function setH(id, v) { const e = $(id); if (e._h !== v) { e._h = v; e.innerHTML = v; } }
+  function setHid(id, v) { const e = $(id); v = !!v; if (e.hidden !== v) e.hidden = v; }
+  function updateUI() {
+    const sea = S.world === 'sea', q = S.sea;
+    setT('tagline', sea ? 'A sea that pays you in ripples.' : 'A cave that pays you in echoes.');
+    $('purse').classList.toggle('sea', sea);
+    setT('humVal', fmt(sea ? q.tide : S.hum));
+    setT('humUnit', sea ? 'tide' : 'hum');
+    setT('rateVal', fmt(sea ? q.rate || 0 : S.rate || 0));
+    setT('rateUnit', sea ? 'tide/s' : 'hum/s');
+    setT('echoVal', sea ? ripples.length : P.length);
+    setT('echoUnit', sea ? 'ripples spreading' : 'echoes ringing');
+    setT('crystalCount', `${S.crystals.length} / ${maxCrystals()}`);
+    setT('bellCount', `${q.bells.length} / ${bellCap()}`);
+    setH('depthChip', sea
+      ? `<b>Sounding ${q.soundings}</b><span>${MODES[(q.soundings + 1) % MODES.length].name}</span>${SK.tm > 1.001 ? `<span class="mono">×${fmt(SK.tm)}</span>` : ''}`
+      : `<b>Depth ${S.depth}</b><span>${MODES[S.depth % MODES.length].name}</span>${K.dm > 1.001 ? `<span class="mono">×${fmt(K.dm)}</span>` : ''}`);
+    setT('lifetime', q.unlocked ? `${fmt(S.total)} hum · ${fmt(q.total)} tide, all told` : `${fmt(S.total)} hum sung, all told`);
+    setHid('worlds', !q.unlocked);
+    $('wCave').setAttribute('aria-pressed', String(!sea));
+    $('wSea').setAttribute('aria-pressed', String(sea));
+    setT('fxBtn', `Effects: ${S.fx === 'auto' ? (lite ? 'Auto · calm' : 'Auto') : S.fx === 'full' ? 'Full' : 'Calm'}`);
+
+    setHid('pillShard', sea || !shardsOn()); setT('shardVal', fmt(S.shards));
+    setHid('pillFossil', sea || !(S.depth >= 1 || S.fossilsTotal > 0)); setT('fossilVal', fmt(S.fossils));
+    setHid('pillLumen', sea || !S.strata.nest); setT('lumenVal', fmt(S.lumen));
+    setT('lumenRate', lumenRate > 0 ? `+${fmt(lumenRate)}/s` : '');
+    setHid('pillPearl', !sea || !pearlsOn()); setT('pearlVal', fmt(q.pearls));
+    setHid('pillFathom', !sea || !(q.soundings >= 1 || q.fathomsTotal > 0)); setT('fathomVal', fmt(q.fathoms));
+    setHid('pillIvory', !S.hornsOn); setT('ivoryVal', fmt(S.ivory));
+    setHid('pillHeart', !S.hearts); setT('heartVal', S.hearts);
+    setHid('chronDot', !!S.seen.chron);
+
+    let others = 0;
+    for (const t of TABS) {
+      const vis = tabVisible(t);
+      $('tab-' + t).hidden = !vis;
+      if (vis && t !== S.world) others++;
+      const dot = $('tab-' + t).querySelector('.new');
+      if (dot) dot.hidden = !vis || !!S.seen['tab_' + t];
+    }
+    setHid('tabs', others === 0);
+    if (!tabVisible(S.tab)) setTab(S.world);
+
+    for (const it of shopEls) it.update();
+
+    // chord meter (cave)
+    const chord = $('chord');
+    chord.hidden = sea || S.lv.harmony === 0;
+    if (!chord.hidden) {
+      const on = Math.min(8, chordNow);
+      [...chordDots.children].forEach((d, i) => d.classList.toggle('on', i < on));
+      setT('chordMult', '×' + (1 + 0.2 * S.lv.harmony * Math.max(0, Math.min(chordNow - 1, 10))).toFixed(1));
+    }
+
+    // heartstone
+    const showHeart = !sea && (S.lumenTotal >= 1e4 || S.hearts > 0);
+    setHid('heartBox', !showHeart);
+    if (showHeart) {
+      once('heartSeen');
+      const cost = heartCost(), can = S.lumen >= cost;
+      setT('heartCount', S.hearts ? `${S.hearts} kindled` : '');
+      setH('heartText', `Costs <b>${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns and the sea. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens a second world.'}`);
+      heartBtn.classList.toggle('poor', !can);
+      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : 'Not enough lumen');
+    }
+
+    // choir
+    setH('choirInfo', `The cave above sings <b>${fmt(S.idleRate || 0)} hum/s</b> on its own, lifting all tide <b>×${fmtX(choirBonus())}</b>. Whichever world you aren't in keeps earning <b>${pct(quietEff())}</b> of its idle rate. Choir upgrades are never lost.`);
+
+    // horns
+    setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
+    setT('hornCount', `${S.horns.length} / ${HORN_CAP}`);
+    setT('hornTimer', S.hornsOn ? `Next horn turns up in ${mmss(Math.max(0, S.hornTimer))}.` : '');
+    if (hornsDirty && S.tab === 'horns') renderHorns();
+
+    // prestige panel
+    let need, prog, got;
+    if (sea) {
+      need = soundAt(); prog = Math.min(1, q.run / need); got = fathomGain();
+      setT('descTitle', 'Sound the depths');
+      setH('descText', prog < 1
+        ? `Ring <b>${fmt(need)}</b> tide in this sea to sound deeper. You lose its bells, voices, oysters and pearls, but gain <b class="fat">fathoms</b> for the Deep, tide ×2 per sounding, and a horn.`
+        : `Sound now for <b class="fat">${got} fathom${got > 1 ? 's' : ''}</b> and a horn, or keep ringing: fathoms grow with the square root of everything you ring here.`);
+      if (prog >= 1) once('canSound');
+    } else {
+      need = deepenAt(); prog = Math.min(1, S.run / need); got = fossilGain();
+      setT('descTitle', 'Descend');
+      setH('descText', prog < 1
+        ? `Sing <b>${fmt(need)}</b> hum in this cave to break through the floor. You lose its crystals, voices and shards, but carry down <b class="fos">fossils</b> for Strata, hum ×2 per depth, and maybe a horn.`
+        : `Descend now for <b class="fos">${got} fossil${got > 1 ? 's' : ''}</b>, or keep singing: fossils grow with the square root of everything you sing here.`);
+      if (prog >= 1) once('canDescend');
+    }
+    $('descBar').style.width = (prog * 100).toFixed(1) + '%';
+    setT('descPct', Math.floor(prog * 100) + '%');
+    const btn = $('descBtn');
+    btn.classList.toggle('poor', prog < 1);
+    if (!descArmed || Date.now() - descArmed > 3000) {
+      descArmed = 0;
+      const unit = sea ? 'fathom' : 'fossil';
+      btn.textContent = prog < 1 ? (sea ? 'Sound the depths' : 'Descend') : `${sea ? 'Sound' : 'Descend'} · +${got} ${unit}${got > 1 ? 's' : ''}`;
+    }
+    if (!resetArmed || Date.now() - resetArmed > 3000) { resetArmed = 0; if ($('resetBtn').textContent !== 'Forget everything') $('resetBtn').textContent = 'Forget everything'; }
+  }
+
+  // =====================================================================
+  // persistence
+  // =====================================================================
+  function serialize() {
+    const q = S.sea;
+    return {
+      ...S,
+      crystals: S.crystals.map(c => ({ t: c.t, x: c.x, y: c.y, strain: c.strain || 0 })),
+      wonders: S.wonders.map(o => ({ k: o.k, x: o.x, y: o.y, charge: o.charge || 0 })),
+      sea: {
+        ...q,
+        bells: q.bells.map(b => ({ bt: b.bt, x: b.x, y: b.y })),
+        oysters: q.oysters.map(o => ({ oy: 1, x: o.x, y: o.y, wash: o.wash || 0 })),
+        objs: q.objs.map(o => ({ pk: o.pk, x: o.x, y: o.y })),
+      },
+      saved: Date.now(),
+    };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(serialize())); } catch (_) {} }
+  function mergeObj(def, got) { return Object.assign(def, got && typeof got === 'object' ? got : {}); }
+  function fixArr(a) { const r = Array.isArray(a) ? a.slice(0, 4) : []; while (r.length < 4) r.push(0); return r; }
+  function load(data) {
+    let d = data && typeof data.hum === 'number' ? data : null;
+    if (!d) { try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { d = null; } }
+    if (!d || typeof d.hum !== 'number') return null;
+    const f = fresh();
+    S = Object.assign(f, d);
+    for (const k of ['lv', 'strata', 'illum', 'toggles', 'wBought', 'hornUp']) S[k] = mergeObj(fresh()[k], d[k]);
+    S.bought = fixArr(d.bought); S.attune = fixArr(d.attune);
+    S.seen = d.seen || {};
+    S.lore = d.lore && typeof d.lore === 'object' ? d.lore : {};
+    S.feats = d.feats && typeof d.feats === 'object' ? d.feats : {};
+    S.stats = mergeObj(freshStats(), d.stats);
+    // Saves from before the Chronicle: rebuild what the stats can tell us.
+    S.stats.maxDepth = Math.max(S.stats.maxDepth, S.depth || 0);
+    if (Array.isArray(d.horns)) {
+      S.stats.hornsFound = Math.max(S.stats.hornsFound, d.horns.length);
+      for (const h of d.horns) if (h && RARITY[h.r]) S.stats.bestHorn = Math.max(S.stats.bestHorn, h.r);
+    }    if (!Array.isArray(S.crystals) || !S.crystals.length) S.crystals = fresh().crystals;
+    S.wonders = Array.isArray(S.wonders) ? S.wonders.filter(o => WONDERS[o.k]) : [];
+    S.horns = Array.isArray(S.horns) ? S.horns.filter(h => h && RARITY[h.r] && Array.isArray(h.lines)) : [];
+    S.equipped = Array.isArray(S.equipped) ? S.equipped.filter(id => S.horns.some(h => h.id === id)).slice(0, hornSlots()) : [];
+    const fs = freshSea(), ds = d.sea || {};
+    S.sea = Object.assign(fs, ds);
+    for (const k of ['lv', 'deep', 'choir', 'pBought']) S.sea[k] = mergeObj(freshSea()[k], ds[k]);
+    S.sea.bought = fixArr(ds.bought); S.sea.tune = fixArr(ds.tune);
+    if (!Array.isArray(S.sea.bells) || !S.sea.bells.length) S.sea.bells = freshSea().bells;
+    S.sea.oysters = Array.isArray(S.sea.oysters) ? S.sea.oysters : [];
+    S.sea.objs = Array.isArray(S.sea.objs) ? S.sea.objs.filter(o => PEARLOBJ[o.pk]) : [];
+    if (S.world !== 'sea' || !S.sea.unlocked) S.world = 'cave';
+    if (!TABS.includes(S.tab)) S.tab = S.world;
+    if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
+    return Math.min((Date.now() - (d.saved || Date.now())) / 1000, 8 * 3600);
+  }
+  function grantAway(seconds) {
+    if (seconds < 20) return;
+    if (seconds >= 3600) S.stats.longAway++;
+    const eff = offlineEff(), qe = quietEff(), q = S.sea, sea = S.world === 'sea';
+    const h = S.idleRate * seconds * eff * (sea ? qe : 1);
+    const l = sea ? 0 : S.lumenIdle * seconds * eff;
+    const t = q.unlocked ? q.idleRate * seconds * eff * (sea ? 1 : qe) : 0;
+    if (!(h > 0 || l > 0 || t > 0)) return;
+    S.hum += h; S.run += h; S.total += h;
+    S.lumen += l; S.lumenTotal += l;
+    q.tide += t; q.run += t; q.total += t;
+    const bits = [];
+    if (h > 0) bits.push(`${fmt(h)} hum`);
+    if (l > 0) bits.push(`${fmt(l)} lumen`);
+    if (t > 0) bits.push(`${fmt(t)} tide`);
+    const mins = Math.round(seconds / 60);
+    whisper(`While you were away${mins >= 1 ? ` (${mins} min)` : ''}, the world sang ${bits.join(', ')} on its own.`);
+  }
+
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); save(); }
+    else if (hiddenAt) { grantAway(Math.min((Date.now() - hiddenAt) / 1000, 8 * 3600)); hiddenAt = 0; last = performance.now(); }
+  });
+  window.addEventListener('pagehide', save);
+
+  // =====================================================================
+  // loop
+  // =====================================================================
+  let last = performance.now(), secT = 0, uiT = 0, saveT = 0, liteT = 0, storyT = 0;
+  function fxLimits() { return S.fx === 'full' ? { p: MAX_P, r: MAX_R } : S.fx === 'calm' ? { p: 450, r: 80 } : { p: 1000, r: 160 }; }
+  // Watches how long each frame's work takes and trims the echo/ripple budgets before the game can stutter.
+  function govern() {
+    const lim = fxLimits();
+    if (frameMs > 10) { capP = Math.max(150, capP * 0.8); capR = Math.max(40, capR * 0.8); }
+    else if (frameMs < 5) { capP = Math.min(lim.p, capP * 1.08 + 5); capR = Math.min(lim.r, capR * 1.08 + 2); }
+    capP = Math.min(capP, lim.p); capR = Math.min(capR, lim.r);
+    // Anything over budget folds its voice into a survivor, so no hum is lost.
+    while (P.length > capP * 1.1) {
+      const p = P.pop();
+      if (P.length) { const q = P[(Math.random() * P.length) | 0]; q.w += (p.w * p.e) / Math.max(q.e, 0.15); }
+    }
+    while (ripples.length > capR * 1.1) {
+      const rp = ripples.pop();
+      if (ripples.length) { const q = ripples[(Math.random() * ripples.length) | 0]; q.w += (rp.w * rp.e) / Math.max(q.e, 0.2); }
+    }
+  }
+  function frame(now) {
+    const t0 = performance.now();
+    // A long frame no longer buys more physics steps; the world just runs a touch slower until it catches up.
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now; T += dt;
+    noteBudget = Math.min(8, noteBudget + dt * (lite ? 10 : 20));
+    if (W > 0) {
+      if (S.world === 'sea') {
+        stepSea(dt); updateSeaVoices(dt); updateSeaFx(dt); updateSharedFx(dt);
+        drawSea();
+      } else {
+        buildGrid();
+        const sub = Math.min(3, Math.max(1, Math.ceil((dt * V) / 5))), h = dt / sub;
+        for (let i = 0; i < sub; i++) stepParticles(h);
+        updateCaveVoices(dt); updateDrops(dt); updateCaveFx(dt); updateSharedFx(dt);
+        drawCave();
+      }
+    }
+    liteT += dt; if (liteT > 0.25) { liteT = 0; updateLite(); govern(); }
+    autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(); }
+    storyT += dt; if (storyT >= 0.5) { storyT = 0; checkStory(false); }
+    if (holding) {
+      holdT += dt;
+      if (holdT >= 3) { holding = false; holdT = 0; kindle(); }
+    } else holdT = Math.max(0, holdT - dt * 3);
+    const fill = (holdT / 3 * 100).toFixed(1) + '%';
+    if (heartFill.style.width !== fill) heartFill.style.width = fill;
+    if (S.hornsOn && !cinematic) {
+      S.hornTimer -= dt;
+      if (S.hornTimer <= 0) { S.hornTimer = hornInterval(); const h = gainHorn(0); whisper('A horn turns up. ' + hornMsg(h)); }
+    }
+    secT += dt;
+    if (secT >= 1) {
+      secT -= 1;
+      hist.push(secAcc); ihist.push(idleAcc); lhist.push(lumAcc); secAcc = idleAcc = lumAcc = 0;
+      if (hist.length > 5) hist.shift();
+      if (ihist.length > 12) ihist.shift();
+      if (lhist.length > 8) lhist.shift();
+      const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+      const q = S.sea;
+      if (S.world === 'sea') { q.rate = avg(hist); q.idleRate = avg(ihist); }
+      else { S.rate = avg(hist); S.idleRate = avg(ihist); lumenRate = avg(lhist); S.lumenIdle = lumenRate; }
+      // the other world sings quietly
+      if (q.unlocked && !cinematic) {
+        const qe = quietEff();
+        if (S.world === 'sea') { const g = (S.idleRate || 0) * qe; S.hum += g; S.run += g; S.total += g; }
+        else { const g = (q.idleRate || 0) * qe; q.tide += g; q.run += g; q.total += g; }
+      }
+      refreshSK(); // the choir bonus follows the cave's song
+    }
+    uiT += dt; if (uiT > 0.12) { uiT = 0; updateUI(); }
+    saveT += dt; if (saveT > 5) { saveT = 0; save(); }
+    frameMs = frameMs * 0.9 + (performance.now() - t0) * 0.1;
+    requestAnimationFrame(frame);
+  }
+  const heartFill = $('heartFill');
+
+  function world_reset_hist() { hist = []; ihist = []; lhist = []; }
+  $('wCave').addEventListener('click', world_reset_hist);
+  $('wSea').addEventListener('click', world_reset_hist);
+
+  function start(data) {
+    const away = load(data);
+    const returning = away != null;
+    refreshAll(); buildShop();
+    setMuted(S.muted);
+    new ResizeObserver(resize).observe($('stage'));
+    afterStateChange();
+    if (away != null) grantAway(away);
+    // Pages and feats earned before the Chronicle existed are remembered quietly, then the story begins.
+    const needPrologue = !S.lore.prologue;
+    const caught = checkStory(true);
+    if (needPrologue && caught.lore) caught.lore--;
+    updateUI();
+    window.claude?.hot?.snapshot?.(() => serialize());
+    requestAnimationFrame(t => { last = t; frame(t); });
+    if (needPrologue) {
+      S.seen.chron = 0;
+      playScene('prologue', () => {
+        if (returning && (caught.lore || caught.feats)) toast('Chronicle', `The Chronicle remembers ${caught.lore} page${caught.lore === 1 ? '' : 's'} and ${caught.feats} feat${caught.feats === 1 ? '' : 's'} from before.`, 'lore');
+      });
+    }
+  }
+  window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+
+</html>
