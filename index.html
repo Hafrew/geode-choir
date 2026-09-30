@@ -270,6 +270,16 @@
   .page.locked p { color: var(--muted); font-style: italic; }
   .page button { align-self: flex-start; font: inherit; font-size: 12px; color: var(--text); cursor: pointer; background: var(--slab-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 4px 10px; }
   .page button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+  .set-row .wide { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; }
+  .set-row textarea { width: 100%; min-height: 64px; resize: vertical; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; background: var(--slab); border: 1px solid var(--line-2); color: var(--text); font: 12px/1.4 var(--mono); }
+  .set-row textarea:focus-visible { outline: 2px solid var(--echo); outline-offset: 1px; }
+  .set-actions { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+  .set-msg { font-size: 12.5px; color: var(--muted); min-height: 1.2em; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 12.5px; color: var(--muted); }
+  .keys kbd { font: 600 11.5px var(--mono); padding: 1px 6px; border-radius: 5px; background: var(--slab); border: 1px solid var(--line-2); color: var(--text-2); justify-self: start; }
+  .statgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+  .stat { padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12.5px; color: var(--muted); }
+  .stat b { font-family: var(--mono); font-weight: 600; font-size: 13.5px; color: var(--text); font-variant-numeric: tabular-nums; }
   .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
   .feat { padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
   .feat b { font-weight: 600; font-size: 13.5px; }
@@ -278,7 +288,7 @@
   .feat.got b { color: var(--hum); }
   .feat:not(.got) { opacity: .6; }
 
-  .settings { display: flex; flex-direction: column; gap: 4px; }
+  .settings { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
   .set-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
   .set-row:last-child { border-bottom: 0; }
   .set-row b { font-weight: 600; font-size: 14px; }
@@ -508,6 +518,39 @@
         <p>Every crystal and bell is tuned by its height.</p>
       </div>
       <div class="set-row">
+        <b>Numbers</b>
+        <div class="worlds seg" role="group" aria-label="Numbers">
+          <button type="button" data-num-opt="short">Short</button><button type="button" data-num-opt="sci">Scientific</button>
+        </div>
+        <p>Short reads 1.2M. Scientific reads 1.2e6 from a million up.</p>
+      </div>
+      <div class="set-row">
+        <b>Save code</b>
+        <div class="wide">
+          <p style="margin:0;font-size:12.5px;color:var(--muted);line-height:1.45">Copy your whole save as a line of text to keep it safe or move it to another device. Paste one below to load it. Loading keeps a backup of what you had.</p>
+          <textarea id="saveBox" spellcheck="false" autocomplete="off" aria-label="Save code" placeholder="GC1:…"></textarea>
+          <div class="set-actions">
+            <button class="link" id="saveCopy" type="button">Copy save</button>
+            <button class="link" id="saveLoad" type="button">Load from box</button>
+            <button class="link" id="saveRestore" type="button" hidden>Restore backup</button>
+          </div>
+          <div class="set-msg" id="saveMsg" role="status"></div>
+        </div>
+      </div>
+      <div class="set-row">
+        <b>Shortcuts</b>
+        <div class="wide">
+          <div class="keys">
+            <kbd>Space</kbd><span>Shout, or throw a stone</span>
+            <kbd>1 – 9</kbd><span>Switch tabs</span>
+            <kbd>C</kbd><span>Open the Chronicle</span>
+            <kbd>M</kbd><span>Mute or unmute</span>
+            <kbd>?</kbd><span>Open Settings</span>
+            <kbd>Esc</kbd><span>Close a window</span>
+          </div>
+        </div>
+      </div>
+      <div class="set-row">
         <b>Version</b>
         <button class="link" id="newsBtn" type="button">What’s new</button>
         <p id="verNote"></p>
@@ -515,7 +558,7 @@
       <div class="set-row">
         <b>Forget everything</b>
         <button class="link" id="resetBtn" type="button">Forget everything</button>
-        <p>Wipes all progress, including horns, the Chronicle and feats. You'll be asked twice.</p>
+        <p>Wipes all progress, including horns, the Chronicle and feats. You'll be asked twice. A backup of your save is kept.</p>
       </div>
     </div>
   </div>
@@ -533,9 +576,25 @@
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" id="ctab-story" type="button" aria-selected="true">Story</button>
       <button class="tab" role="tab" id="ctab-feats" type="button" aria-selected="false">Feats</button>
+      <button class="tab" role="tab" id="ctab-stats" type="button" aria-selected="false">Stats</button>
     </nav>
     <div class="chron-body" id="chronStory"></div>
     <div class="chron-body" id="chronFeats" hidden><div class="feat-grid" id="featGrid"></div></div>
+    <div class="chron-body" id="chronStats" hidden><div class="statgrid" id="statGrid"></div></div>
+  </div>
+</div>
+
+<div class="modal" id="away" hidden role="dialog" aria-modal="true" aria-labelledby="awayTitle">
+  <div class="modal-box" style="width:min(420px,100%)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="awayTitle">Welcome back</div>
+        <div class="modal-sub" id="awaySub"></div>
+      </div>
+      <button class="link" id="awayClose" type="button">Close</button>
+    </div>
+    <div class="statgrid" id="awayRows" style="grid-template-columns:1fr"></div>
+    <div class="modal-sub" id="awayNote"></div>
   </div>
 </div>
 
@@ -558,9 +617,17 @@
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.2.0', date: '2026-09-30', head: 'The Safekeeping Update', items: [
+      'Save codes: copy your save as a line of text and load it back from Settings, on this device or another. A backup of your previous save is kept whenever you load one, reset, or update.',
+      'A Stats tab in the Chronicle: time played, shouts, skips, everything you have sung, and how many horns you hold of each rarity.',
+      'Keyboard shortcuts: Space shouts, 1 to 9 switch tabs, C opens the Chronicle, M mutes, ? opens Settings.',
+      'A Numbers setting: short (1.2M) or scientific (1.2e6).',
+      'A welcome-back card after a long time away, showing how long you were gone and what the world sang without you.',
+      'The first click on Descend or Sound now tells you what will be reset and what you keep.',
+    ] },
     { ver: '1.1.0', date: '2026-09-30', head: 'The Balance Update', items: [
       'Old Echoes, Lantern, Silk Threads and Deep Current now grow at full strength up to level 10, then at half strength. Level 15 Old Echoes is ×27.7 instead of ×51.2.',
       'Amethyst, Citrine and Moonstone crystals, and Bronze, Silver and Abyssal bells, are cheaper, so the upper tiers pay back sooner.',
@@ -686,10 +753,10 @@
     hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
     sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', saved: Date.now(), shouts: 0, tab: 'cave',
     lore: {}, feats: {}, stats: freshStats(),
-    ver: VERSION, seenVer: VERSION, refund: null,
+    ver: VERSION, seenVer: VERSION, refund: null, numfmt: 'short',
   });
   function freshStats() {
-    return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0 };
+    return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0 };
   }
   let S = fresh();
 
@@ -835,6 +902,7 @@
     if (!isFinite(n)) return '∞';
     if (n < 10) return (Math.floor(n * 10) / 10).toString();
     if (n < 1000) return Math.floor(n).toString();
+    if (S.numfmt === 'sci' && n >= 1e6) { const e = Math.floor(Math.log10(n)); return (n / Math.pow(10, e)).toFixed(2) + 'e' + e; }
     const u = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
     let i = -1;
     while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
@@ -2156,7 +2224,7 @@
   for (const b of segButtons('fx')) b.addEventListener('click', () => { setFx(b.dataset.fxOpt); save(); });
   for (const b of segButtons('snd')) b.addEventListener('click', () => { initAudio(); setMuted(b.dataset.sndOpt === 'off'); save(); });
   let setOpen = false;
-  function openSettings() { setOpen = true; $('settings').hidden = false; syncSeg('theme', S.theme); syncSeg('fx', S.fx); syncSeg('snd', S.muted ? 'off' : 'on'); $('setClose').focus(); }
+  function openSettings() { setOpen = true; $('settings').hidden = false; saveMsg(''); syncNum(); syncBackupBtn(); syncSeg('theme', S.theme); syncSeg('fx', S.fx); syncSeg('snd', S.muted ? 'off' : 'on'); $('setClose').focus(); }
   function closeSettings() { setOpen = false; $('settings').hidden = true; $('setBtn').focus(); }
   $('setBtn').addEventListener('click', () => { initAudio(); setOpen ? closeSettings() : openSettings(); });
   $('setClose').addEventListener('click', closeSettings);
@@ -2164,7 +2232,7 @@
   window.addEventListener('keydown', e => { if (setOpen && e.key === 'Escape') closeSettings(); });
 
   // ---------- what's new ----------
-  let newsOpen = false;
+  let newsOpen = false, awayOpen = false;
   function renderNews() {
     const cur = CHANGES[0];
     $('newsTitle').textContent = `${cur.ver}: ${cur.head}`;
@@ -2180,11 +2248,44 @@
     newsOpen = false; $('news').hidden = true;
     S.seenVer = VERSION; S.refund = null; save();
   }
-  function maybeShowNews() { if (cmpVer(S.seenVer, VERSION) < 0 && !newsOpen) setTimeout(openNews, 600); }
+  function maybeShowNews() { if (cmpVer(S.seenVer, VERSION) < 0 && !newsOpen && !awayOpen) setTimeout(() => { if (!awayOpen) openNews(); }, 600); }
   $('newsBtn').addEventListener('click', () => { closeSettings(); openNews(); });
   $('newsClose').addEventListener('click', closeNews);
   window.addEventListener('keydown', e => { if (newsOpen && e.key === 'Escape') closeNews(); });
   $('verNote').textContent = `Geode Choir ${VERSION}`;
+
+  // ---------- numbers, save codes ----------
+  function syncNum() { syncSeg('num', S.numfmt); }
+  document.querySelectorAll('[data-num-opt]').forEach(b => b.addEventListener('click', () => { S.numfmt = b.dataset.numOpt; syncNum(); updateUI(); }));
+  const saveMsg = t => { $('saveMsg').textContent = t; };
+  let loadArmed = 0, restoreArmed = 0;
+  function syncBackupBtn() {
+    const b = readBackup();
+    $('saveRestore').hidden = !b;
+    if (b) $('saveRestore').title = `Backup from ${new Date(b.at).toLocaleString()}`;
+  }
+  $('saveCopy').addEventListener('click', () => {
+    let code;
+    try { code = encodeSave(); } catch (_) { saveMsg('Could not make a code.'); return; }
+    const box = $('saveBox'); box.value = code; box.focus(); box.select();
+    const done = () => saveMsg('Copied. Keep it somewhere safe.');
+    const manual = () => saveMsg('Select the text above and copy it.');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, manual); else manual();
+  });
+  $('saveLoad').addEventListener('click', () => {
+    const d = decodeSave($('saveBox').value);
+    if (!d) { saveMsg('That is not a Geode Choir save code.'); loadArmed = 0; return; }
+    if (Date.now() - loadArmed > 4000) { loadArmed = Date.now(); saveMsg('This replaces your current save. Click again to load it. A backup is kept.'); return; }
+    loadArmed = 0;
+    if (!replaceSaveAndReload(d)) saveMsg('Could not write the save. Storage may be full or blocked.');
+  });
+  $('saveRestore').addEventListener('click', () => {
+    const b = readBackup(); if (!b) return;
+    if (Date.now() - restoreArmed > 4000) { restoreArmed = Date.now(); saveMsg(`Click again to swap back to the backup from ${new Date(b.at).toLocaleString()}. Your current save becomes the backup.`); return; }
+    restoreArmed = 0;
+    let d = null; try { d = JSON.parse(b.data); } catch (_) {}
+    if (!d || typeof d.hum !== 'number' || !replaceSaveAndReload(d)) saveMsg('That backup could not be restored.');
+  });
 
   // =====================================================================
   // shop
@@ -2635,15 +2736,22 @@
   $('descBtn').addEventListener('click', () => {
     const ready = S.world === 'sea' ? fathomGain() > 0 : fossilGain() > 0;
     if (!ready) return;
-    if (Date.now() - descArmed > 3000) { descArmed = Date.now(); $('descBtn').textContent = S.world === 'sea' ? 'Click again to sound' : 'Click again to descend'; return; }
+    if (Date.now() - descArmed > 3000) {
+      descArmed = Date.now(); $('descBtn').textContent = S.world === 'sea' ? 'Click again to sound' : 'Click again to descend';
+      whisper(S.world === 'sea'
+        ? 'Sounding resets your bells, tide, pearls and tide upgrades. You keep fathoms, the Deep and the Choir.'
+        : `Descending resets your crystals, hum, shards, attunement and hum upgrades${S.illum.carry ? '' : ', and your wonders'}. You keep fossils, strata, lumen and glow.`);
+      return;
+    }
     descArmed = 0;
     if (S.world === 'sea') sound(); else descend();
   });
   $('resetBtn').addEventListener('click', () => {
     if (Date.now() - resetArmed > 3000) { resetArmed = Date.now(); $('resetBtn').textContent = 'Click again to forget'; return; }
     resetArmed = 0;
-    const muted = S.muted, fx = S.fx, theme = S.theme;
-    S = fresh(); S.muted = muted; S.fx = fx; S.theme = theme; S.lore.prologue = 1;
+    const muted = S.muted, fx = S.fx, theme = S.theme, numfmt = S.numfmt;
+    save(); backupNow();
+    S = fresh(); S.muted = muted; S.fx = fx; S.theme = theme; S.numfmt = numfmt; S.lore.prologue = 1;
     try { localStorage.removeItem(KEY); } catch (_) {}
     refreshAll();
     afterStateChange();
@@ -2725,7 +2833,7 @@
       const keep = {
         total: S.total, world: 'sea', hearts: S.hearts + 1,
         horns: S.horns, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
-        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, shouts: S.shouts, tab: 'sea',
+        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, numfmt: S.numfmt, shouts: S.shouts, tab: 'sea',
         lore: S.lore, feats: S.feats, stats: S.stats,
       };
       keep.sea.unlocked = true;
@@ -2942,6 +3050,16 @@
       return;
     }
     if (chronOpen && e.key === 'Escape') closeChronicle();
+    if (awayOpen && e.key === 'Escape') closeAway();
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    const tg = e.target, tag = tg && tg.tagName;
+    if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
+    if (setOpen || newsOpen || chronOpen || awayOpen || cinematic) return;
+    if (e.key === ' ' && tag !== 'BUTTON') { e.preventDefault(); initAudio(); const q = randomInside(); tap(q.x, q.y, null); }
+    else if (e.key >= '1' && e.key <= '9') { const t = [...document.querySelectorAll('#tabs .tab:not([hidden])')][+e.key - 1]; if (t) t.click(); }
+    else if (e.key === 'c' || e.key === 'C') { initAudio(); openChronicle(); }
+    else if (e.key === 'm' || e.key === 'M') { initAudio(); setMuted(!S.muted); }
+    else if (e.key === '?') openSettings();
   });
 
   // ---------- the Chronicle ----------
@@ -2953,11 +3071,20 @@
     $('chronClose').focus();
   }
   function closeChronicle() { chronOpen = false; $('chron').hidden = true; $('chronBtn').focus(); }
+  function fmtDur(sec) {
+    sec = Math.max(0, Math.round(sec));
+    const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+    if (d) return `${d}d ${h}h`;
+    if (h) return `${h}h ${m}m`;
+    return m ? `${m}m` : `${sec}s`;
+  }
   function setChronTab(t) {
     $('ctab-story').setAttribute('aria-selected', String(t === 'story'));
     $('ctab-feats').setAttribute('aria-selected', String(t === 'feats'));
     $('chronStory').hidden = t !== 'story';
     $('chronFeats').hidden = t !== 'feats';
+    $('ctab-stats').setAttribute('aria-selected', String(t === 'stats'));
+    $('chronStats').hidden = t !== 'stats';
   }
   function renderChronicle() {
     const got = Object.keys(S.feats).length, pages = LORE.filter(l => S.lore[l.id]).length;
@@ -2977,6 +3104,19 @@
       html += '</div>';
     });
     $('chronStory').innerHTML = html;
+    const st = S.stats, held = RARITY.map((r, i) => S.horns.filter(h => h.r === i).length);
+    const rows = [
+      ['Time played', fmtDur(st.playSec || 0)],
+      ['Shouts', fmt(S.shouts)], ['Stones thrown', fmt(S.sea.throws)],
+      ['Hum sung, all told', fmt(S.total)], ['Tide rung, all told', fmt(S.sea.total)],
+      ['Deepest cave', st.maxDepth], ['Soundings', S.sea.soundings], ['Heartstones', S.hearts],
+      ['Crystals fused', fmt(st.fuses)], ['Biggest chord', st.maxChord], ['Gong booms', fmt(st.booms)],
+      ['Shards shed', fmt(st.shards)], ['Crossings rung', fmt(st.crossings)], ['Pearls opened', fmt(st.pearls)],
+      ['Horns found', fmt(st.hornsFound)], ['Horns held', S.horns.length],
+      ...RARITY.map((r, i) => [`${r.name} horns held`, held[i]]),
+      ['Feats', `${got} / ${FEATS.length}`], ['Pages', `${pages} / ${LORE.length}`],
+    ];
+    $('statGrid').innerHTML = rows.map(r => `<div class="stat"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
     $('featGrid').innerHTML = FEATS.map(f => `<div class="feat${S.feats[f.id] ? ' got' : ''}"><b>${S.feats[f.id] ? f.name : 'Unfound feat'}</b><span>${f.desc}</span></div>`).join('');
   }
   $('chronBtn').addEventListener('click', () => { initAudio(); chronOpen ? closeChronicle() : openChronicle(); });
@@ -2984,6 +3124,7 @@
   $('chron').addEventListener('click', e => { if (e.target === $('chron')) closeChronicle(); });
   $('ctab-story').addEventListener('click', () => setChronTab('story'));
   $('ctab-feats').addEventListener('click', () => setChronTab('feats'));
+  $('ctab-stats').addEventListener('click', () => setChronTab('stats'));
   $('chronStory').addEventListener('click', e => {
     const b = e.target.closest('button[data-replay]');
     if (!b) return;
@@ -3122,7 +3263,36 @@
       saved: Date.now(),
     };
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(serialize())); } catch (_) {} }
+  let noSave = false; // set while the page reloads into an imported save, so the old state doesn't overwrite it
+  function save() { if (noSave) return; try { localStorage.setItem(KEY, JSON.stringify(serialize())); } catch (_) {} }
+  // One backup slot: the save as it was before it was replaced (import, restore, forget, or a version update).
+  const BACKUP = KEY + '-backup';
+  function backupNow(raw) {
+    try {
+      const data = raw != null ? raw : localStorage.getItem(KEY);
+      if (data) localStorage.setItem(BACKUP, JSON.stringify({ at: Date.now(), data }));
+    } catch (_) {}
+  }
+  function readBackup() {
+    try { const b = JSON.parse(localStorage.getItem(BACKUP) || 'null'); return b && typeof b.data === 'string' ? b : null; } catch (_) { return null; }
+  }
+  function encodeSave() { return 'GC1:' + btoa(unescape(encodeURIComponent(JSON.stringify(serialize())))); }
+  function decodeSave(text) {
+    try {
+      const t = String(text).replace(/\s+/g, '');
+      if (!t.startsWith('GC1:')) return null;
+      const d = JSON.parse(decodeURIComponent(escape(atob(t.slice(4)))));
+      return d && typeof d === 'object' && typeof d.hum === 'number' ? d : null;
+    } catch (_) { return null; }
+  }
+  function replaceSaveAndReload(d) {
+    save(); backupNow();
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (_) { return false; }
+    noSave = true;
+    try { sessionStorage.setItem('gc-fresh-import', '1'); } catch (_) {}
+    location.reload();
+    return true;
+  }
   function mergeObj(def, got) { return Object.assign(def, got && typeof got === 'object' ? got : {}); }
   function fixArr(a) { const r = Array.isArray(a) ? a.slice(0, 4) : []; while (r.length < 4) r.push(0); return r; }
   // 1.1.0 soft-capped four multipliers and shrank Wide Cavern. Levels past the knee now give about half
@@ -3147,6 +3317,10 @@
     if (!d) { try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { d = null; } }
     if (!d || typeof d.hum !== 'number') return null;
     const from = d.ver || '1.0.0';
+    // A save loaded on purpose already made its own backup of what it replaced, so only back up on a real update.
+    let imported = false;
+    try { imported = sessionStorage.getItem('gc-fresh-import') === '1'; sessionStorage.removeItem('gc-fresh-import'); } catch (_) {}
+    if (!imported && cmpVer(from, VERSION) < 0) { try { backupNow(JSON.stringify(d)); } catch (_) {} }
     const refund = migrate(d, from);
     const f = fresh();
     S = Object.assign(f, d);
@@ -3180,6 +3354,7 @@
     if (!TABS.includes(S.tab)) S.tab = S.world;
     if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
     if (!['dark', 'light', 'system'].includes(S.theme)) S.theme = 'dark';
+    if (!['short', 'sci'].includes(S.numfmt)) S.numfmt = 'short';
     return Math.min((Date.now() - (d.saved || Date.now())) / 1000, AWAY_CAP);
   }
   function grantAway(seconds) {
@@ -3198,8 +3373,19 @@
     if (l > 0) bits.push(`${fmt(l)} lumen`);
     if (t > 0) bits.push(`${fmt(t)} tide`);
     const mins = Math.round(seconds / 60);
-    whisper(`While you were away${mins >= 1 ? ` (${mins} min)` : ''}, the world sang ${bits.join(', ')} on its own.`);
+    if (seconds >= 300 && !sceneOpen) {
+      awayOpen = true;
+      $('awaySub').textContent = `You were away for ${fmtDur(seconds)}.`;
+      $('awayRows').innerHTML = [['Hum', h], ['Lumen', l], ['Tide', t]].filter(r => r[1] > 0).map(r => `<div class="stat"><span>${r[0]}</span><b>+${fmt(r[1])}</b></div>`).join('');
+      $('awayNote').textContent = `The world kept singing at ${Math.round(eff * 100)}% of its idle rate${seconds >= AWAY_CAP - 1 ? `, for up to ${AWAY_CAP / 3600} hours` : ''}.`;
+      $('away').hidden = false; $('awayClose').focus();
+    } else {
+      whisper(`While you were away${mins >= 1 ? ` (${mins} min)` : ''}, the world sang ${bits.join(', ')} on its own.`);
+    }
   }
+  function closeAway() { awayOpen = false; $('away').hidden = true; maybeShowNews(); }
+  $('awayClose').addEventListener('click', closeAway);
+  $('away').addEventListener('click', e => { if (e.target === $('away')) closeAway(); });
 
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', () => {
@@ -3262,6 +3448,7 @@
     secT += dt;
     if (secT >= 1) {
       secT -= 1;
+      S.stats.playSec = (S.stats.playSec || 0) + 1;
       hist.push(secAcc); ihist.push(idleAcc); lhist.push(lumAcc); secAcc = idleAcc = lumAcc = 0;
       if (hist.length > 5) hist.shift();
       if (ihist.length > 12) ihist.shift();
