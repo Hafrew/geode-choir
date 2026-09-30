@@ -2,6 +2,21 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.2.0: The Safekeeping Update (2026-09-30)
+
+### Added
+- **Save codes.** Settings → Save code copies your whole save as one line of text (`GC1:…`) and loads it back, on this device or another. Loading asks for a second click.
+- **Backup slot.** The save as it was before it was replaced is kept whenever you load a code, restore, forget everything, or open the game after an update. Settings → Restore backup swaps it back (your current save becomes the backup).
+- **Stats tab** in the Chronicle: time played, shouts, stones thrown, hum and tide sung, deepest cave, soundings, Heartstones, fuses, biggest chord, booms, shards, crossings, pearls, horns found and held by rarity, feats and pages.
+- **Keyboard shortcuts:** Space shouts or throws a stone, 1–9 switch tabs, C opens the Chronicle, M mutes, ? opens Settings. Shortcuts are listed in Settings and are off while typing or while a window is open.
+- **Numbers setting:** short (1.2M) or scientific (1.2e6, from a million up).
+- **Welcome-back card** after 5 or more minutes away: how long, what was earned, and the away rate. Shorter absences still use the whisper. The What's new page waits until the card is closed.
+- **Descend and Sound warning.** The first click now says what resets and what you keep.
+
+### Notes
+- Time played counts from 1.2.0 for existing saves.
+- No balance numbers changed.
+
 ## 1.1.0: The Balance Update (2026-09-30)
 
 ### Balance
