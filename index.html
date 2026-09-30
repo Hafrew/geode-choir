@@ -508,6 +508,11 @@
         <p>Every crystal and bell is tuned by its height.</p>
       </div>
       <div class="set-row">
+        <b>Version</b>
+        <button class="link" id="newsBtn" type="button">What’s new</button>
+        <p id="verNote"></p>
+      </div>
+      <div class="set-row">
         <b>Forget everything</b>
         <button class="link" id="resetBtn" type="button">Forget everything</button>
         <p>Wipes all progress, including horns, the Chronicle and feats. You'll be asked twice.</p>
@@ -534,21 +539,57 @@
   </div>
 </div>
 
+<div class="modal" id="news" hidden role="dialog" aria-modal="true" aria-labelledby="newsTitle">
+  <div class="modal-box" style="width:min(560px,100%)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="newsTitle">What’s new</div>
+        <div class="modal-sub" id="newsSub"></div>
+      </div>
+      <button class="link" id="newsClose" type="button">Close</button>
+    </div>
+    <div class="chron-body" id="newsBody"></div>
+  </div>
+</div>
+
 <script>
 (() => {
   const $ = id => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
+  const VERSION = '1.1.0';
+  // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
+  const CHANGES = [
+    { ver: '1.1.0', date: '2026-09-30', head: 'The Balance Update', items: [
+      'Old Echoes, Lantern, Silk Threads and Deep Current now grow at full strength up to level 10, then at half strength. Level 15 Old Echoes is ×27.7 instead of ×51.2.',
+      'Amethyst, Citrine and Moonstone crystals, and Bronze, Silver and Abyssal bells, are cheaper, so the upper tiers pay back sooner.',
+      'Away earnings start at 35% of your idle rate (was 50%) and stop after 6 hours (was 8). Long Sleep horns still add up to +50%.',
+      'Mythic horns roll their multiplier from ×2.5 to ×4 (was up to ×5). Horns you already own keep theirs.',
+      'Horn luck: after 25 horns below Epic, the next one is at least Epic.',
+      'Wide Cavern makes room for 3 more crystals per level (was 4).',
+      'Late feats are worth +3% to hum and tide instead of +2%: Cathedral, Mountain Song, The Bottomless, Lantern Bearer, Thrice Kindled, Tidecaller, Fathomless, Spring Tide, Gilded and Worldsong.',
+      'New: this What\u2019s new page, a version line in Settings, and a version stamp on saves.',
+    ] },
+    { ver: '1.0.0', date: '2026-09-26', head: 'Geode Choir', items: [
+      'Two worlds: shout into the crystal cave and descend through older caves, then kindle the Heartstone and skip stones across the Sunless Sea.',
+      'Slower pacing, staged unlocks, the Heartstone gate, horns, the Chronicle and feats, light mode and settings.',
+    ] },
+  ];
+  const cmpVer = (a, b) => {
+    const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+    for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d < 0 ? -1 : 1; }
+    return 0;
+  };
 
   // =====================================================================
   // content
   // =====================================================================
   const TIERS = [
     { name: 'Quartz',    color: '#e3edf5', glow: '#bcdcff', value: 1,  base: 12,    g: 1.30, r: 11 },
-    { name: 'Amethyst',  color: '#b58cff', glow: '#b58cff', value: 3,  base: 150,   g: 1.30, r: 12.5 },
-    { name: 'Citrine',   color: '#ffc766', glow: '#ffbf5a', value: 9,  base: 2500,  g: 1.30, r: 14 },
-    { name: 'Moonstone', color: '#a4f2d6', glow: '#8ff2e6', value: 27, base: 40000, g: 1.30, r: 15.5 },
+    { name: 'Amethyst',  color: '#b58cff', glow: '#b58cff', value: 3,  base: 110,   g: 1.30, r: 12.5 },
+    { name: 'Citrine',   color: '#ffc766', glow: '#ffbf5a', value: 9,  base: 1500,  g: 1.30, r: 14 },
+    { name: 'Moonstone', color: '#a4f2d6', glow: '#8ff2e6', value: 27, base: 22000, g: 1.30, r: 15.5 },
   ];
   const WONDERS = {
     prism:     { name: 'Prism',     r: 13, base: 6,  g: 1.8, max: 4, desc: 'Splits echoes: one bounces back, a twin passes straight through.' },
@@ -557,9 +598,9 @@
   };
   const BELLS = [
     { name: 'Tin Bell',     color: '#bdb8b0', value: 1,  base: 15,    g: 1.30, r: 11 },
-    { name: 'Bronze Bell',  color: '#d0955a', value: 3,  base: 200,   g: 1.30, r: 12.5 },
-    { name: 'Silver Bell',  color: '#dfe6ee', value: 9,  base: 3500,  g: 1.30, r: 14 },
-    { name: 'Abyssal Bell', color: '#6fe3d0', value: 27, base: 60000, g: 1.30, r: 15.5 },
+    { name: 'Bronze Bell',  color: '#d0955a', value: 3,  base: 150,   g: 1.30, r: 12.5 },
+    { name: 'Silver Bell',  color: '#dfe6ee', value: 9,  base: 2000,  g: 1.30, r: 14 },
+    { name: 'Abyssal Bell', color: '#6fe3d0', value: 27, base: 30000, g: 1.30, r: 15.5 },
   ];
   const PEARLOBJ = {
     breakwater: { name: 'Breakwater', r: 12, base: 6,  g: 1.8, max: 4, desc: 'When a ripple reaches it, it sends out a ripple of its own.' },
@@ -580,7 +621,7 @@
     { name: 'Rare',      col: '#7fb8ff', p: 0.27, lines: 1, pct: [15, 40],   flatK: 2, ivory: 3 },
     { name: 'Epic',      col: '#b58cff', p: 0.10, lines: 2, pct: [40, 90],   flatK: 3, ivory: 10, mult: [1.2, 1.5], multP: 0.3 },
     { name: 'Legendary', col: '#ffcf86', p: 0.04, lines: 2, pct: [90, 200],  flatK: 4, ivory: 30, mult: [1.5, 2.5], multP: 0.5 },
-    { name: 'Mythic',    col: '#ff8fa3', p: 0.01, lines: 3, pct: [200, 400], flatK: 6, ivory: 100, mult: [2.5, 5], multP: 1 },
+    { name: 'Mythic',    col: '#ff8fa3', p: 0.01, lines: 3, pct: [200, 400], flatK: 6, ivory: 100, mult: [2.5, 4], multP: 1 },
   ];
   const HSTATS = {
     hum:     { label: 'Hum',               kind: 'scale', of: 'the Deep Choir' },
@@ -608,6 +649,7 @@
     ['Starborn', 'Worldsong', 'Unending', 'First'],
   ];
   const MAX_P = 1400, GONG_CAP = 25, MAX_R = 220, HORN_CAP = 30;
+  const PITY_AT = 25; // horns in a row below Epic before the next one is guaranteed Epic or better
   // Live budgets. The governor shrinks these when frames run slow; extra voices fold into the survivors.
   let capP = 900, capR = 160, frameMs = 6;
 
@@ -640,10 +682,11 @@
   });
   const fresh = () => ({
     ...freshCave(), total: 0, world: 'cave', hearts: 0,
-    horns: [], equipped: [], hornSeq: 0, hornBuys: 0, hornsOn: false, hornTimer: 360, ivory: 0,
+    horns: [], equipped: [], hornPity: 0, hornSeq: 0, hornBuys: 0, hornsOn: false, hornTimer: 360, ivory: 0,
     hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
     sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', saved: Date.now(), shouts: 0, tab: 'cave',
     lore: {}, feats: {}, stats: freshStats(),
+    ver: VERSION, seenVer: VERSION, refund: null,
   });
   function freshStats() {
     return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0 };
@@ -681,22 +724,26 @@
   }
   computeHB();
 
-  const featMult = () => 1 + 0.02 * Object.keys(S.feats).length;
+  // Multipliers that never cap grow at full strength up to a knee, then at half strength.
+  const KNEE = 10;
+  const softPow = (b, l) => Math.pow(b, Math.min(l, KNEE)) * Math.pow(1 + (b - 1) / 2, Math.max(0, l - KNEE));
+  const featMult = () => 1 + FEATS.reduce((a, f) => a + (S.feats[f.id] ? (f.w || 2) : 0), 0) / 100;
   const heartMult = () => Math.pow(3, S.hearts) * featMult();
   const priceK = () => 1 - HB.cost;
-  const offlineEff = () => Math.min(1, 0.5 + HB.offline);
+  const AWAY_CAP = 6 * 3600;
+  const offlineEff = () => Math.min(1, 0.35 + HB.offline);
   // cave
   const shoutN = l => 6 + 3 * l + HB.lungs;
   const retainAt = l => Math.min(0.95, 1 - 0.4 * Math.pow(0.88, l));
   const polishAt = l => Math.pow(1.4, l);
-  const humMult = () => Math.pow(1.6, S.depth) * Math.pow(1.3, S.strata.old) * Math.pow(1.3, S.illum.lantern) * heartMult() * HB.hum;
+  const humMult = () => Math.pow(1.6, S.depth) * softPow(1.3, S.strata.old) * softPow(1.3, S.illum.lantern) * heartMult() * HB.hum;
   const deepenAt = () => 2e4 * Math.pow(3.5, S.depth);
   const fossilGain = () => S.run < deepenAt() ? 0 :
     Math.floor((1 + 0.5 * S.depth) * 2 * Math.sqrt(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils);
-  const maxCrystals = () => 8 + S.lv.chisel + 4 * S.strata.wide;
+  const maxCrystals = () => 8 + S.lv.chisel + 3 * S.strata.wide;
   const crackAt = () => 40 * Math.pow(0.8, S.strata.fault);
   const shardsOn = () => S.depth >= 3;
-  const lumenMult = () => Math.pow(1.35, S.illum.silk) * Math.pow(1.25, S.depth) * Math.pow(2, S.hearts) * HB.lumen;
+  const lumenMult = () => softPow(1.35, S.illum.silk) * Math.pow(1.25, S.depth) * Math.pow(2, S.hearts) * HB.lumen;
   const crystalCost = t => Math.ceil(TIERS[t].base * Math.pow(TIERS[t].g, S.bought[t] || 0) * priceK());
   const wonderCost = k => Math.ceil(WONDERS[k].base * Math.pow(WONDERS[k].g, S.wBought[k] || 0));
   const attuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.attune[t]));
@@ -715,7 +762,7 @@
   const quietEff = () => 0.25 + 0.1 * S.sea.choir.listen;
   const choirK = () => 0.1 * (1 + S.sea.choir.open);
   const choirBonus = () => 1 + choirK() * Math.log10(1 + (S.idleRate || 0));
-  const tideMult = () => Math.pow(1.6, S.sea.soundings) * Math.pow(1.3, S.sea.deep.current) * heartMult() * HB.tide * choirBonus() * Math.pow(1.4, S.sea.lv.bronze);
+  const tideMult = () => Math.pow(1.6, S.sea.soundings) * softPow(1.3, S.sea.deep.current) * heartMult() * HB.tide * choirBonus() * Math.pow(1.4, S.sea.lv.bronze);
   const skipsN = l => 1 + l + HB.skips;
   const seaDecayAt = l => 0.3 * Math.pow(0.86, l);
   const openAt = () => 30 * Math.pow(0.8, S.sea.deep.beds);
@@ -2116,6 +2163,29 @@
   $('settings').addEventListener('click', e => { if (e.target === $('settings')) closeSettings(); });
   window.addEventListener('keydown', e => { if (setOpen && e.key === 'Escape') closeSettings(); });
 
+  // ---------- what's new ----------
+  let newsOpen = false;
+  function renderNews() {
+    const cur = CHANGES[0];
+    $('newsTitle').textContent = `${cur.ver}: ${cur.head}`;
+    $('newsSub').textContent = `Released ${cur.date}`;
+    const refund = S.refund && (S.refund.fossils || S.refund.lumen || S.refund.fathoms) ? S.refund : null;
+    const bits = refund ? [['fossil', refund.fossils], ['lumen', refund.lumen], ['fathom', refund.fathoms]].filter(b => b[1] > 0).map(b => `${fmt(b[1])} ${b[0]}${b[0] === 'lumen' || b[1] === 1 ? '' : 's'}`) : [];
+    $('newsBody').innerHTML =
+      (bits.length ? `<div class="page"><h3>A refund for the changes</h3><p>Levels past 10 in the four multipliers, and Wide Cavern levels, now give less than they did, so the cave paid you back ${bits.join(', ')}.</p></div>` : '') +
+      CHANGES.map((c, i) => `<div class="chapter"><div class="chapter-name">${i ? `${c.ver} · ${c.date}` : 'Changes in ' + c.ver}</div><div class="page"><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.55;color:var(--text-2)">${c.items.map(t => `<li>${t}</li>`).join('')}</ul></div></div>`).join('');
+  }
+  function openNews() { newsOpen = true; renderNews(); $('news').hidden = false; $('newsClose').focus(); }
+  function closeNews() {
+    newsOpen = false; $('news').hidden = true;
+    S.seenVer = VERSION; S.refund = null; save();
+  }
+  function maybeShowNews() { if (cmpVer(S.seenVer, VERSION) < 0 && !newsOpen) setTimeout(openNews, 600); }
+  $('newsBtn').addEventListener('click', () => { closeSettings(); openNews(); });
+  $('newsClose').addEventListener('click', closeNews);
+  window.addEventListener('keydown', e => { if (newsOpen && e.key === 'Escape') closeNews(); });
+  $('verNote').textContent = `Geode Choir ${VERSION}`;
+
   // =====================================================================
   // shop
   // =====================================================================
@@ -2278,11 +2348,11 @@
       parent: 'shopStrata', icon, unit: 'fossil', name, base, g, max, desc, show,
       get: () => S.strata[k], inc: () => { S.strata[k]++; }, ...extra,
     });
-    st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmtX(Math.pow(1.3, l))} → ×${fmtX(Math.pow(1.3, l + 1))}`);
+    st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmtX(softPow(1.3, l))} → ×${fmtX(softPow(1.3, l + 1))}`);
     st('lungs', 'Deep Lungs', ICONS.lungs(), 2, 1.7, 1e9, l => `Every descent starts with Lungs Lv ${2 * l} → ${2 * (l + 1)}`);
     st('water', 'Old Water', ICONS.drip(), 2, 1.7, 1e9, l => `Every descent starts with ${2 * l} → ${2 * (l + 1)} extra drips`);
     st('seed', 'Seed Crystals', ICONS.gem('#b58cff'), 4, 2, 6, l => `Every descent starts with ${l} → ${l + 1} amethyst already placed`);
-    st('wide', 'Wide Cavern', ICONS.widen(), 5, 2.4, 6, l => `Room for 4 more crystals (+${4 * l} → +${4 * (l + 1)})`);
+    st('wide', 'Wide Cavern', ICONS.widen(), 5, 2.4, 6, l => `Room for 3 more crystals (+${3 * l} → +${3 * (l + 1)})`);
     st('fault', 'Fault Lines', ICONS.crack(), 4, 2, 12, l => `Crystals crack after ${fmt(40 * Math.pow(0.8, l))} → ${fmt(40 * Math.pow(0.8, l + 1))} ringing, shedding shards sooner`);
     st('record', 'Fossil Record', ICONS.bone(), 6, 2.3, 1e9, l => `Fossils from each descent ×${fmt(Math.pow(1.25, l))} → ×${fmt(Math.pow(1.25, l + 1))}`);
     st('nest', 'Glowworm Nest', ICONS.worm(), 15, 1, 1,
@@ -2308,8 +2378,8 @@
       },
     });
     il('firefly', 'Firefly Hands', ICONS.firefly(), 4, 2, 15, l => l ? `Shouts somewhere random every ${Math.max(0.3, 3 * Math.pow(0.8, l - 1)).toFixed(1)}s → ${Math.max(0.3, 3 * Math.pow(0.8, l)).toFixed(1)}s` : 'Something shouts for you every 3s, even while you’re away.', { onBuy: () => once('firstFirefly') });
-    il('lantern', 'Lantern', ICONS.lantern(), 8, 2.3, 1e9, l => `All hum ×${fmtX(Math.pow(1.3, l))} → ×${fmtX(Math.pow(1.3, l + 1))}`);
-    il('silk', 'Silk Threads', ICONS.silk(), 12, 2.0, 1e9, l => `Glowworms make lumen ×${fmtX(Math.pow(1.35, l))} → ×${fmtX(Math.pow(1.35, l + 1))}`);
+    il('lantern', 'Lantern', ICONS.lantern(), 8, 2.3, 1e9, l => `All hum ×${fmtX(softPow(1.3, l))} → ×${fmtX(softPow(1.3, l + 1))}`);
+    il('silk', 'Silk Threads', ICONS.silk(), 12, 2.0, 1e9, l => `Glowworms make lumen ×${fmtX(softPow(1.35, l))} → ×${fmtX(softPow(1.35, l + 1))}`);
     toggle('autofuse', 'Patient Hands', ICONS.gear(), 12, 'Fuses twin crystals for you. Stays with you through every descent.', 'shopStrata', 'fossil');
     toggle('autobuy', 'Crystal Seeker', ICONS.gear(), 60, 'Buys the best crystal you can afford. Stays with you through every descent.', 'shopWonders', 'shard');
     il('carry', 'Carry Wonders', ICONS.chest(), 60, 1, 1, l => l ? 'Your wonders come with you when you descend.' : 'Wonders come down with you when you descend, instead of being lost.', { single: true });
@@ -2371,7 +2441,7 @@
       parent: 'shopDeep', icon, unit: 'fathom', name, base, g, max, desc,
       get: () => S.sea.deep[k], inc: () => { S.sea.deep[k]++; }, ...extra,
     });
-    dp('current', 'Deep Current', ICONS.layers('#9aa7ff'), 2, 1.9, 1e9, l => `All tide ×${fmtX(Math.pow(1.3, l))} → ×${fmtX(Math.pow(1.3, l + 1))}`);
+    dp('current', 'Deep Current', ICONS.layers('#9aa7ff'), 2, 1.9, 1e9, l => `All tide ×${fmtX(softPow(1.3, l))} → ×${fmtX(softPow(1.3, l + 1))}`);
     dp('rain', 'Old Rain', ICONS.drip('#9aa7ff'), 2, 1.7, 1e9, l => `Every sounding starts with ${2 * l} → ${2 * (l + 1)} extra rain`);
     dp('buoys', 'Long Moorings', ICONS.widen('#9aa7ff'), 5, 2.4, 6, l => `Room for 2 more bells (+${2 * l} → +${2 * (l + 1)})`);
     dp('beds', 'Pearl Beds', ICONS.oyster(), 4, 2, 12, l => `Oysters open after ${fmt(30 * Math.pow(0.8, l))} → ${fmt(30 * Math.pow(0.8, l + 1))} washing`);
@@ -2431,7 +2501,9 @@
   function gainHorn(minR) {
     let x = Math.random(), ri = 0;
     for (; ri < RARITY.length - 1; ri++) { if (x < RARITY[ri].p) break; x -= RARITY[ri].p; }
+    if ((S.hornPity || 0) >= PITY_AT) ri = Math.max(ri, 2);
     ri = Math.max(ri, minR || 0);
+    S.hornPity = ri >= 2 ? 0 : (S.hornPity || 0) + 1;
     const R = RARITY[ri];
     let n = R.lines + (Math.random() < S.hornUp.branch * 0.2 ? 1 : 0);
     n = Math.min(4, n);
@@ -2652,7 +2724,7 @@
     setTimeout(() => {
       const keep = {
         total: S.total, world: 'sea', hearts: S.hearts + 1,
-        horns: S.horns, equipped: S.equipped, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
+        horns: S.horns, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
         ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, shouts: S.shouts, tab: 'sea',
         lore: S.lore, feats: S.feats, stats: S.stats,
       };
@@ -2757,33 +2829,33 @@
     { id: 'hoarse', name: 'Hoarse', desc: 'Shout or skip a stone 1,000 times.', check: () => S.shouts + S.sea.throws >= 1000 },
     { id: 'hum3', name: 'Murmur', desc: 'Sing 1K hum, all told.', check: () => S.total >= 1e3 },
     { id: 'hum6', name: 'Chorus', desc: 'Sing 1M hum, all told.', check: () => S.total >= 1e6 },
-    { id: 'hum9', name: 'Cathedral', desc: 'Sing 1B hum, all told.', check: () => S.total >= 1e9 },
-    { id: 'hum12', name: 'Mountain Song', desc: 'Sing 1T hum, all told.', check: () => S.total >= 1e12 },
+    { id: 'hum9', name: 'Cathedral', desc: 'Sing 1B hum, all told.', w: 3, check: () => S.total >= 1e9 },
+    { id: 'hum12', name: 'Mountain Song', desc: 'Sing 1T hum, all told.', w: 3, check: () => S.total >= 1e12 },
     { id: 'fuse', name: 'Two Become One', desc: 'Fuse two crystals or bells.', check: () => S.stats.fuses >= 1 },
     { id: 'moon', name: 'Moonlit', desc: 'Own a moonstone.', check: () => S.crystals.some(c => c.t === 3) },
     { id: 'full', name: 'Crowded Dark', desc: 'Fill every crystal slot in a cave.', check: () => S.crystals.length >= maxCrystals() },
     { id: 'chord8', name: 'Eightfold', desc: 'Ring 8 crystals in the same breath.', check: () => S.stats.maxChord >= 8 },
     { id: 'depth1', name: 'Breaking Ground', desc: 'Descend for the first time.', check: () => S.stats.maxDepth >= 1 },
     { id: 'depth5', name: 'Deeper Still', desc: 'Reach depth 5.', check: () => S.stats.maxDepth >= 5 },
-    { id: 'depth10', name: 'The Bottomless', desc: 'Reach depth 10.', check: () => S.stats.maxDepth >= 10 },
+    { id: 'depth10', name: 'The Bottomless', desc: 'Reach depth 10.', w: 3, check: () => S.stats.maxDepth >= 10 },
     { id: 'shard', name: 'Cracked Open', desc: 'Make a crystal shed shards.', check: () => S.stats.shards > 0 },
     { id: 'boom', name: 'Thunder Below', desc: 'Make a gong boom.', check: () => S.stats.booms >= 1 },
     { id: 'prisms', name: 'Split Light', desc: 'Place 4 prisms in one cave.', check: () => S.wonders.filter(o => o.k === 'prism').length >= 4 },
     { id: 'lumen3', name: 'Kindling', desc: 'Gather 1K lumen in one cave.', check: () => S.lumenTotal >= 1e3 },
-    { id: 'lumen6', name: 'Lantern Bearer', desc: 'Gather 1M lumen in one cave.', check: () => S.lumenTotal >= 1e6 },
+    { id: 'lumen6', name: 'Lantern Bearer', desc: 'Gather 1M lumen in one cave.', w: 3, check: () => S.lumenTotal >= 1e6 },
     { id: 'hands', name: 'Many Hands', desc: 'Own all three automations at once.', check: () => !!(S.illum.autofuse && S.illum.autobuy && S.illum.autodescend) },
     { id: 'heart1', name: 'Heartfire', desc: 'Kindle a Heartstone.', check: () => S.hearts >= 1 },
-    { id: 'heart3', name: 'Thrice Kindled', desc: 'Kindle three Heartstones.', check: () => S.hearts >= 3 },
+    { id: 'heart3', name: 'Thrice Kindled', desc: 'Kindle three Heartstones.', w: 3, check: () => S.hearts >= 3 },
     { id: 'cross', name: 'Crossing', desc: 'Ring a bell with crossing ripples.', check: () => S.stats.crossings >= 1 },
-    { id: 'cross1k', name: 'Tidecaller', desc: 'Ring 1,000 crossings.', check: () => S.stats.crossings >= 1000 },
+    { id: 'cross1k', name: 'Tidecaller', desc: 'Ring 1,000 crossings.', w: 3, check: () => S.stats.crossings >= 1000 },
     { id: 'pearl', name: 'Pale Moon', desc: 'Open an oyster.', check: () => S.stats.pearls > 0 },
     { id: 'abyss', name: 'Abyssal', desc: 'Own an abyssal bell.', check: () => S.sea.bells.some(b => b.bt === 3) },
     { id: 'sound1', name: 'Plumb Line', desc: 'Sound the depths.', check: () => S.sea.soundings >= 1 },
-    { id: 'sound5', name: 'Fathomless', desc: 'Reach sounding 5.', check: () => S.sea.soundings >= 5 },
-    { id: 'tide9', name: 'Spring Tide', desc: 'Ring 1B tide, all told.', check: () => S.sea.total >= 1e9 },
+    { id: 'sound5', name: 'Fathomless', desc: 'Reach sounding 5.', w: 3, check: () => S.sea.soundings >= 5 },
+    { id: 'tide9', name: 'Spring Tide', desc: 'Ring 1B tide, all told.', w: 3, check: () => S.sea.total >= 1e9 },
     { id: 'horn', name: 'Horned', desc: 'Find a horn.', check: () => S.stats.hornsFound >= 1 },
-    { id: 'legend', name: 'Gilded', desc: 'Find a legendary horn.', check: () => S.stats.bestHorn >= 3 },
-    { id: 'mythic', name: 'Worldsong', desc: 'Find a mythic horn.', check: () => S.stats.bestHorn >= 4 },
+    { id: 'legend', name: 'Gilded', desc: 'Find a legendary horn.', w: 3, check: () => S.stats.bestHorn >= 3 },
+    { id: 'mythic', name: 'Worldsong', desc: 'Find a mythic horn.', w: 3, check: () => S.stats.bestHorn >= 4 },
     { id: 'rack', name: 'Full Rack', desc: 'Wear three horns at once.', check: () => S.equipped.length >= 3 },
     { id: 'dream', name: 'Dreamer', desc: 'Come back after an hour away to find the world still singing.', check: () => S.stats.longAway >= 1 },
   ];
@@ -3053,12 +3125,35 @@
   function save() { try { localStorage.setItem(KEY, JSON.stringify(serialize())); } catch (_) {} }
   function mergeObj(def, got) { return Object.assign(def, got && typeof got === 'object' ? got : {}); }
   function fixArr(a) { const r = Array.isArray(a) ? a.slice(0, 4) : []; while (r.length < 4) r.push(0); return r; }
+  // 1.1.0 soft-capped four multipliers and shrank Wide Cavern. Levels past the knee now give about half
+  // the bonus, and each Wide Cavern level gives 3 slots instead of 4, so hand back that share of what was spent.
+  function migrate(d, from) {
+    if (cmpVer(from, '1.1.0') >= 0) return null;
+    const spent = (base, g, from0, to) => { let t = 0; for (let i = from0; i < to; i++) t += Math.ceil(base * Math.pow(g, i)); return t; };
+    const lost = b => 1 - Math.log(1 + (b - 1) / 2) / Math.log(b);
+    const n = v => Math.max(0, Math.floor(+v || 0));
+    const st = d.strata || {}, il = d.illum || {}, sea = d.sea || {}, dp = sea.deep || {};
+    const fossils = Math.round(lost(1.3) * spent(2, 1.9, KNEE, n(st.old)) + 0.25 * spent(5, 2.4, 0, n(st.wide)));
+    const lumen = Math.round(lost(1.3) * spent(8, 2.3, KNEE, n(il.lantern)) + lost(1.35) * spent(12, 2, KNEE, n(il.silk)));
+    const fathoms = Math.round(lost(1.3) * spent(2, 1.9, KNEE, n(dp.current)));
+    if (!(fossils || lumen || fathoms)) return null;
+    d.fossils = n(d.fossils) + fossils;
+    d.lumen = (+d.lumen || 0) + lumen;
+    if (d.sea) d.sea.fathoms = n(d.sea.fathoms) + fathoms;
+    return { fossils, lumen, fathoms };
+  }
   function load(data) {
     let d = data && typeof data.hum === 'number' ? data : null;
     if (!d) { try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { d = null; } }
     if (!d || typeof d.hum !== 'number') return null;
+    const from = d.ver || '1.0.0';
+    const refund = migrate(d, from);
     const f = fresh();
     S = Object.assign(f, d);
+    S.ver = VERSION;
+    S.seenVer = d.seenVer || from;
+    S.refund = refund || d.refund || null;
+    S.hornPity = Math.max(0, +d.hornPity || 0);
     for (const k of ['lv', 'strata', 'illum', 'toggles', 'wBought', 'hornUp']) S[k] = mergeObj(fresh()[k], d[k]);
     S.bought = fixArr(d.bought); S.attune = fixArr(d.attune);
     S.seen = d.seen || {};
@@ -3085,7 +3180,7 @@
     if (!TABS.includes(S.tab)) S.tab = S.world;
     if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
     if (!['dark', 'light', 'system'].includes(S.theme)) S.theme = 'dark';
-    return Math.min((Date.now() - (d.saved || Date.now())) / 1000, 8 * 3600);
+    return Math.min((Date.now() - (d.saved || Date.now())) / 1000, AWAY_CAP);
   }
   function grantAway(seconds) {
     if (seconds < 20) return;
@@ -3109,7 +3204,7 @@
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { hiddenAt = Date.now(); save(); }
-    else if (hiddenAt) { grantAway(Math.min((Date.now() - hiddenAt) / 1000, 8 * 3600)); hiddenAt = 0; last = performance.now(); }
+    else if (hiddenAt) { grantAway(Math.min((Date.now() - hiddenAt) / 1000, AWAY_CAP)); hiddenAt = 0; last = performance.now(); }
   });
   window.addEventListener('pagehide', save);
 
@@ -3210,9 +3305,11 @@
     updateUI();
     window.claude?.hot?.snapshot?.(() => serialize());
     requestAnimationFrame(t => { last = t; frame(t); });
+    if (returning && !needPrologue) maybeShowNews();
     if (needPrologue) {
       S.seen.chron = 0;
       playScene('prologue', () => {
+        maybeShowNews();
         if (returning && (caught.lore || caught.feats)) toast('Chronicle', `The Chronicle remembers ${caught.lore} page${caught.lore === 1 ? '' : 's'} and ${caught.feats} feat${caught.feats === 1 ? '' : 's'} from before.`, 'lore');
       });
     }
