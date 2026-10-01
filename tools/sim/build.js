@@ -16,6 +16,12 @@ function build(outFile) {
   must(s, '  function updateUI() {', 'updateUI');
   s = s.replace('  function updateUI() {', '  function updateUI() {\n    if (window.__fast) return;');
 
+  // Fixed particle budget: the real game shrinks it when frames run slow, which would make runs depend on this machine.
+  must(s, '    if (frameMs > 10) {', 'govern shrink');
+  s = s.replace('    if (frameMs > 10) {', '    if (false) {');
+  must(s, '    else if (frameMs < 5) {', 'govern grow');
+  s = s.replace('    else if (frameMs < 5) {', '    else {');
+
   const anchor = '  window.claude?.hot?.ready ?';
   must(s, anchor, 'start anchor');
   const expose = `
