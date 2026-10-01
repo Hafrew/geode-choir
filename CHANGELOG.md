@@ -2,6 +2,14 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.3.1: Freeze Fix (2026-10-01)
+
+### Fixed
+- A freeze when one shout had more echoes than the particle budget while the cave was empty (possible late-game with a lot of Lungs, or on a slow device where the budget shrinks). The echoes now ring together, each one heavier, so no hum is lost.
+
+### Added
+- `tools/sim/`: a progression simulator that plays the real game with a bot to estimate time to the finale. It is development tooling and is not part of the game.
+
 ## 1.3.0: The Finale Update (2026-10-01)
 
 ### Added
