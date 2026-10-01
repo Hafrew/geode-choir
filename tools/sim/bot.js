@@ -110,7 +110,7 @@ module.exports = function installBot(cfg) {
     if (want !== S.world) sim.setWorld(want);
     if (S.world === 'cave') {
       if (sim.canKindle()) { bot.kindleNow = true; return; }
-      if (sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt()) { sim.descend(); bot.descents++; }
+      if (!cfg.noDescend && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt()) { sim.descend(); bot.descents++; }
     } else {
       if (sim.fathomGain() > 0 && S.sea.run >= cfg.k * sim.soundAt() && S.sea.soundings < cfg.maxSoundings) { sim.sound(); bot.soundings++; }
     }
@@ -130,8 +130,8 @@ module.exports = function installBot(cfg) {
     if (sim.sceneOpen) sim.endScene();
     if (sim.cinematic) return;
     S.toggles.autodescend = 0; S.toggles.autobuy = cfg.autobuy ? 1 : 0;
-    fuseAll(S);
-    buyLoop(S);
+    if (!cfg.noFuse) fuseAll(S);
+    if (!cfg.noBuy) buyLoop(S);
     if (Math.round(bot.t) % 30 === 0) manageHorns(S);
     progress(S);
     marks(S);
@@ -145,16 +145,16 @@ module.exports = function installBot(cfg) {
 
   bot.run = function (seconds) {
     if (!bot.started) { const first = window.__raf.shift(); first(0); sim.S.lore.prologue = 1; bot.started = true; }
-    const frames = Math.round(seconds * 20);
+    const step = cfg.stepMs || 50, frames = Math.round(seconds * 1000 / step), decideEvery = Math.round(500 / step);
     for (let i = 0; i < frames && !bot.done; i++) {
-      bot.now += 50; bot.t += 0.05; bot.frames++;
+      bot.now += step; bot.t += step / 1000; bot.frames++;
       const S = sim.S;
       if (!sim.cinematic && !sim.sceneOpen) {
-        bot.tapAcc += cfg.clicks * 0.05;
+        bot.tapAcc += cfg.clicks * step / 1000;
         while (bot.tapAcc >= 1) { bot.tapAcc -= 1; const q = sim.randomInside(); sim.tap(q.x, q.y, null); }
       }
       sim.frame(bot.now);
-      if (bot.frames % 10 === 0) { decide(); if (bot.kindleNow) { bot.kindleNow = false; sim.kindle(); return 'kindle'; } }
+      if (bot.frames % decideEvery === 0) { decide(); if (bot.kindleNow) { bot.kindleNow = false; sim.kindle(); return 'kindle'; } }
     }
     return bot.done ? 'done' : 'ok';
   };

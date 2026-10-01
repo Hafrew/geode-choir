@@ -8,6 +8,7 @@ const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i > 0 ?
 const cfg = {
   policy: arg('policy', 'smart'), clicks: +arg('clicks', 3), seaShare: +arg('sea', 0.25), k: +arg('k', 2),
   maxSoundings: +arg('maxSoundings', 6), autobuy: arg('autobuy', '0') === '1',
+  stepMs: +arg('step', 50), noBuy: arg('noBuy', '0') === '1', noFuse: arg('noFuse', '0') === '1', noDescend: arg('noDescend', '0') === '1',
 };
 const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
 
