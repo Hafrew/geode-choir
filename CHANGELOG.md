@@ -2,6 +2,23 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.3.0: The Finale Update (2026-10-01)
+
+### Added
+- **The Undersong.** From sounding 3 the Deep tab shows the final goal at the top: sound the depths 6 times, kindle 3 Heartstones, earn 20 feats, then make an offering of 25 fathoms.
+- **The finale scene** (five cards, with your own totals in the text) and a **credits card** with your stats. Answering does not end the run. The finale can be replayed from the Chronicle or from the Deep tab.
+- **Six new Chronicle pages** at depth 5, depth 10 and soundings 2, 4 and 6, plus a seventh chapter, "The Whole Song". Existing saves are credited quietly for pages they already qualify for.
+- **Feat: The Whole Song** (+3% hum and tide, like the other late feats). There are now 34 feats.
+- **Version history, always visible.** The version sits next to the title and opens the full history; Settings → Version history opens the same list. Every release is listed, the newest expanded. Opening the history does not mark an update as seen.
+- The Chronicle header and the Stats tab show that the Song is complete.
+
+### Fixed
+- The pop-up for +3% feats said +2%.
+
+### Notes
+- The finale gate (6 soundings, 3 Heartstones, 20 feats, 25 fathoms) is untested against real play. If it feels too easy or too hard it is four numbers to change.
+- No other balance changed, apart from the new feat's +3%.
+
 ## 1.2.0: The Safekeeping Update (2026-09-30)
 
 ### Added
