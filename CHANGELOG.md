@@ -2,6 +2,19 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.3.2: Pacing Pass (2026-10-01)
+
+### Changed
+- **Heartstones cost more lumen:** each costs 10× the previous (10M, 100M, 1B, 10B), was 5× (10M, 50M, 250M, 1.25B).
+- **Heartstones ask for a deeper cave:** depth 12 for the first, 16 for the second, 20 for the third, and so on (was 12 every time).
+- The first Heartstone's lumen cost and depth are unchanged.
+
+### Why
+The progression simulator (`tools/sim`) showed a bot acting every 2 seconds reaching the finale in about 4.5 to 6 game-hours, with lumen for the later Heartstones as the limiting step. The target is about 10 hours at that pace, and the slower 5-second pace should land in the 15 to 20 hour range.
+
+### Existing saves
+- Nothing is removed or refunded. A save partway to a Heartstone keeps its lumen and depth but may need more of either than before.
+
 ## 1.3.1: Freeze Fix (2026-10-01)
 
 ### Fixed

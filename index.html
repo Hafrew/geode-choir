@@ -655,9 +655,14 @@
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.3.1';
+  const VERSION = '1.3.2';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.3.2', date: '2026-10-01', head: 'Pacing Pass', items: [
+      'Heartstones are slower to earn. Each one now costs 10× the lumen of the one before (10M, 100M, 1B, and so on; it was 5×), and each asks for a deeper cave: depth 12, then 16, then 20.',
+      'This stretches the road to the Undersong. The first Heartstone is unchanged in cost and only slightly later in practice.',
+      'If you are partway to a Heartstone, you keep everything you have. You may just need more lumen or a deeper cave than before.',
+    ] },
     { ver: '1.3.1', date: '2026-10-01', head: 'Freeze Fix', items: [
       'Fixed a freeze: with a lot of Lungs, a single shout in a quiet cave could have more echoes than the cave is allowed to ring at once, which stopped the game. Those echoes now ring together, each one heavier, so no hum is lost.',
     ] },
@@ -863,7 +868,8 @@
   const crystalCost = t => Math.ceil(TIERS[t].base * Math.pow(TIERS[t].g, S.bought[t] || 0) * priceK());
   const wonderCost = k => Math.ceil(WONDERS[k].base * Math.pow(WONDERS[k].g, S.wBought[k] || 0));
   const attuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.attune[t]));
-  const heartCost = () => 1e7 * Math.pow(5, S.hearts);
+  const heartCost = () => 1e7 * Math.pow(10, S.hearts);
+  const heartDepth = () => 12 + 4 * S.hearts;   // each Heartstone asks for a deeper cave: 12, 16, 20, ...
   // sea
   const bellCap = () => 8 + S.sea.lv.line + 2 * S.sea.deep.buoys;
   const bellCost = t => Math.ceil(BELLS[t].base * Math.pow(BELLS[t].g, S.sea.bought[t] || 0) * priceK());
@@ -2869,8 +2875,7 @@
   // ---------- the Heartstone: press and hold ----------
   let holding = false, holdT = 0;
   const heartBtn = $('heartBtn');
-  const HEART_DEPTH = 12;
-  const canKindle = () => S.lumen >= heartCost() && S.depth >= HEART_DEPTH;
+  const canKindle = () => S.lumen >= heartCost() && S.depth >= heartDepth();
   const startHold = () => { if (canKindle() && !cinematic) { initAudio(); holding = true; } };
   const stopHold = () => { holding = false; };
   heartBtn.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
@@ -3339,9 +3344,9 @@
       const cost = heartCost(), can = canKindle();
       const tick = ok => ok ? '✓' : '·';
       setT('heartCount', S.hearts ? `${S.hearts} kindled` : '');
-      setH('heartText', `Needs <b>${tick(S.depth >= HEART_DEPTH)} depth ${HEART_DEPTH}</b> (you're at ${S.depth}) and <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
+      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}) and <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
       heartBtn.classList.toggle('poor', !can);
-      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < HEART_DEPTH ? `Reach depth ${HEART_DEPTH} first` : 'Not enough lumen');
+      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < heartDepth() ? `Reach depth ${heartDepth()} first` : 'Not enough lumen');
     }
 
     // choir
