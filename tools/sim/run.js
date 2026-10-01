@@ -43,7 +43,15 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
       status = 'ok';
     }
     t = await pg.evaluate(() => window.__bot.t);
-    if (Math.round(t) % 3600 < CH) process.stderr.write(`  game ${(t / 3600).toFixed(1)}h  wall ${((Date.now() - wall0) / 1000).toFixed(0)}s\n`);
+    if (Math.round(t) % 3600 < CH) {
+      process.stderr.write(`  game ${(t / 3600).toFixed(1)}h  wall ${((Date.now() - wall0) / 1000).toFixed(0)}s\n`);
+      if (arg('out', null)) {                                // hourly snapshot so long runs can be inspected while running
+        const snap = await pg.evaluate(() => { const b = window.__bot, S = window.__sim.S; return { marks: b.marks, log: b.log.slice(-6), gameSeconds: b.t,
+          final: { depth: S.depth, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length, fathoms: S.sea.fathoms, world: S.world, lumen: S.lumen, fossils: S.fossils, rate: S.rate, tideRate: S.sea.rate } }; });
+        fs.mkdirSync(path.dirname(arg('out', null)), { recursive: true });
+        fs.writeFileSync(arg('out', null).replace(/\.json$/, '.snap.json'), JSON.stringify(snap, null, 1));
+      }
+    }
   }
   const out = await pg.evaluate(() => {
     const b = window.__bot, S = window.__sim.S;
