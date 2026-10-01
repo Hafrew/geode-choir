@@ -280,6 +280,22 @@
   .statgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
   .stat { padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12.5px; color: var(--muted); }
   .stat b { font-family: var(--mono); font-weight: 600; font-size: 13.5px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .verlink { font: 500 12px var(--mono); letter-spacing: 0; vertical-align: middle; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--slab); border: 1px solid var(--line); color: var(--muted); cursor: pointer; }
+  .verlink:hover { color: var(--text); border-color: var(--line-2); }
+  .verlink:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+  .ver { border-radius: 10px; background: var(--slab); border: 1px solid var(--line); padding: 0; }
+  .ver + .ver { margin-top: 8px; }
+  .ver summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 14px; cursor: pointer; list-style: none; }
+  .ver summary::-webkit-details-marker { display: none; }
+  .ver summary::before { content: '▸'; color: var(--muted); font-size: 11px; transition: transform .15s; }
+  .ver[open] summary::before { transform: rotate(90deg); }
+  .ver summary:focus-visible { outline: 2px solid var(--echo); outline-offset: -2px; border-radius: 10px; }
+  .ver summary b { font-family: var(--mono); font-size: 13.5px; }
+  .ver summary span { font-family: var(--display); font-size: 17px; letter-spacing: .02em; }
+  .ver summary em { margin-left: auto; font-style: normal; font-size: 12px; color: var(--muted); }
+  .ver summary .now { font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--heart); font-family: var(--body); }
+  .ver ul { margin: 0; padding: 0 14px 12px 32px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
+  .statgrid .stat.done b { color: var(--heart); }
   .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
   .feat { padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
   .feat b { font-weight: 600; font-size: 13.5px; }
@@ -350,7 +366,7 @@
 
   <aside class="ledger">
     <header>
-      <h1>Geode Choir</h1>
+      <h1>Geode Choir <button class="verlink" id="verChip" type="button" title="Version history"></button></h1>
       <p class="tagline" id="tagline">A cave that pays you in echoes.</p>
       <div class="purse" id="purse"><span id="humVal">0</span><small id="humUnit">hum</small></div>
       <div class="rates"><b id="rateVal">0</b> <span id="rateUnit">hum/s</span> &nbsp;·&nbsp; <b id="echoVal">0</b> <span id="echoUnit">echoes ringing</span></div>
@@ -443,6 +459,12 @@
       </section>
     </div>
     <div class="panel" id="panel-deep" role="tabpanel" hidden>
+      <section id="songSec" hidden>
+        <h2>The Undersong</h2>
+        <p class="note" id="songNote"></p>
+        <div class="statgrid" id="songReqs" style="grid-template-columns:1fr"></div>
+        <button class="bigbtn poor" id="songBtn" type="button"></button>
+      </section>
       <section>
         <h2>The Deep</h2>
         <p class="note">Fathoms are earned by sounding the depths. Deep upgrades never reset.</p>
@@ -552,7 +574,7 @@
       </div>
       <div class="set-row">
         <b>Version</b>
-        <button class="link" id="newsBtn" type="button">What’s new</button>
+        <button class="link" id="newsBtn" type="button">Version history</button>
         <p id="verNote"></p>
       </div>
       <div class="set-row">
@@ -584,6 +606,22 @@
   </div>
 </div>
 
+<div class="modal" id="credits" hidden role="dialog" aria-modal="true" aria-labelledby="creditsTitle">
+  <div class="modal-box" style="width:min(460px,100%)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="creditsTitle">The Song is complete</div>
+        <div class="modal-sub" id="creditsSub"></div>
+      </div>
+      <button class="link" id="creditsClose" type="button">Keep singing</button>
+    </div>
+    <div class="chron-body">
+      <div class="page"><p id="creditsText"></p></div>
+      <div class="statgrid" id="creditsRows" style="grid-template-columns:1fr"></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="away" hidden role="dialog" aria-modal="true" aria-labelledby="awayTitle">
   <div class="modal-box" style="width:min(420px,100%)">
     <div class="modal-head">
@@ -602,7 +640,7 @@
   <div class="modal-box" style="width:min(560px,100%)">
     <div class="modal-head">
       <div>
-        <div class="modal-title" id="newsTitle">What’s new</div>
+        <div class="modal-title" id="newsTitle">Version history</div>
         <div class="modal-sub" id="newsSub"></div>
       </div>
       <button class="link" id="newsClose" type="button">Close</button>
@@ -617,9 +655,17 @@
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.2.0';
+  const VERSION = '1.3.0';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.3.0', date: '2026-10-01', head: 'The Finale Update', items: [
+      'The story has an ending. From sounding 3 the Deep tab shows the Undersong: three things to do (sound the depths 6 times, kindle 3 Heartstones, earn 20 feats) and a small offering of 25 fathoms to answer it.',
+      'Answering plays the finale, then a credits card with your own numbers. Nothing ends: you can keep playing, replay the finale from the Chronicle, and your Stats and Chronicle remember that the Song is complete.',
+      'Six new Chronicle pages along the way (depth 5, depth 10, soundings 2, 4 and 6) and a final chapter, so the story keeps pace with you.',
+      'New feat The Whole Song, worth +3% to hum and tide.',
+      'Version history you can always see: tap the version in the top bar, or Settings → Version history, to read every release.',
+      'Fixed: feats worth +3% now say so in their pop-up.',
+    ] },
     { ver: '1.2.0', date: '2026-09-30', head: 'The Safekeeping Update', items: [
       'Save codes: copy your save as a line of text and load it back from Settings, on this device or another. A backup of your previous save is kept whenever you load one, reset, or update.',
       'A Stats tab in the Chronicle: time played, shouts, skips, everything you have sung, and how many horns you hold of each rarity.',
@@ -753,7 +799,7 @@
     hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
     sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', saved: Date.now(), shouts: 0, tab: 'cave',
     lore: {}, feats: {}, stats: freshStats(),
-    ver: VERSION, seenVer: VERSION, refund: null, numfmt: 'short',
+    ver: VERSION, seenVer: VERSION, refund: null, numfmt: 'short', finale: 0,
   });
   function freshStats() {
     return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0 };
@@ -2233,23 +2279,29 @@
 
   // ---------- what's new ----------
   let newsOpen = false, awayOpen = false;
+  let newsMode = 'auto';
   function renderNews() {
-    const cur = CHANGES[0];
-    $('newsTitle').textContent = `${cur.ver}: ${cur.head}`;
-    $('newsSub').textContent = `Released ${cur.date}`;
-    const refund = S.refund && (S.refund.fossils || S.refund.lumen || S.refund.fathoms) ? S.refund : null;
+    const cur = CHANGES[0], hist = newsMode === 'history';
+    $('newsTitle').textContent = hist ? 'Version history' : `${cur.ver}: ${cur.head}`;
+    $('newsSub').textContent = hist ? `You are on ${VERSION}. Newest first.` : `Released ${cur.date}`;
+    const refund = !hist && S.refund && (S.refund.fossils || S.refund.lumen || S.refund.fathoms) ? S.refund : null;
     const bits = refund ? [['fossil', refund.fossils], ['lumen', refund.lumen], ['fathom', refund.fathoms]].filter(b => b[1] > 0).map(b => `${fmt(b[1])} ${b[0]}${b[0] === 'lumen' || b[1] === 1 ? '' : 's'}`) : [];
     $('newsBody').innerHTML =
       (bits.length ? `<div class="page"><h3>A refund for the changes</h3><p>Levels past 10 in the four multipliers, and Wide Cavern levels, now give less than they did, so the cave paid you back ${bits.join(', ')}.</p></div>` : '') +
-      CHANGES.map((c, i) => `<div class="chapter"><div class="chapter-name">${i ? `${c.ver} · ${c.date}` : 'Changes in ' + c.ver}</div><div class="page"><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.55;color:var(--text-2)">${c.items.map(t => `<li>${t}</li>`).join('')}</ul></div></div>`).join('');
+      '<div>' + CHANGES.map((c, i) => {
+        const open = i === 0 || (!hist && cmpVer(c.ver, S.seenVer) > 0);
+        return `<details class="ver"${open ? ' open' : ''}><summary><b>${c.ver}</b><span>${c.head}</span>${i === 0 ? '<span class="now">current</span>' : ''}<em>${c.date}</em></summary><ul>${c.items.map(t => `<li>${t}</li>`).join('')}</ul></details>`;
+      }).join('') + '</div>';
   }
-  function openNews() { newsOpen = true; renderNews(); $('news').hidden = false; $('newsClose').focus(); }
+  function openNews(mode) { newsMode = mode === 'history' ? 'history' : 'auto'; newsOpen = true; renderNews(); $('news').hidden = false; $('newsClose').focus(); }
   function closeNews() {
     newsOpen = false; $('news').hidden = true;
-    S.seenVer = VERSION; S.refund = null; save();
+    if (newsMode === 'auto') { S.seenVer = VERSION; S.refund = null; save(); }
   }
-  function maybeShowNews() { if (cmpVer(S.seenVer, VERSION) < 0 && !newsOpen && !awayOpen) setTimeout(() => { if (!awayOpen) openNews(); }, 600); }
-  $('newsBtn').addEventListener('click', () => { closeSettings(); openNews(); });
+  function maybeShowNews() { if (cmpVer(S.seenVer, VERSION) < 0 && !newsOpen && !awayOpen) setTimeout(() => { if (!awayOpen) openNews('auto'); }, 600); }
+  $('newsBtn').addEventListener('click', () => { closeSettings(); openNews('history'); });
+  $('verChip').textContent = 'v' + VERSION;
+  $('verChip').addEventListener('click', () => { if (!newsOpen && !sceneOpen && !cinematic) openNews('history'); });
   $('newsClose').addEventListener('click', closeNews);
   window.addEventListener('keydown', e => { if (newsOpen && e.key === 'Escape') closeNews(); });
   $('verNote').textContent = `Geode Choir ${VERSION}`;
@@ -2833,7 +2885,7 @@
       const keep = {
         total: S.total, world: 'sea', hearts: S.hearts + 1,
         horns: S.horns, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
-        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, numfmt: S.numfmt, shouts: S.shouts, tab: 'sea',
+        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, numfmt: S.numfmt, finale: S.finale, shouts: S.shouts, tab: 'sea',
         lore: S.lore, feats: S.feats, stats: S.stats,
       };
       keep.sea.unlocked = true;
@@ -2874,8 +2926,8 @@
   // =====================================================================
   // STORY: the Chronicle, cutscenes, feats
   // =====================================================================
-  const CHAPTERS = ['The Long Quiet', 'The Floor of the World', 'The Lamplighters', 'The Heartstone', 'The Sunless Sea', 'The Undersong'];
-  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+  const CHAPTERS = ['The Long Quiet', 'The Floor of the World', 'The Lamplighters', 'The Heartstone', 'The Sunless Sea', 'The Undersong', 'The Whole Song'];
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
   // Each page unlocks when `when` turns true. Pages with cards play as a cutscene the first time.
   const LORE = [
     { id: 'prologue', ch: 0, title: 'Hollowmere', when: () => true, cards: [
@@ -2929,7 +2981,25 @@
       text: 'Below the tower the line goes slack, as if it had reached open air. Then it pulls back, gently, three times, like someone on the other end is testing it. Something under the sea is singing, and it has noticed you.' },
     { id: 'listener', ch: 5, title: 'The Listener’s Name', when: () => Object.keys(S.feats).length >= 12,
       text: 'On one of the stone benches in the old choir you find a name cut among the others. It is yours. You do not remember sitting there. Perhaps everyone who listens long enough ends up singing.' },
+    { id: 'depth5', ch: 1, title: 'The Fifth Floor', when: () => S.stats.maxDepth >= 5,
+      text: 'By the fifth floor the walls have stopped echoing you and started answering. Not in words: in the shape of the next note, a half-beat before you sing it. Whoever carved these caves was listening for the same thing.' },
+    { id: 'depth10', ch: 2, title: 'The Bottom of the Bottomless', when: () => S.stats.maxDepth >= 10,
+      text: 'The tenth floor has no floor. You stand on a ledge of old song, packed so hard it has turned to stone, and far beneath it something warm is keeping time.' },
+    { id: 'sound2', ch: 4, title: 'Slack Water', when: () => S.sea.soundings >= 2,
+      text: 'On the second sounding the water goes still. Not calm: attentive. Every bell on its buoy stops swaying at once, as if a conductor had raised a hand.' },
+    { id: 'sound4', ch: 5, title: 'Four Knocks', when: () => S.sea.soundings >= 4,
+      text: 'The line pulls back once, twice, three times, four. Four knocks is how a foundry apprentice told the master caster that the mould was ready. Someone under the tower is asking whether you are.' },
+    { id: 'sound6', ch: 5, title: 'The Last Interval', when: () => S.sea.soundings >= 6,
+      text: 'The line goes slack and stays slack. It is not testing you any more. Between the bell and the floor of the sea there is one interval left unsung, and it is waiting for you to sing it.' },
+    { id: 'finale', ch: 6, title: 'The Undersong', when: () => S.finale > 0, cards: () => [
+      ['The Answer', 'You pour the offering into the water and shout once, the way you did on the first day, into a dark you no longer remember being small.'],
+      ['Below the Tower', 'The sea lets go of the line. Beneath the bell tower the air fills with voices: not ghosts, not echoes, but a choir, every singer of Hollowmere, mid-breath, holding the note they were singing when the mountain closed.'],
+      ['What They Were Waiting For', `They had not been lost. They had been holding the note, all of them, until someone sang the next one. It took ${fmt(S.shouts)} ${S.shouts === 1 ? 'shout' : 'shouts'}, ${S.sea.soundings} soundings, ${S.hearts} Heartstones and ${Object.keys(S.feats).length} feats. It took exactly as long as it took.`],
+      ['The Song Closes', 'Hum from the cave above and tide from the sea below meet at the tower, and the interval resolves. The mountain is warm. The water is bright. Somewhere, a door that was never locked swings open.'],
+      ['Hollowmere', 'The town does not come back. It does not need to. It sings, and you are in the choir, third bench from the left, where your name was cut before you arrived. The song is complete. It will keep going anyway.'],
+    ] },
   ];
+  const cardsOf = l => typeof l.cards === 'function' ? l.cards() : l.cards;
   const LORE_BY_ID = Object.fromEntries(LORE.map(l => [l.id, l]));
 
   const FEATS = [
@@ -2965,8 +3035,66 @@
     { id: 'legend', name: 'Gilded', desc: 'Find a legendary horn.', w: 3, check: () => S.stats.bestHorn >= 3 },
     { id: 'mythic', name: 'Worldsong', desc: 'Find a mythic horn.', w: 3, check: () => S.stats.bestHorn >= 4 },
     { id: 'rack', name: 'Full Rack', desc: 'Wear three horns at once.', check: () => S.equipped.length >= 3 },
+    { id: 'song', name: 'The Whole Song', desc: 'Answer the Undersong.', w: 3, check: () => S.finale > 0 },
     { id: 'dream', name: 'Dreamer', desc: 'Come back after an hour away to find the world still singing.', check: () => S.stats.longAway >= 1 },
   ];
+
+  // ---------- the Undersong ----------
+  const SONG_COST = 25; // fathoms: a small offering, not a wall
+  const songReqs = () => [
+    { label: 'Sound the depths', have: S.sea.soundings, need: 6 },
+    { label: 'Kindle Heartstones', have: S.hearts, need: 3 },
+    { label: 'Earn feats', have: Object.keys(S.feats).length, need: 20 },
+  ];
+  const songReady = () => songReqs().every(r => r.have >= r.need);
+  const songOn = () => S.finale > 0 || S.sea.soundings >= 3;
+  const AFTER_SCENE = { finale: () => openCredits() };
+  let creditsOpen = false;
+  function openCredits() {
+    creditsOpen = true;
+    $('creditsSub').textContent = `Geode Choir ${VERSION}`;
+    $('creditsText').textContent = 'Thank you for listening. The caves are still singing, and so is the sea. Keep going for as long as you like: nothing here ends, it only gets deeper.';
+    $('creditsRows').innerHTML = [
+      ['Time played', fmtDur(S.stats.playSec || 0)], ['Shouts and stones', fmt(S.shouts + S.sea.throws)],
+      ['Hum sung', fmt(S.total)], ['Tide rung', fmt(S.sea.total)], ['Deepest cave', S.stats.maxDepth], ['Soundings', S.sea.soundings],
+      ['Heartstones', S.hearts], ['Feats', `${Object.keys(S.feats).length} / ${FEATS.length}`],
+    ].map(r => `<div class="stat"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+    $('credits').hidden = false; $('creditsClose').focus();
+  }
+  function closeCredits() { creditsOpen = false; $('credits').hidden = true; }
+  $('creditsClose').addEventListener('click', closeCredits);
+  $('credits').addEventListener('click', e => { if (e.target === $('credits')) closeCredits(); });
+  function answerSong() {
+    if (S.finale || cinematic || sceneOpen || !songReady()) return;
+    if (!spend('fathom', SONG_COST)) return;
+    S.finale = Date.now();
+    cinematic = true;
+    $('veil').classList.add('on');
+    if (audible()) { chordSound(); setTimeout(waterSound, 600); }
+    whisper('You answer. The line goes still, and then the whole sea listens.');
+    save();
+    setTimeout(() => { $('veil').classList.remove('on'); cinematic = false; checkStory(); updateUI(); }, 1600);
+  }
+  function updateSong() {
+    const on = songOn();
+    setHid('songSec', !on);
+    if (!on) return;
+    const done = S.finale > 0, ready = songReady(), afford = S.sea.fathoms >= SONG_COST;
+    setT('songNote', done ? 'The Song is complete. The choir under the tower keeps singing, and so do you.'
+      : ready ? `Everything is in place. Answering costs ${SONG_COST} fathoms, an offering poured into the water.`
+      : 'Something under the tower is waiting for an answer. It wants proof that you have heard the whole mountain and the whole sea.');
+    setH('songReqs', done ? '' : songReqs().map(r => `<div class="stat${r.have >= r.need ? ' done' : ''}"><span>${r.label}</span><b>${r.have >= r.need ? '✓' : `${r.have} / ${r.need}`}</b></div>`).join(''));
+    const btn = $('songBtn');
+    setT('songBtn', done ? 'Hear it again' : `Answer the Undersong · ${SONG_COST} fathoms`);
+    btn.classList.toggle('poor', !done && !(ready && afford));
+  }
+  $('songBtn').addEventListener('click', () => {
+    initAudio();
+    if (S.finale) { if (!sceneOpen && !cinematic) playScene('finale', AFTER_SCENE.finale); return; }
+    if (!songReady()) { whisper('Not yet. The tower wants more than this.'); return; }
+    if (S.sea.fathoms < SONG_COST) { whisper(`You need ${SONG_COST} fathoms to make the offering.`); return; }
+    answerSong();
+  });
 
   // ---------- toasts ----------
   function toast(kind, text, cls) {
@@ -2987,13 +3115,13 @@
     for (const f of FEATS) {
       if (S.feats[f.id] || !f.check()) continue;
       S.feats[f.id] = 1; caught.feats++; changed = true;
-      if (!silent) toast('Feat', `<b>${f.name}</b> · hum &amp; tide +2%`);
+      if (!silent) toast('Feat', `<b>${f.name}</b> · hum &amp; tide +${f.w || 2}%`);
     }
     for (const l of LORE) {
       if (S.lore[l.id] || !l.when()) continue;
       S.lore[l.id] = 1; caught.lore++;
       if (silent) continue;
-      if (l.cards) { playScene(l.id); break; }   // one cutscene at a time; anything after it waits for the next check
+      if (l.cards) { playScene(l.id, AFTER_SCENE[l.id]); break; }   // one cutscene at a time; anything after it waits for the next check
       toast('Chronicle', `A new page: <b>${l.title}</b>`, 'lore');
     }
     if (caught.lore || caught.feats) S.seen.chron = 0;
@@ -3008,7 +3136,7 @@
   function playScene(id, onDone) {
     const l = LORE_BY_ID[id];
     if (!l || !l.cards) { if (onDone) onDone(); return; }
-    sceneOpen = true; sceneCards = l.cards; sceneIdx = 0; sceneDone = onDone || null; sceneId = id;
+    sceneOpen = true; sceneCards = cardsOf(l); sceneIdx = 0; sceneDone = onDone || null; sceneId = id;
     $('sceneEyebrow').textContent = `Chapter ${ROMAN[l.ch]} · ${CHAPTERS[l.ch]}`;
     $('sceneDots').innerHTML = '<i></i>'.repeat(sceneCards.length);
     sceneEl.hidden = false;
@@ -3051,10 +3179,11 @@
     }
     if (chronOpen && e.key === 'Escape') closeChronicle();
     if (awayOpen && e.key === 'Escape') closeAway();
+    if (creditsOpen && e.key === 'Escape') closeCredits();
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
     const tg = e.target, tag = tg && tg.tagName;
     if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
-    if (setOpen || newsOpen || chronOpen || awayOpen || cinematic) return;
+    if (setOpen || newsOpen || chronOpen || awayOpen || creditsOpen || cinematic) return;
     if (e.key === ' ' && tag !== 'BUTTON') { e.preventDefault(); initAudio(); const q = randomInside(); tap(q.x, q.y, null); }
     else if (e.key >= '1' && e.key <= '9') { const t = [...document.querySelectorAll('#tabs .tab:not([hidden])')][+e.key - 1]; if (t) t.click(); }
     else if (e.key === 'c' || e.key === 'C') { initAudio(); openChronicle(); }
@@ -3088,7 +3217,7 @@
   }
   function renderChronicle() {
     const got = Object.keys(S.feats).length, pages = LORE.filter(l => S.lore[l.id]).length;
-    $('chronSub').textContent = `${pages} of ${LORE.length} pages · ${got} of ${FEATS.length} feats (hum & tide ×${fmtX(featMult())})`;
+    $('chronSub').textContent = `${pages} of ${LORE.length} pages · ${got} of ${FEATS.length} feats (hum & tide ×${fmtX(featMult())})${S.finale ? ' · The Song is complete' : ''}`;
     let html = '';
     CHAPTERS.forEach((name, ch) => {
       const entries = LORE.filter(l => l.ch === ch);
@@ -3098,7 +3227,7 @@
       html += `<div class="chapter"><div class="chapter-name">Chapter ${ROMAN[ch]} · ${name}</div>`;
       for (const l of entries) {
         if (!S.lore[l.id]) { html += '<div class="page locked"><p>A page not yet found.</p></div>'; continue; }
-        const paras = l.cards ? l.cards.map(c => c[1]) : [l.text];
+        const paras = l.cards ? cardsOf(l).map(c => c[1]) : [l.text];
         html += `<div class="page"><h3>${l.title}</h3>${paras.map(t => `<p>${t}</p>`).join('')}${l.cards ? `<button type="button" data-replay="${l.id}">Replay scene</button>` : ''}</div>`;
       }
       html += '</div>';
@@ -3114,6 +3243,7 @@
       ['Shards shed', fmt(st.shards)], ['Crossings rung', fmt(st.crossings)], ['Pearls opened', fmt(st.pearls)],
       ['Horns found', fmt(st.hornsFound)], ['Horns held', S.horns.length],
       ...RARITY.map((r, i) => [`${r.name} horns held`, held[i]]),
+      ['The Song', S.finale ? new Date(S.finale).toLocaleDateString() : 'Unsung'],
       ['Feats', `${got} / ${FEATS.length}`], ['Pages', `${pages} / ${LORE.length}`],
     ];
     $('statGrid').innerHTML = rows.map(r => `<div class="stat"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
@@ -3208,6 +3338,7 @@
     }
 
     // choir
+    updateSong();
     setH('choirInfo', `The cave above sings <b>${fmt(S.idleRate || 0)} hum/s</b> on its own, lifting all tide <b>×${fmtX(choirBonus())}</b>. Whichever world you aren't in keeps earning <b>${pct(quietEff())}</b> of its idle rate. Choir upgrades are never lost.`);
 
     // horns
@@ -3355,6 +3486,7 @@
     if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
     if (!['dark', 'light', 'system'].includes(S.theme)) S.theme = 'dark';
     if (!['short', 'sci'].includes(S.numfmt)) S.numfmt = 'short';
+    S.finale = Math.max(0, +d.finale || 0);
     return Math.min((Date.now() - (d.saved || Date.now())) / 1000, AWAY_CAP);
   }
   function grantAway(seconds) {
