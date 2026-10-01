@@ -5,7 +5,7 @@ module.exports = function installBot(cfg) {
   const sim = window.__sim;
   const CAVE = new Set(['shopCrystals', 'shopVoices', 'shopTuning', 'shopWonders', 'shopAttune', 'shopStrata', 'shopGlow', 'shopHorns']);
   const SEA = new Set(['shopBells', 'shopSeaVoices', 'shopSeaTuning', 'shopOysters', 'shopPearlObjs', 'shopBellTune', 'shopDeep', 'shopChoir', 'shopHorns']);
-  const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0 };
+  const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, budget: 0 };
   const strip = h => String(h).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
   // ---- purchase weights: effective price = cost / weight, cheapest wins ----
@@ -31,6 +31,8 @@ module.exports = function installBot(cfg) {
     if (tier >= 0) return [1, 1.2, 1.5, 2][tier % 4];
     return 1;
   }
+  // Human pacing: with cfg.actionGap > 0 the bot gets one shop/fuse/descend action per gap seconds (small bursts allowed).
+  const canAct = () => { if (!cfg.actionGap) return true; if (bot.budget >= 1) { bot.budget -= 1; return true; } return false; };
   const unitOf = it => typeof it.unit === 'function' ? it.unit() : it.unit;
   const fathomReserve = S => (S.sea.soundings >= 3 && !S.finale) ? sim.SONG_COST : 0;
 
@@ -53,6 +55,7 @@ module.exports = function installBot(cfg) {
         if (sc < bestScore) { best = it; bestScore = sc; }
       }
       if (!best) return;
+      if (!canAct()) return;
       if (!best.buy()) return;
       sim.refreshAll(); sim.syncVoices(); bot.buys++;
     }
@@ -64,7 +67,7 @@ module.exports = function installBot(cfg) {
       let did = false;
       for (let t = 0; t < 3; t++) {
         const same = list.filter(c => c[key] === t);
-        if (same.length >= 2) { sim.fuse(same[0], same[1]); did = true; break; }
+        if (same.length >= 2) { if (!canAct()) return; sim.fuse(same[0], same[1]); did = true; break; }
       }
       if (!did) return;
     }
@@ -107,12 +110,12 @@ module.exports = function installBot(cfg) {
   }
   function progress(S) {
     const want = pickWorld(S);
-    if (want !== S.world) sim.setWorld(want);
+    if (want !== S.world && canAct()) sim.setWorld(want);
     if (S.world === 'cave') {
-      if (sim.canKindle()) { bot.kindleNow = true; return; }
-      if (!cfg.noDescend && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt()) { sim.descend(); bot.descents++; }
+      if (sim.canKindle()) { if (canAct()) bot.kindleNow = true; return; }
+      if (!cfg.noDescend && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt() && canAct()) { sim.descend(); bot.descents++; }
     } else {
-      if (sim.fathomGain() > 0 && S.sea.run >= cfg.k * sim.soundAt() && S.sea.soundings < cfg.maxSoundings) { sim.sound(); bot.soundings++; }
+      if (sim.fathomGain() > 0 && S.sea.run >= cfg.k * sim.soundAt() && S.sea.soundings < cfg.maxSoundings && canAct()) { sim.sound(); bot.soundings++; }
     }
     if (S.finale === 0 && sim.songReady() && S.sea.fathoms >= sim.SONG_COST) { mark('finaleReady', S); bot.done = true; }
   }
@@ -129,6 +132,7 @@ module.exports = function installBot(cfg) {
     const S = sim.S;
     if (sim.sceneOpen) sim.endScene();
     if (sim.cinematic) return;
+    if (cfg.actionGap) bot.budget = Math.min(2, bot.budget + 0.5 / cfg.actionGap);
     S.toggles.autodescend = 0; S.toggles.autobuy = cfg.autobuy ? 1 : 0;
     if (!cfg.noFuse) fuseAll(S);
     if (!cfg.noBuy) buyLoop(S);
