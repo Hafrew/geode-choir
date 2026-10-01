@@ -134,10 +134,10 @@ module.exports = function installBot(cfg) {
     if (sim.cinematic) return;
     if (cfg.actionGap) bot.budget = Math.min(2, bot.budget + 0.5 / cfg.actionGap);
     S.toggles.autodescend = 0; S.toggles.autobuy = cfg.autobuy ? 1 : 0;
+    progress(S);                                  // descend / sound / kindle / switch world come first, or shopping eats every action
     if (!cfg.noFuse) fuseAll(S);
     if (!cfg.noBuy) buyLoop(S);
     if (Math.round(bot.t) % 30 === 0) manageHorns(S);
-    progress(S);
     marks(S);
     if (bot.t - (bot.lastLog || -1e9) >= 300) {
       bot.lastLog = bot.t;
