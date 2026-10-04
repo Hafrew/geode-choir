@@ -113,7 +113,7 @@ module.exports = function installBot(cfg) {
     if (want !== S.world && canAct()) sim.setWorld(want);
     if (S.world === 'cave') {
       if (sim.canKindle()) { if (canAct()) bot.kindleNow = true; return; }
-      if (!cfg.noDescend && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt() && canAct()) { sim.descend(); bot.descents++; }
+      if (!cfg.noDescend && S.cool <= 0 && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt() && canAct()) { sim.descend(); bot.descents++; }
     } else {
       if (sim.fathomGain() > 0 && S.sea.run >= cfg.k * sim.soundAt() && S.sea.soundings < cfg.maxSoundings && canAct()) { sim.sound(); bot.soundings++; }
     }
