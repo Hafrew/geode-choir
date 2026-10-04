@@ -2,6 +2,22 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.3.3: The Restless Mountain (2026-10-04)
+
+### Changed
+- **Steeper Heartstone depth gates.** The first Heartstone still asks for depth 12. Each later one asks for 22 more depth than the one before (about 34, then about 56), instead of 4 more.
+
+### Added
+- **Mountain moods.** Each time you kindle a Heartstone, the mountain rolls a mood for the next one: Steady (40%, no change), Generous (20%, 6 less depth), Stubborn (20%, 8 more depth) or Hungry (20%, twice the lumen). The Heartstone panel shows it, so a climb can be planned. The first Heartstone is always Steady.
+- **Descent surprises** from depth 6: 8% the floor gives way twice (you fall one floor further), 10% you land in rubble (that floor needs 1.5x the hum), 12% you land on a vein (+25% fossils, at least 1).
+- Two Chronicle pages ("Moods", "Uneven Ground") and the feat Freefall (35 feats in total).
+
+### Why
+Simulated play with `tools/sim` showed the finale arriving in about 4 to 5 game-hours at a 2-second action pace, with the Heartstone climbs repeating the same way each time. Lumen cost alone barely moved it, because lumen income roughly doubles every 15 minutes while climbing. Depth is the roughly linear lever, and the moods and surprises keep each climb from playing out the same.
+
+### Existing saves
+- Nothing is removed. A save partway to a Heartstone keeps everything but may need a deeper cave than before. Saves from before this version count as Steady.
+
 ## 1.3.2: Pacing Pass (2026-10-01)
 
 ### Changed

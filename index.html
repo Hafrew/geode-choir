@@ -655,9 +655,15 @@
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.3.2';
+  const VERSION = '1.3.3';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.3.3', date: '2026-10-04', head: 'The Restless Mountain', items: [
+      'Heartstones ask for much deeper caves: depth 12 for the first, then about 34, then about 56. Each one now makes you climb a long way down again.',
+      'The mountain has moods. Each time you kindle a Heartstone it rolls a mood for the next one: Steady, Generous (a shallower cave will do), Stubborn (a deeper one) or Hungry (twice the lumen). The Heartstone panel tells you before you start climbing.',
+      'Below the fifth floor, descents can surprise you: the floor may give way twice and drop you two levels, bury you in rubble (the next floor needs half again as much hum), or open on a vein of extra fossils.',
+      'Two new Chronicle pages and a new feat, Freefall.',
+    ] },
     { ver: '1.3.2', date: '2026-10-01', head: 'Pacing Pass', items: [
       'Heartstones are slower to earn. Each one now costs 10× the lumen of the one before (10M, 100M, 1B, and so on; it was 5×), and each asks for a deeper cave: depth 12, then 16, then 20.',
       'This stretches the road to the Undersong. The first Heartstone is unchanged in cost and only slightly later in practice.',
@@ -807,10 +813,10 @@
     hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
     sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', saved: Date.now(), shouts: 0, tab: 'cave',
     lore: {}, feats: {}, stats: freshStats(),
-    ver: VERSION, seenVer: VERSION, refund: null, numfmt: 'short', finale: 0,
+    ver: VERSION, seenVer: VERSION, refund: null, numfmt: 'short', finale: 0, omen: 'steady', rubble: 0,
   });
   function freshStats() {
-    return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0 };
+    return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0, shafts: 0, rockfalls: 0, veins: 0 };
   }
   let S = fresh();
 
@@ -858,7 +864,7 @@
   const retainAt = l => Math.min(0.95, 1 - 0.4 * Math.pow(0.88, l));
   const polishAt = l => Math.pow(1.4, l);
   const humMult = () => Math.pow(1.6, S.depth) * softPow(1.3, S.strata.old) * softPow(1.3, S.illum.lantern) * heartMult() * HB.hum;
-  const deepenAt = () => 2e4 * Math.pow(3.5, S.depth);
+  const deepenAt = () => 2e4 * Math.pow(3.5, S.depth) * (S.rubble ? 1.5 : 1);
   const fossilGain = () => S.run < deepenAt() ? 0 :
     Math.floor((1 + 0.5 * S.depth) * 2 * Math.sqrt(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils);
   const maxCrystals = () => 8 + S.lv.chisel + 3 * S.strata.wide;
@@ -868,8 +874,18 @@
   const crystalCost = t => Math.ceil(TIERS[t].base * Math.pow(TIERS[t].g, S.bought[t] || 0) * priceK());
   const wonderCost = k => Math.ceil(WONDERS[k].base * Math.pow(WONDERS[k].g, S.wBought[k] || 0));
   const attuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.attune[t]));
-  const heartCost = () => 1e7 * Math.pow(10, S.hearts);
-  const heartDepth = () => 12 + 4 * S.hearts;   // each Heartstone asks for a deeper cave: 12, 16, 20, ...
+  // Each Heartstone asks for a deeper cave and more lumen, and the mountain rolls a mood for the next one when you kindle.
+  const HEART_STEP = 22;
+  const OMENS = {
+    steady:   { name: 'Steady',   p: 0.4, depth: 0,  lumen: 1, text: 'It asks what it always asks.' },
+    generous: { name: 'Generous', p: 0.2, depth: -6, lumen: 1, text: 'The stone is thin: a shallower cave will do.' },
+    stubborn: { name: 'Stubborn', p: 0.2, depth: 8,  lumen: 1, text: 'The stone is thick: it wants a deeper cave.' },
+    hungry:   { name: 'Hungry',   p: 0.2, depth: 0,  lumen: 2, text: 'It will take twice the lumen.' },
+  };
+  const omen = () => OMENS[S.omen] || OMENS.steady;
+  const rollOmen = () => { let x = Math.random(); for (const k of Object.keys(OMENS)) { if (x < OMENS[k].p) return k; x -= OMENS[k].p; } return 'steady'; };
+  const heartCost = () => 1e7 * Math.pow(10, S.hearts) * omen().lumen;
+  const heartDepth = () => 12 + HEART_STEP * S.hearts + omen().depth;
   // sea
   const bellCap = () => 8 + S.sea.lv.line + 2 * S.sea.deep.buoys;
   const bellCost = t => Math.ceil(BELLS[t].base * Math.pow(BELLS[t].g, S.sea.bought[t] || 0) * priceK());
@@ -2830,11 +2846,19 @@
     if (got <= 0) return;
     const carry = S.illum.carry;
     const oldWonders = S.wonders.map(o => ({ k: o.k, x: o.x, y: o.y, charge: 0 })), oldWB = S.wBought;
+    // Below the fifth floor the ground can surprise you.
+    let fall = 0, rubble = 0, vein = 0;
+    if (S.depth + 1 >= 6) {
+      const r = Math.random();
+      if (r < 0.08) fall = 1; else if (r < 0.18) rubble = 1; else if (r < 0.30) vein = Math.max(1, Math.ceil(got * 0.25));
+    }
     const keep = {
-      depth: S.depth + 1, fossils: S.fossils + got, fossilsTotal: S.fossilsTotal + got, strata: S.strata,
+      depth: S.depth + 1 + fall, fossils: S.fossils + got + vein, fossilsTotal: S.fossilsTotal + got + vein, strata: S.strata,
       lumen: S.lumen, lumenTotal: S.lumenTotal, illum: S.illum, toggles: S.toggles, idleRate: S.idleRate, lumenIdle: S.lumenIdle,
     };
     Object.assign(S, freshCave(), keep);
+    S.rubble = rubble;
+    if (fall) S.stats.shafts++; if (rubble) S.stats.rockfalls++; if (vein) S.stats.veins++;
     if (carry) { S.wonders = oldWonders; S.wBought = oldWB; }
     S.stats.maxDepth = Math.max(S.stats.maxDepth, S.depth);
     S.lv.lungs = 2 * S.strata.lungs;
@@ -2849,6 +2873,9 @@
       S.crystals.push(c);
     }
     let msg = `Depth ${S.depth}. You carry ${got} fossil${got > 1 ? 's' : ''} down. The cave now sings in ${MODES[S.depth % MODES.length].name.toLowerCase()}.`;
+    if (fall) msg += ` The floor gave way twice, and you fell a floor further.`;
+    if (rubble) msg += ' You land in rubble: this floor will need half again as much to break through.';
+    if (vein) msg += ` You land on a vein: ${vein} extra fossil${vein > 1 ? 's' : ''}.`;
     if (S.depth >= 5 && (!S.hornsOn || Math.random() < 0.4)) { const h = gainHorn(0); msg += ' ' + hornMsg(h); }
     whisper(msg);
     save();
@@ -2902,6 +2929,7 @@
       };
       keep.sea.unlocked = true;
       S = Object.assign(fresh(), keep);
+      S.omen = rollOmen();
       for (const k of Object.keys(S.seen)) if (k.startsWith('u_') || k === 'canDescend') delete S.seen[k];
       const h = gainHorn(2);
       refreshAll();
@@ -2911,7 +2939,7 @@
       const wake = () => {
         $('veil').classList.remove('on');
         cinematic = false;
-        whisper(`Heartstone ${S.hearts}. All hum and tide are now ×${fmt(Math.pow(3, S.hearts))}. ${hornMsg(h)}`);
+        whisper(`Heartstone ${S.hearts}. All hum and tide are now ×${fmt(Math.pow(3, S.hearts))}. The mountain feels ${omen().name.toLowerCase()}. ${hornMsg(h)}`);
         $('hint').hidden = S.sea.throws >= 3;
       };
       // The first kindling is told as a scene over the dark; later ones just wake you.
@@ -2977,6 +3005,8 @@
     ] },
     { id: 'heart2', ch: 3, title: 'Again, the Fire', when: () => S.hearts >= 2,
       text: 'You climb back to the caves and find they have healed shut, as caves do. But you remember the chord now. Kindling it a second time is easier to decide and harder to do.' },
+    { id: 'omens', ch: 3, title: 'Moods', when: () => S.hearts >= 1,
+      text: 'After the first kindling the mountain stops asking the same thing twice. Some days the stone is thin and the Heartstone wakes early. Some days it is thick, or hungry. The old singers called these its moods, and learned to read them before they began to climb.' },
     { id: 'heart3', ch: 3, title: 'What the Mountain Wants', when: () => S.hearts >= 3,
       text: 'After the third kindling you understand. The mountain did not swallow Hollowmere out of spite. It was cold and it was lonely, and a town full of singers is warm. Every Heartstone you light gives a little of that warmth back.' },
     { id: 'sea', ch: 4, title: 'The Sunless Sea', when: () => S.sea.unlocked && S.world === 'sea',
@@ -2995,6 +3025,8 @@
       text: 'On one of the stone benches in the old choir you find a name cut among the others. It is yours. You do not remember sitting there. Perhaps everyone who listens long enough ends up singing.' },
     { id: 'depth5', ch: 1, title: 'The Fifth Floor', when: () => S.stats.maxDepth >= 5,
       text: 'By the fifth floor the walls have stopped echoing you and started answering. Not in words: in the shape of the next note, a half-beat before you sing it. Whoever carved these caves was listening for the same thing.' },
+    { id: 'uneven', ch: 1, title: 'Uneven Ground', when: () => S.stats.shafts + S.stats.rockfalls + S.stats.veins > 0,
+      text: 'Below the fifth floor the ground is not always where it should be. Sometimes the floor gives way twice. Sometimes it buries you in rubble, and sometimes it opens on a vein of old fossils. None of it is aimed at you. The mountain is simply very old.' },
     { id: 'depth10', ch: 2, title: 'The Bottom of the Bottomless', when: () => S.stats.maxDepth >= 10,
       text: 'The tenth floor has no floor. You stand on a ledge of old song, packed so hard it has turned to stone, and far beneath it something warm is keeping time.' },
     { id: 'sound2', ch: 4, title: 'Slack Water', when: () => S.sea.soundings >= 2,
@@ -3028,6 +3060,7 @@
     { id: 'depth1', name: 'Breaking Ground', desc: 'Descend for the first time.', check: () => S.stats.maxDepth >= 1 },
     { id: 'depth5', name: 'Deeper Still', desc: 'Reach depth 5.', check: () => S.stats.maxDepth >= 5 },
     { id: 'depth10', name: 'The Bottomless', desc: 'Reach depth 10.', w: 3, check: () => S.stats.maxDepth >= 10 },
+    { id: 'shaft', name: 'Freefall', desc: 'Fall two floors at once.', check: () => S.stats.shafts >= 1 },
     { id: 'shard', name: 'Cracked Open', desc: 'Make a crystal shed shards.', check: () => S.stats.shards > 0 },
     { id: 'boom', name: 'Thunder Below', desc: 'Make a gong boom.', check: () => S.stats.booms >= 1 },
     { id: 'prisms', name: 'Split Light', desc: 'Place 4 prisms in one cave.', check: () => S.wonders.filter(o => o.k === 'prism').length >= 4 },
@@ -3344,7 +3377,7 @@
       const cost = heartCost(), can = canKindle();
       const tick = ok => ok ? '✓' : '·';
       setT('heartCount', S.hearts ? `${S.hearts} kindled` : '');
-      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}) and <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
+      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}) and <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). ${S.hearts ? `The mountain feels <b>${omen().name.toLowerCase()}</b> this time. ${omen().text} ` : ''}Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
       heartBtn.classList.toggle('poor', !can);
       setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < heartDepth() ? `Reach depth ${heartDepth()} first` : 'Not enough lumen');
     }
@@ -3372,7 +3405,7 @@
       need = deepenAt(); prog = Math.min(1, S.run / need); got = fossilGain();
       setT('descTitle', 'Descend');
       setH('descText', prog < 1
-        ? `Sing <b>${fmt(need)}</b> hum in this cave to break through the floor. You lose its crystals, voices and shards, but carry down <b class="fos">fossils</b> for Strata, hum ×2 per depth, and maybe a horn.`
+        ? `${S.rubble ? 'Rubble from the fall: this floor asks for half again as much. ' : ''}Sing <b>${fmt(need)}</b> hum in this cave to break through the floor. You lose its crystals, voices and shards, but carry down <b class="fos">fossils</b> for Strata, hum ×2 per depth, and maybe a horn.`
         : `Descend now for <b class="fos">${got} fossil${got > 1 ? 's' : ''}</b>, or keep singing: fossils grow with the square root of everything you sing here.`);
       if (prog >= 1) once('canDescend');
     }
@@ -3499,6 +3532,8 @@
     if (!['dark', 'light', 'system'].includes(S.theme)) S.theme = 'dark';
     if (!['short', 'sci'].includes(S.numfmt)) S.numfmt = 'short';
     S.finale = Math.max(0, +d.finale || 0);
+    if (!OMENS[S.omen]) S.omen = 'steady';
+    S.rubble = d.rubble ? 1 : 0;
     return Math.min((Date.now() - (d.saved || Date.now())) / 1000, AWAY_CAP);
   }
   function grantAway(seconds) {
