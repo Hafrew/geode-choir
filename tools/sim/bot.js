@@ -121,6 +121,7 @@ module.exports = function installBot(cfg) {
   }
   function marks(S) {
     if (S.depth >= 1) mark('depth1', S); if (S.depth >= 5) mark('depth5', S); if (S.depth >= 10) mark('depth10', S); if (S.depth >= 12) mark('depth12', S);
+    for (const d of [20, 30, 40, 50]) if (S.depth >= d) mark('depth' + d, S);
     for (let h = 1; h <= 3; h++) if (S.hearts >= h) mark('heart' + h, S);
     for (let n = 1; n <= 6; n++) if (S.sea.soundings >= n) mark('sounding' + n, S);
     if (S.strata.nest) mark('nest', S);
@@ -143,7 +144,7 @@ module.exports = function installBot(cfg) {
       bot.lastLog = bot.t;
       bot.log.push({ t: Math.round(bot.t), world: S.world, depth: S.depth, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length,
         hum: S.total, tide: S.sea.total, rate: S.rate, tideRate: S.sea.rate, crystals: S.crystals.length, bells: S.sea.bells.length, horns: S.horns.length,
-        lumen: S.lumen, fossils: S.fossils, fathoms: S.sea.fathoms, capP: sim.capP });
+        lumen: S.lumen, fossils: S.fossils, fathoms: S.sea.fathoms, capP: sim.capP, omen: S.omen, rubble: S.rubble, shafts: S.stats.shafts, rockfalls: S.stats.rockfalls, veins: S.stats.veins });
     }
   }
 
