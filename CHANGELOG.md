@@ -2,6 +2,19 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.4.0: The Settling Update (2026-10-05)
+
+### Added
+- **×5 and Max buttons** beside every repeatable upgrade (levelled upgrades, crystals and bells). They repeat the normal purchase up to 5 times, or as many times as you can afford.
+- **Descent lock ("settling").** After each descent the floor is locked for 10 minutes. Four quests each shorten it by 2 minutes, down to 2: Settling In (descend 6 times), Horn Collector (find 8 horns), Voice of the Sea (sound the depths 4 times) and The Mountain's Mood (kindle 2 Heartstones). The quests are listed under Strata. The lock counts while you are away at your away rate. Heartstones reset it. Completing a quest also takes 2 minutes off a lock already running. The Sinking Stone respects it too.
+- A `tickRate()` hook that every time gate now runs through, ready for upgrades that speed time up.
+
+### Changed
+- **Fossils and fathoms bend.** Gain from a descent or sounding used to grow with the square root of what you sang or rang. It now grows as 1 + 0.7 ln(ratio), so a floor sung 100 times past its threshold gives about 8 fossils at depth 0 (was 20) and one sung 100 million times past gives 27 (was 20,000).
+
+### Existing saves
+- Nothing is removed or refunded. Quests you already qualify for complete silently. The descents quest counts your deepest cave as descents so far.
+
 ## 1.3.3: The Restless Mountain (2026-10-04)
 
 ### Changed
