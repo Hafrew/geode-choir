@@ -515,6 +515,8 @@
       <h2><span style="font-family:var(--body);letter-spacing:.16em;text-transform:uppercase;font-weight:600" id="descTitle">Descend</span> <span id="descPct">0%</span></h2>
       <div class="bar"><i id="descBar"></i></div>
       <p id="descText"></p>
+      <p id="freshText" class="note"></p>
+      <button class="bigbtn" id="windBtn" type="button" hidden>Second Wind</button>
       <button class="bigbtn poor" id="descBtn" type="button">Descend</button>
     </section>
 
@@ -668,9 +670,16 @@
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.4.0';
+  const VERSION = '1.5.0';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.5.0', date: '2026-10-06', head: 'The Fading Update', items: [
+      'Floors go stale. Hum and lumen fade the longer you stay on one floor, from full strength toward a floor of 15%, about every 10 minutes. Descending or kindling starts a fresh floor. The fade runs on real time. The Descend panel shows how fresh the floor is.',
+      'Every Heartstone unlocks something against the fade: Deep Roots (the floor rises to 30%), Slow Pulse (the fade takes twice as long), Second Wind (once per floor, a button takes half the age off it), then Echo Memory for each one after.',
+      'Faster Tick (Strata, in fossils) makes time gates run 10% faster per level: the descent lock and horn timers. Each Heartstone raises how many levels you can buy.',
+      'Heartstones after the first need the sea: 2 soundings for the second, 4 for the third, and so on.',
+      'Fossils and fathoms grow with the cube-root-ish curve (run ^ 0.3662), about 850× for a run 100 million times past its threshold. Fuse and Crush drop zones appear after your first descent.',
+    ] },
     { ver: '1.4.0', date: '2026-10-05', head: 'The Settling Update', items: [
       'Every repeatable upgrade now has ×5 and Max buttons beside it. ×5 buys up to five levels, Max buys as many as you can afford.',
       'Descents have to settle. After each descent the floor is locked for 10 minutes before you can descend again, and the lock only shortens through four quests, 2 minutes each: Settling In (descend 6 times), Horn Collector (find 8 horns), Voice of the Sea (sound the depths 4 times) and The Mountain\u2019s Mood (kindle 2 Heartstones). See them under Strata.',
@@ -803,12 +812,12 @@
   // state
   // =====================================================================
   const freshCave = () => ({
-    hum: 0, run: 0, depth: 0,
+    hum: 0, run: 0, depth: 0, age: 0, wind: 0,
     crystals: [{ t: 0, x: 0, y: -0.12 }], bought: [0, 0, 0, 0],
     lv: { lungs: 0, drips: 0, bats: 0, resonance: 0, polish: 0, harmony: 0, chisel: 0 },
     shards: 0, attune: [0, 0, 0, 0], wonders: [], wBought: { prism: 0, lodestone: 0, gong: 0 },
     fossils: 0, fossilsTotal: 0,
-    strata: { old: 0, lungs: 0, water: 0, seed: 0, wide: 0, fault: 0, record: 0, nest: 0, worm: 0 },
+    strata: { tick: 0, old: 0, lungs: 0, water: 0, seed: 0, wide: 0, fault: 0, record: 0, nest: 0, worm: 0 },
     lumen: 0, lumenTotal: 0,
     illum: { firefly: 0, lantern: 0, silk: 0, autofuse: 0, autobuy: 0, autodescend: 0, carry: 0 },
     toggles: { autofuse: 1, autobuy: 1, autodescend: 1 },
@@ -886,7 +895,29 @@
   const deepenAt = () => 2e4 * Math.pow(3.5, S.depth) * (S.rubble ? 1.5 : 1);
   // After every descent the floor has to settle. Only quests shorten it. All time gates run through tickRate().
   const LOCK_BASE = 600, LOCK_STEP = 120, LOCK_MIN = 120;
-  const tickRate = () => 1;
+  // Faster Tick speeds every time gate (the descent lock, horn timers). It never touches the floor's fade, which runs on real time.
+  const tickMax = () => 2 + 3 * S.hearts;
+  const tickRate = () => Math.pow(1.1, S.strata.tick || 0);
+  // Floor freshness: hum and lumen fade the longer you stay on one floor, from full strength toward a floor.
+  // Each Heartstone unlocks something that offsets it. Descending or kindling starts a fresh floor.
+  const DECAY_TAU = 600;
+  const decayFloor = () => 0.15 + (S.hearts >= 1 ? 0.15 : 0) + 0.05 * Math.max(0, S.hearts - 3);
+  const decayTau = () => DECAY_TAU * (S.hearts >= 2 ? 2 : 1) * (1 + 0.25 * Math.max(0, S.hearts - 3));
+  const freshAt = t => { const f = decayFloor(); return f + (1 - f) * Math.exp(-t / decayTau()); };
+  const freshAvg = (t0, t1) => {
+    if (t1 - t0 < 1e-6) return freshAt(t0);
+    const f = decayFloor(), tau = decayTau();
+    return f + (1 - f) * tau * (Math.exp(-t0 / tau) - Math.exp(-t1 / tau)) / (t1 - t0);
+  };
+  const HOFFSETS = [
+    ['Deep Roots', 'the freshness floor rises from 15% to 30%'],
+    ['Slow Pulse', 'the fade takes twice as long'],
+    ['Second Wind', 'once per floor, a button takes half the age off it'],
+    ['Echo Memory', 'the floor rises by 5% and the fade slows by a quarter'],
+  ];
+  const nextOffset = () => HOFFSETS[Math.min(S.hearts, HOFFSETS.length - 1)];
+  const windReady = () => S.hearts >= 3 && !S.wind;
+  let decayF = 1;
   const QUESTS = [
     { id: 'settle', name: 'Settling In',          desc: 'Descend 6 times.',            have: () => S.stats.descents,   need: 6 },
     { id: 'horns',  name: 'Horn Collector',       desc: 'Find 8 horns.',               have: () => S.stats.hornsFound, need: 8 },
@@ -918,6 +949,8 @@
   const rollOmen = () => { let x = Math.random(); for (const k of Object.keys(OMENS)) { if (x < OMENS[k].p) return k; x -= OMENS[k].p; } return 'steady'; };
   const heartCost = () => 1e7 * Math.pow(10, S.hearts) * omen().lumen;
   const heartDepth = () => 12 + HEART_STEP * S.hearts + omen().depth;
+  // The first Heartstone opens the sea. Each one after that asks the sea to have been sounded 2 more times.
+  const heartSea = () => 2 * S.hearts;
   // sea
   const bellCap = () => 8 + S.sea.lv.line + 2 * S.sea.deep.buoys;
   const bellCost = t => Math.ceil(BELLS[t].base * Math.pow(BELLS[t].g, S.sea.bought[t] || 0) * priceK());
@@ -1303,7 +1336,7 @@
     // chordNow is counted once per frame, not once per hit
     const voices = Math.max(1, chordNow);
     const hm = 1 + 0.15 * K.harm * Math.min(voices - 1, 10);
-    const g = TIERS[c.t].value * K.att[c.t] * K.crys * e * w * K.pol * K.dm * hm;
+    const g = TIERS[c.t].value * K.att[c.t] * K.crys * e * w * K.pol * K.dm * decayF * hm;
     gain(g, idle);
     c.pend = (c.pend || 0) + g;
     if (K.shards) {
@@ -1395,7 +1428,7 @@
       for (let j = 0; j < worms.length; j++) {
         const w = worms[j];
         if (p.y > w.y0 && p.y < w.y1 && Math.abs(p.x - w.x) < 4 * SC) {
-          const l = 0.05 * p.e * Math.min(p.w, 30) * K.lm;
+          const l = 0.05 * p.e * Math.min(p.w, 30) * K.lm * decayF;
           S.lumen += l; S.lumenTotal += l; lumAcc += l;
           w.glow = 1; w.pend += l; p.e = 0;
           break;
@@ -1417,7 +1450,7 @@
           }
           const s = (r - 0.004) / d;
           p.x = cx + u * s * rx; p.y = cy + v * s * ry;
-          gain(0.15 * p.e * p.w * K.dm * K.wall, p.idle);
+          gain(0.15 * p.e * p.w * K.dm * K.wall * decayF, p.idle);
           p.e *= ret;
         }
       }
@@ -2560,9 +2593,9 @@
   // A levelled upgrade. o: parent, icon, unit, name, get(), inc(), base, g, max, desc(l), show(), gate, pre, single, onBuy
   function lvItem(o) {
     const costOf = () => Math.ceil(o.base * Math.pow(o.g, o.get()));
-    const max = o.max ?? 1e9;
+    const maxOf = () => typeof o.max === 'function' ? o.max() : (o.max ?? 1e9);
     addItem({
-      bulk: !o.single && max > 1,
+      bulk: !o.single && maxOf() > 1,
       parent: o.parent, icon: o.icon, unit: o.unit,
       show: () => {
         if (!o.gate) return o.show ? o.show() : true;
@@ -2571,10 +2604,10 @@
         return false;
       },
       name: () => o.single ? o.name : lvl(o.name, o.get(), o.pre || 'Lv '),
-      cost: () => o.get() >= max ? null : costOf(),
+      cost: () => o.get() >= maxOf() ? null : costOf(),
       desc: () => o.desc(o.get()),
       buy: () => {
-        if (o.get() >= max) return false;
+        if (o.get() >= maxOf()) return false;
         if (!spend(o.unit, costOf())) return false;
         o.inc(); if (o.onBuy) o.onBuy();
         return true;
@@ -2630,6 +2663,9 @@
       parent: 'shopStrata', icon, unit: 'fossil', name, base, g, max, desc, show,
       get: () => S.strata[k], inc: () => { S.strata[k]++; }, ...extra,
     });
+    st('tick', 'Faster Tick', ICONS.gear(), 3, 3.2, tickMax,
+      l => l >= tickMax() ? 'Time gates run as fast as this Heartstone allows. Another Heartstone raises the limit.' : `Time gates (the descent lock, horn timers) run ×${fmtX(Math.pow(1.1, l))} → ×${fmtX(Math.pow(1.1, l + 1))} faster. The floor's fade stays on real time.`,
+      () => S.depth >= 1 || S.strata.tick > 0);
     st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmtX(softPow(1.3, l))} → ×${fmtX(softPow(1.3, l + 1))}`);
     st('lungs', 'Deep Lungs', ICONS.lungs(), 2, 1.7, 1e9, l => `Every descent starts with Lungs Lv ${2 * l} → ${2 * (l + 1)}`);
     st('water', 'Old Water', ICONS.drip(), 2, 1.7, 1e9, l => `Every descent starts with ${2 * l} → ${2 * (l + 1)} extra drips`);
@@ -2914,6 +2950,12 @@
   // prestige: descend, sound, kindle
   // =====================================================================
   let descArmed = 0, resetArmed = 0;
+  $('windBtn').addEventListener('click', () => {
+    if (!windReady() || S.world === 'sea') return;
+    S.age *= 0.5; S.wind = 1; decayF = freshAt(S.age);
+    whisper('A second wind. The floor is half as stale as it was.');
+    updateUI();
+  });
   $('descBtn').addEventListener('click', () => {
     if (S.world !== 'sea' && S.cool > 0) { whisper(`The floor is still settling: ${mmss(S.cool)} to go. Quests shorten it.`); return; }
     const ready = S.world === 'sea' ? fathomGain() > 0 : fossilGain() > 0;
@@ -3005,7 +3047,7 @@
   // ---------- the Heartstone: press and hold ----------
   let holding = false, holdT = 0;
   const heartBtn = $('heartBtn');
-  const canKindle = () => S.lumen >= heartCost() && S.depth >= heartDepth();
+  const canKindle = () => S.lumen >= heartCost() && S.depth >= heartDepth() && S.sea.soundings >= heartSea();
   const startHold = () => { if (canKindle() && !cinematic) { initAudio(); holding = true; } };
   const stopHold = () => { holding = false; };
   heartBtn.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
@@ -3495,9 +3537,9 @@
       const cost = heartCost(), can = canKindle();
       const tick = ok => ok ? '✓' : '·';
       setT('heartCount', S.hearts ? `${S.hearts} kindled` : '');
-      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}) and <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)}). ${S.hearts ? `The mountain feels <b>${omen().name.toLowerCase()}</b> this time. ${omen().text} ` : ''}Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
+      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}), <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)})${S.hearts ? ` and <b>${tick(S.sea.soundings >= heartSea())} ${heartSea()} soundings</b> of the sea (you have ${S.sea.soundings})` : ''}. ${S.hearts ? `The mountain feels <b>${omen().name.toLowerCase()}</b> this time. ${omen().text} ` : ''}Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn. It also unlocks <b>${nextOffset()[0]}</b>: ${nextOffset()[1]}.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
       heartBtn.classList.toggle('poor', !can);
-      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < heartDepth() ? `Reach depth ${heartDepth()} first` : 'Not enough lumen');
+      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < heartDepth() ? `Reach depth ${heartDepth()} first` : S.sea.soundings < heartSea() ? `Sound the sea ${heartSea()} times first` : 'Not enough lumen');
     }
 
     // choir
@@ -3531,6 +3573,11 @@
         : `Descend now for <b class="fos">${got} fossil${got > 1 ? 's' : ''}</b>, or keep singing: fossils grow more slowly the more you sing here.`);
       if (prog >= 1) once('canDescend');
     }
+    setHid('freshText', sea);
+    if (!sea) setH('freshText', `Floor freshness <b>${Math.round(decayF * 100)}%</b>: hum and lumen fade toward ${Math.round(decayFloor() * 100)}% the longer you stay (about ${Math.round(decayTau() / 60)} min per fade). Descending starts a fresh floor.`);
+    setHid('windBtn', sea || S.hearts < 3);
+    $('windBtn').disabled = !windReady();
+    $('windBtn').textContent = S.wind ? 'Second Wind used' : 'Second Wind · refresh the floor';
     $('descBar').style.width = (prog * 100).toFixed(1) + '%';
     setT('descPct', Math.floor(prog * 100) + '%');
     const btn = $('descBtn');
@@ -3658,6 +3705,7 @@
     if (!OMENS[S.omen]) S.omen = 'steady';
     S.rubble = d.rubble ? 1 : 0;
     S.cool = Math.max(0, +d.cool || 0);
+    S.age = Math.max(0, +d.age || 0); S.wind = d.wind ? 1 : 0;
     S.quests = d.quests && typeof d.quests === 'object' ? d.quests : {};
     return Math.min((Date.now() - (d.saved || Date.now())) / 1000, AWAY_CAP);
   }
@@ -3666,8 +3714,11 @@
     if (seconds >= 3600) S.stats.longAway++;
     const eff = offlineEff(), qe = quietEff(), q = S.sea, sea = S.world === 'sea';
     if (S.cool > 0) S.cool = Math.max(0, S.cool - seconds * eff * tickRate());
-    const h = S.idleRate * seconds * eff * (sea ? qe : 1);
-    const l = sea ? 0 : S.lumenIdle * seconds * eff;
+    // The rate you left at was measured at your floor's freshness then; the fade carries on while you are away.
+    const fadeK = freshAvg(S.age, S.age + seconds) / Math.max(1e-9, freshAt(S.age));
+    S.age += seconds;
+    const h = S.idleRate * seconds * eff * fadeK * (sea ? qe : 1);
+    const l = sea ? 0 : S.lumenIdle * seconds * eff * fadeK;
     const t = q.unlocked ? q.idleRate * seconds * eff * (sea ? 1 : qe) : 0;
     if (!(h > 0 || l > 0 || t > 0)) return;
     S.hum += h; S.run += h; S.total += h;
@@ -3751,6 +3802,8 @@
       S.hornTimer -= dt;
       if (S.hornTimer <= 0) { S.hornTimer = hornInterval(); const h = gainHorn(0); whisper('A horn turns up. ' + hornMsg(h)); }
     }
+    if (!cinematic) S.age += dt;
+    decayF = freshAt(S.age);
     secT += dt;
     if (secT >= 1) {
       secT -= 1;

@@ -2,13 +2,20 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
-## Unreleased
+## 1.5.0: The Fading Update (2026-10-06)
 
 ### Added
-- **Fuse and Crush zones.** Unlocked by your first descent (saves that have already descended get them at once). While you drag a crystal in the cave, two drop zones appear at the foot of the screen. Dropping a stone on Fuse joins it with any twin in the cave, wherever it is; dropping it on Crush breaks it up to free the space. Not available for wonders or in the sea.
+- **Floor freshness (decay).** Hum and lumen fade the longer you stay on one floor: income is `floor + (1 - floor) * e^(-t / τ)`, with t the real seconds since your last descent or Heartstone. It starts at a floor of 15% and τ of 10 minutes. It runs on real time and is never sped up by Faster Tick. The Descend panel shows the current freshness, and away time fades too.
+- **One offset per Heartstone.** 1st: Deep Roots (floor 30%). 2nd: Slow Pulse (τ ×2). 3rd: Second Wind (once per floor, a button takes half the age off). Each one after: Echo Memory (+5% floor, τ +25%). The Heartstone panel names the next one.
+- **Faster Tick** (Strata, fossils): +10% time-gate speed per level (the descent lock, horn timers). Costs 3 × 3.2^level fossils. The level cap is 2 + 3 per Heartstone kindled.
+- **Sea requirement for Heartstones.** After the first, each needs 2 more soundings than the last (2, 4, 6, ...).
+- **Fuse and Crush zones.** Unlocked by your first descent (saves that have already descended get them at once). While you drag a crystal in the cave, two drop zones appear at the foot of the screen. Dropping a stone on Fuse joins it with any twin in the cave; dropping it on Crush breaks it up to free the space. Not available for wonders or in the sea.
 
 ### Changed
 - **Gentler bend on fossils and fathoms.** The multiplier from a long run is now (how far past the threshold)^0.3662 (was 1 + 0.7 ln). A floor sung 100 times past its threshold gives about 5.4x (was 4.2x), 10,000 times about 29x (was 7.4x), and 100 million times about 850x (was 13.9x). Just past the threshold it is a little lower (1.66x at 4x, was 2.0x).
+
+### Existing saves
+- Nothing is removed or refunded. A save partway to a Heartstone may need more soundings than before. Your current floor starts at full freshness.
 
 ## 1.4.0: The Settling Update (2026-10-05)
 
