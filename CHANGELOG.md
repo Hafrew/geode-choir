@@ -4,6 +4,9 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ## Unreleased
 
+### Added
+- **Fuse and Crush zones.** Unlocked by your first descent (saves that have already descended get them at once). While you drag a crystal in the cave, two drop zones appear at the foot of the screen. Dropping a stone on Fuse joins it with any twin in the cave, wherever it is; dropping it on Crush breaks it up to free the space. Not available for wonders or in the sea.
+
 ### Changed
 - **Gentler bend on fossils and fathoms.** The multiplier from a long run is now (how far past the threshold)^0.3662 (was 1 + 0.7 ln). A floor sung 100 times past its threshold gives about 5.4x (was 4.2x), 10,000 times about 29x (was 7.4x), and 100 million times about 850x (was 13.9x). Just past the threshold it is a little lower (1.66x at 4x, was 2.0x).
 
