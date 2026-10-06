@@ -5,7 +5,7 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 ## Unreleased
 
 ### Changed
-- **Gentler bend on fossils and fathoms.** The multiplier from a long run is now the cube root of how far past the threshold you went (was 1 + 0.7 ln). A floor sung 100 times past its threshold gives about 4.6x (was 4.2x), and 10,000 times gives about 21.5x (was 7.4x). Just past the threshold it is a little lower (1.6x at 4x, was 2.0x).
+- **Gentler bend on fossils and fathoms.** The multiplier from a long run is now (how far past the threshold)^0.3662 (was 1 + 0.7 ln). A floor sung 100 times past its threshold gives about 5.4x (was 4.2x), 10,000 times about 29x (was 7.4x), and 100 million times about 850x (was 13.9x). Just past the threshold it is a little lower (1.66x at 4x, was 2.0x).
 
 ## 1.4.0: The Settling Update (2026-10-05)
 

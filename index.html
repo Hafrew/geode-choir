@@ -896,7 +896,7 @@
   const questsDone = () => QUESTS.filter(q => S.quests[q.id]).length;
   const descentLock = () => Math.max(LOCK_MIN, LOCK_BASE - LOCK_STEP * questsDone());
   // Gains from a long run bend: a bigger run is still worth more, but ever more slowly.
-  const bend = r => r <= 1 ? 1 : Math.cbrt(r);
+  const bend = r => r <= 1 ? 1 : Math.pow(r, 0.3662);
   const fossilGain = () => S.run < deepenAt() ? 0 :
     Math.floor((1 + 0.5 * S.depth) * 2 * bend(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils);
   const maxCrystals = () => 8 + S.lv.chisel + 3 * S.strata.wide;
