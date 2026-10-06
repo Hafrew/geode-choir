@@ -405,7 +405,7 @@
     <div class="panel" id="panel-cave" role="tabpanel">
       <section>
         <h2>Crystals <span id="crystalCount">1 / 8</span></h2>
-        <p class="note">Echoes that strike a crystal ring it for hum. New crystals find their own spot; drag one to move it, or drop it on a twin to fuse them into the next stone.</p>
+        <p class="note">Echoes that strike a crystal ring it for hum. New crystals find their own spot; drag one to move it, or drop it on a twin to fuse them into the next stone. After your first descent, two zones appear at the foot of the cave while you drag: <b>Fuse</b> joins the stone with any twin, and <b>Crush</b> breaks it up.</p>
         <div class="list" id="shopCrystals"></div>
       </section>
       <section><h2>Voices</h2><div class="list" id="shopVoices"></div></section>
@@ -896,7 +896,7 @@
   const questsDone = () => QUESTS.filter(q => S.quests[q.id]).length;
   const descentLock = () => Math.max(LOCK_MIN, LOCK_BASE - LOCK_STEP * questsDone());
   // Gains from a long run bend: a bigger run is still worth more, but ever more slowly.
-  const bend = r => r <= 1 ? 1 : 1 + 0.7 * Math.log(r);
+  const bend = r => r <= 1 ? 1 : Math.pow(r, 0.3662);
   const fossilGain = () => S.run < deepenAt() ? 0 :
     Math.floor((1 + 0.5 * S.depth) * 2 * bend(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils);
   const maxCrystals = () => 8 + S.lv.chisel + 3 * S.strata.wide;
@@ -1988,6 +1988,7 @@
     for (const d of drops) { ctx.moveTo(d.x, d.y - Math.min(9, d.vy * 0.012)); ctx.lineTo(d.x, d.y); }
     ctx.stroke();
     for (const b of bats) drawBat(b);
+    drawBins();
     drawFloats();
   }
 
@@ -2277,12 +2278,13 @@
     if (!drag) return;
     const p = ptr(e);
     if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 5) drag.moved = true;
-    if (drag.moved) setObjPx(drag.o, p.x, p.y);
+    if (drag.moved) { setObjPx(drag.o, p.x, p.y); drag.bin = S.crystals.includes(drag.o) ? binAt(p.x, p.y) : null; }
   });
   cv.addEventListener('pointerup', () => {
     if (!drag) return;
     const o = drag.o;
     if (!drag.moved) tap(o.px, o.py, o);
+    else if (drag.bin) dropInBin(o, drag.bin);
     else {
       const tw = twinOf(o);
       if (tw) fuse(o, tw);
@@ -2293,6 +2295,51 @@
   cv.addEventListener('pointercancel', () => {
     if (drag) { drag.o.x = drag.ox; drag.o.y = drag.oy; placeObj(drag.o); drag = null; }
   });
+
+  // Unlocked by the first descent: two drop zones at the foot of the cave while you hold a crystal.
+  // Fuse joins the crystal with any twin in the cave. Crush breaks it up to make room.
+  const BIN_W = 120, BIN_H = 46, BIN_LABEL = { fuse: 'Fuse', crush: 'Crush' };
+  const binsOn = () => S.world !== 'sea' && S.stats.maxDepth >= 1;
+  const binRect = k => ({ x: k === 'fuse' ? 12 : W - 12 - BIN_W, y: H - 12 - BIN_H, w: BIN_W, h: BIN_H });
+  function binAt(x, y) {
+    if (!binsOn()) return null;
+    for (const k of ['fuse', 'crush']) {
+      const r = binRect(k);
+      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return k;
+    }
+    return null;
+  }
+  function dropInBin(o, bin) {
+    if (bin === 'fuse') {
+      const tw = o.t >= 3 ? null : S.crystals.find(c => c !== o && c.t === o.t);
+      if (tw) { fuse(o, tw); return; }
+      whisper(o.t >= 3 ? 'This stone is as deep as it goes.' : 'No twin to fuse it with.');
+    } else {
+      const i = S.crystals.indexOf(o);
+      if (i >= 0) {
+        S.crystals.splice(i, 1); o.dead = true;
+        rings.push({ x: o.px, y: o.py, r: o.r, life: 1 });
+        whisper('The stone crumbles. There is room again.');
+        updateUI();
+        return;
+      }
+    }
+    o.x = drag.ox; o.y = drag.oy; placeObj(o);
+  }
+  function drawBins() {
+    if (!drag || !drag.moved || !S.crystals.includes(drag.o) || !binsOn()) return;
+    ctx.save();
+    ctx.font = '600 13px ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const k of ['fuse', 'crush']) {
+      const r = binRect(k), hot = drag.bin === k;
+      ctx.fillStyle = k === 'fuse' ? (hot ? 'rgba(255,207,134,.32)' : 'rgba(255,207,134,.12)') : (hot ? 'rgba(255,138,122,.34)' : 'rgba(255,138,122,.12)');
+      ctx.strokeStyle = k === 'fuse' ? '#ffcf86' : '#ff8a7a'; ctx.lineWidth = hot ? 2.5 : 1.5; ctx.setLineDash(hot ? [] : [6, 5]);
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(r.x, r.y, r.w, r.h, 10) : ctx.rect(r.x, r.y, r.w, r.h); ctx.fill(); ctx.stroke();
+      ctx.setLineDash([]); ctx.fillStyle = k === 'fuse' ? '#ffcf86' : '#ff8a7a';
+      ctx.fillText(BIN_LABEL[k], r.x + r.w / 2, r.y + r.h / 2);
+    }
+    ctx.restore();
+  }
 
   function fuse(c, into) {
     const isBell = c.bt != null;
@@ -2932,6 +2979,7 @@
     if (rubble) msg += ' You land in rubble: this floor will need half again as much to break through.';
     if (vein) msg += ` You land on a vein: ${vein} extra fossil${vein > 1 ? 's' : ''}.`;
     if (S.depth >= 5 && (!S.hornsOn || Math.random() < 0.4)) { const h = gainHorn(0); msg += ' ' + hornMsg(h); }
+    if (S.stats.descents === 1) msg += ' Drag a crystal to the foot of the cave: Fuse joins it with any twin, Crush breaks it up.';
     whisper(msg);
     save();
   }
