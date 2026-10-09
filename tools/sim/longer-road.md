@@ -47,6 +47,20 @@ Depth step (`12 + 22 × hearts`) variants, same seeds and flags:
 
 The effect is much smaller than the naive estimate (about +0.9h and +1.8h from the extra levels): levels get cheaper as lumen and hum income grow with depth, so deeper levels take less time each. A depth step is therefore a weak and nonlinear lever, and it adds more of the repetitive cave loop that players already find flat. It is not the preferred direction (see PLAN.md, 1.10.4).
 
+## Pearl Case check — 1.10.4
+
+Seeds 1–3, same flags, with the pearl strand worn automatically by the bot (it keeps the three strongest pearls on).
+
+| Seed | Heartstone 2 | 3 | 4 | 5 (finale ready) | Oyster openings | Pearls found |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 3.83h | 4.74h | 5.88h | 6.87h | 326,411 | 41 |
+| 2 | 3.83h | 4.56h | 5.55h | 6.44h | 295,651 | 37 |
+| 3 | 3.83h | 4.74h | 5.74h | 6.78h | 335,090 | 39 |
+
+Mean **6.70h** against 6.56h before pearls. Pearls arrive at about one per two minutes of Sea time, so about 40 in a full run (the first per-opening design found over 2,000 in 3 hours because the bot opens roughly 40,000 oysters an hour). The Sounding timeline is identical to the run without pearls (Sounding 20 at 3.79h in both), so the strand's small bonuses do not move the Sea pacing.
+
+The +0.14h difference is not a pearl effect: Heartstone 2 moved from 3.5–3.67h to 3.83h in all three seeds because the pearl code draws from the same seeded random stream, which changed when Epic and Mythic shells turned up (for example seed 1: Epic shell at 3.81h instead of 2.79h). Without an Epic or Mythic shell the second Heartstone waits for the full 20 soundings (3.79h). Seed-to-seed shell luck is about this large; comparing more seeds would be needed to resolve a smaller effect.
+
 ## Reproduce
 
 ```
