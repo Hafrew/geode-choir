@@ -16,9 +16,12 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.9.5';
+  const VERSION = '1.9.6';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.9.6', date: '2026-10-09', head: 'A Faster Call', items: [
+      'Faster Tick now speeds horn calls as described. The Horn chip and Sounding countdown show the time remaining at your current tick speed.',
+    ] },
     { ver: '1.9.5', date: '2026-10-09', head: 'Patient Choir', items: [
       'The countdown inside Horns → Sounding now updates while you stay on the page, and the waiting call count follows new calls immediately.',
       'The Sunless Sea now has Fuse and Crush corner zones while dragging bells. Fuse joins any twin and stops at Abyssal. Crush removes a bell without a refund. Oysters and pearl works are protected.',
@@ -2546,7 +2549,7 @@ import { createState } from './state.js';
           + `<div class="sub">${h.salvaged ? (h.salvageReason === 'filter' ? 'Your filter salvaged this horn for ivory. ' : 'Inventory full: this horn was salvaged for ivory. ') : ''}${extra ? 'Good playing brought a second horn. ' : ''}${avg > AUTO_P ? 'Above average.' : avg < AUTO_P ? 'Below average.' : 'Average.'}</div><button type="button" class="big" data-act="done">Continue</button>`;
       }
     }
-    if (mode === 'idle' && S.hornQueue < 1) setT('sndNext', S.hornsOn ? mmss(Math.max(0, S.hornTimer)) : 'a while');
+    if (mode === 'idle' && S.hornQueue < 1) setT('sndNext', S.hornsOn ? mmss(Math.max(0, S.hornTimer) / tickRate()) : 'a while');
     if (mode === 'play' && !sndRaf) sndRaf = requestAnimationFrame(sndLoop);
   }
   $('sndStage').addEventListener('click', e => {
@@ -3266,7 +3269,7 @@ import { createState } from './state.js';
     const waiting = hornsWaiting();
     setHid('chipHorn', !S.hornsOn && !waiting);
     if (waiting) chip('chipHorn', 'Sound horn', '×' + waiting, 1, true);
-    else if (S.hornsOn) { const t = Math.max(0, S.hornTimer); chip('chipHorn', 'Horn', mmss(t), 1 - t / hornInterval(), false); }
+    else if (S.hornsOn) { const t = Math.max(0, S.hornTimer); chip('chipHorn', 'Horn', mmss(t / tickRate()), 1 - t / hornInterval(), false); }
   }
 
   // Hover (or focus, or tap) a currency for its lifetime total and best.
@@ -3398,7 +3401,7 @@ import { createState } from './state.js';
     // horns
     setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
     setT('hornCount', `${S.horns.length} / ${HORN_CAP}`);
-    setT('hornTimer', S.hornsOn ? `Next horn turns up in ${mmss(Math.max(0, S.hornTimer))}.` : '');
+    setT('hornTimer', S.hornsOn ? `Next horn turns up in ${mmss(Math.max(0, S.hornTimer) / tickRate())}.` : '');
     if (S.tab === 'horns') {
       if (hornsDirty) renderHorns();
       else if (hornSub === 'sounding') sndRender();
@@ -3626,7 +3629,7 @@ import { createState } from './state.js';
       S.gilt += g; S.giltFloor += g; S.stats.giltLife += g;
     }
     if (S.hornsOn && !cinematic) {
-      S.hornTimer -= dt;
+      S.hornTimer -= dt * tickRate();
       if (S.hornTimer <= 0) {
         if (S.hornAuto || hornsWaiting() < HORN_QUEUE_CAP) { S.hornTimer = hornInterval(); addHornCall(); }
         else S.hornTimer = 0; // the calls are waiting for you; the clock holds

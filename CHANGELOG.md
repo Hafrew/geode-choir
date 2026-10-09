@@ -8,6 +8,11 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.9.6: A Faster Call (2026-10-09)
+
+### Fixed
+- Faster Tick speeds the horn timer as described. The Horn chip and Sounding countdown show remaining seconds at the current tick speed; Keen Ear continues to shorten the underlying interval.
+
 ## 1.9.5: Patient Choir (2026-10-09)
 
 ### Fixed

@@ -15,7 +15,7 @@ const KEY = 'geode-choir-v1';
         await page.addInitScript(key => {
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
-          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.5', seenVer: '1.9.5', hum: 1,
+          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.6', seenVer: '1.9.6', hum: 1,
             hornsOn: true, hornTimer: 3, hearts: 1, depth: 1, sea: { unlocked: true, fathoms: 100000 },
             lore: { prologue: 1 }, saved: Date.now() }));
         }, KEY);
@@ -31,6 +31,24 @@ const KEY = 'geode-choir-v1';
         assert.equal(await page.locator('#sndStage [data-act="start"]').isVisible(), true);
         await page.evaluate(() => { const api = window.__geodeSimulation.api; api.S.hornQueue = 2; api.updateUI(); });
         assert((await page.locator('#sndStage').innerText()).includes('2 calls waiting'));
+
+        // Faster Tick must change both actual arrival time and visible countdowns.
+        const faster = await page.evaluate(() => {
+          const api = window.__geodeSimulation.api, S = api.S; api.endScene();
+          S.hornQueue = 0; S.hornTimer = 10; S.strata.tick = 4; api.updateUI();
+          const displayed = document.getElementById('sndNext').textContent;
+          const start = performance.now() + 10000;
+          for (let i = 1; i <= 20; i++) api.frame(start + i * 50);
+          return { displayed, remaining: S.hornTimer };
+        });
+        assert.equal(faster.displayed, '0:06');
+        assert(Math.abs(faster.remaining - (10 - Math.pow(1.1, 4))) < 1e-8);
+        await page.evaluate(() => {
+          const api = window.__geodeSimulation.api; api.S.hornTimer = 1.2;
+          const start = performance.now() + 20000;
+          for (let i = 1; i <= 20; i++) api.frame(start + i * 50);
+        });
+        assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.hornQueue), 1);
 
         const arrange = async (world, kind = 'bell', tiers = [0, 0]) => {
           await page.evaluate(({ world, kind, tiers }) => {
