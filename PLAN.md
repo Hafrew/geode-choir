@@ -4,13 +4,15 @@ Goal: make the gaps between descents more engaging **without changing how long t
 
 ## Ground rules
 
-1. **Baseline equals today.** Every new mechanic has an auto path that pays exactly today's expected value. Skill moves you above or below it within a cap. `tools/sim` must still land at the same finish time (±2% over several seeds) with the bot on auto.
+1. **Baseline equals today.** Every new mechanic has an auto path that pays exactly today's expected value. Skill moves you above or below it within a cap. `tools/sim` must still land at the same finish time (±2% over several seeds) with the bot on auto. **One deliberate exception:** the Golden Floor (Phase 4) is a real bonus. I'll measure how much it speeds the run up and report it, and we decide then whether to offset it.
 2. **Failure costs bonus, not progress**, except the opt-in Risky Descent.
 3. **Nothing important depends on being at the screen.** Minigames pause on a timestamp, not on frame ticks, and every one can be auto-resolved. Away time never triggers a failure.
 4. **Saves migrate silently.** Nothing is removed or refunded. Old horns get a seed and keep their stats.
 5. One version bump and one CHANGELOG entry per phase, plus the in-game "What's new" (see 1.5.0 for the format).
 
 ## Scope
+
+Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x), shipped on this branch.
 
 In: top status strip, hover lifetime/max stats, Horns tab rebuild, procedural then 3D horns, horn minigame, descent minigame with Risky Descent, floor identities, biomes, Chronicle drip, offline return report, horn sets, session goals, horn/bell music.
 
@@ -65,25 +67,35 @@ Sim impact: none (visual and UI only).
 
 ## Phase 3: Horn minigame (1.8.0)
 
-Flow, per your design:
+Flow:
 1. When the horn timer expires, the chip pulses. Opening the **Sounding** screen **spins rarity first** (existing odds and pity unchanged).
-2. A short minigame follows (about 10 to 15 s), a breath/pitch hold or timing lane in keeping with the theme. **Performance** (0 to 1) sets the stat roll within the rarity and how many horns you get.
-3. Horn upgrades scale the minigame: Keen Ear shortens the wait and widens the timing window, Whetstone raises the ceiling, Branching adds the extra-stat chance, Rack gives a bonus pick slot.
+2. **One minigame per stat line.** A horn with 1 stat gives 1 minigame, 2 stats gives 2, and so on up to the line count for its rarity (Branching's extra stat adds one more). Each is short (about 4 to 6 s), and the performance of each sets that stat's roll within the rarity.
+3. The average performance across the minigames also sets the chance of an extra horn.
+4. Horn upgrades scale it: Keen Ear shortens the wait and widens timing windows, Whetstone raises the ceiling, Branching adds a stat (and so a minigame), Rack adds a pick slot.
 
 EV neutrality:
-- Performance maps to a stat multiplier in **0.6 to 1.5** and an extra-horn chance, with the mean set to 1.0 for a typical player.
-- **Auto-resolve** setting (and automatic when the tab is away for more than N minutes) takes performance = the mean. It's the sim bot's path.
-- If the timer expires while you're away, the horn waits in the Sounding screen, with no loss. Multiple unsounded horns can queue, up to a cap.
+- Performance maps to a stat multiplier in **0.6 to 1.5**, with the mean set to 1.0 for a typical player.
+- **Auto-resolve** (a setting, and automatic after N minutes away) takes performance = the mean for every line. A "finish with auto" button skips the remaining lines mid-sounding. This is the sim bot's path.
+- A sounding that expires while you're away waits in the Sounding screen with no loss. Several can queue, up to a cap.
 
 Sim impact: the bot uses auto. Add an assertion that horn stat totals match the old averages over many seeded rolls.
 
-## Phase 4: Floor identities and biomes (1.9.0)
+## Phase 4: Floor identities, Golden Floor and biomes (1.9.0)
 
-**Floor identities.** Rolled on arrival (from depth ~3), shown in the Descend chip and the cave header, stored as `S.floorId`. Examples: *Echoing* (shards ×2, hum ×0.85), *Glowworm bloom* (lumen ×1.6, shards ×0.8), *Cracked* (more fossil veins, slower decay), *Still* (steady, no modifiers). Rule: each is tuned so the average across the roll table is 1.0 on income, so the finish time doesn't move. Sits alongside the existing descent surprises (rubble, vein, double fall). Make the Chronicle record the identities you've met.
+**Floor identities.** Rolled on arrival (from depth ~3), shown in the Descend chip and the cave header, stored as `S.floorId`. Examples: *Echoing* (shards x2, hum x0.85), *Glowworm bloom* (lumen x1.6, shards x0.8), *Cracked* (more fossil veins, slower decay), *Still* (steady, no modifiers). Each table averages 1.0 on income so the finish time doesn't move. They sit alongside the existing descent surprises (rubble, vein, double fall). The Chronicle records the identities you've met.
 
-**Biomes.** Every 4 depths, a new look: palette tint, crystal geometry, ambient layer. Purely visual, no effect on the numbers. Heartstone resets the biome to the first.
+**Golden Floor** (name is a placeholder; alternatives: *Sunvein*, *Gilded Hollow*, *Aurelian Floor*). A rare floor that can replace the normal roll on arrival.
+- **Chance:** 5% by default. Each Golden Horn you own adds +2%, capped at 15% from that source. A successful Risky Descent adds a flat +10% to that one roll (so up to 25% at most).
+- **On a Golden Floor:** decay is 25% slower (decay rate x0.75), fossil gain from that floor is +25%, and horn soundings produce **Golden Horns**.
+- **Golden-only upgrades.** A small set of upgrades that can only be bought while you are standing on a Golden Floor. Levels persist afterwards. (My reading of "can only be upgraded once you get there"; see open questions.)
+- **Golden Horns:** the minigame result gets a further x1.25 on top, plus a distinct look (gold material, glow, particles) and their own Collection entries. Each one you own adds +2% to the Golden Floor chance, so a collection of 5 reaches the 15% cap.
+- Heartstone: the Golden Floor chance and the owned Golden Horns carry over, since horns are kept.
 
-Sim impact: floor identities change variance, not mean. Check at several seeds. Note that identities with a decay effect interact with the floor-freshness curve, so test those explicitly.
+Pacing: this is a real bonus, so the sim must model it. At 5% chance with +25% fossils and 25% slower decay the average gain is small, but it grows with the cap and with Risky Descents. I'll measure it and report before shipping. Offsets, if wanted, are a lower base chance or a smaller fossil bonus.
+
+**Biomes.** Every 4 depths, a new look: palette tint, crystal geometry, ambient layer. Purely visual, no effect on the numbers. Heartstone resets the biome to the first. The Golden Floor overrides the biome with a gold tint.
+
+Sim impact: identities change variance, not mean. The Golden Floor changes the mean; test several seeds and the decay interaction.
 
 ## Phase 5: Descent minigame and Risky Descent (1.10.0)
 
@@ -94,12 +106,12 @@ Sim impact: floor identities change variance, not mean. Check at several seeds. 
 - The settling lock and quests are unchanged.
 
 **Risky Descent (opt-in).** A second button.
-- Success: a bigger bonus than a clean descent, and uses the same landing rules.
+- Success: a bigger bonus than a clean descent, **and +10% flat to the Golden Floor chance** for that landing.
 - Failure: you **fall back to the last gate**. All upgrades stay intact. The floor's decay carries over, and you take a lock of **current settling time ÷ 0.5** (that is, double). Good performance can raise the decay offset, per your note.
 - Tuning: a player who succeeds about 70% of the time should come out modestly ahead, and a poor one behind. The sim models a player at a fixed success rate. The bot's default is to never take the risk.
 - Needs a clear confirm dialog showing the exact penalty.
 
-Open item for you: define "last gate" precisely. My default is the previous depth you descended from (depth − 1).
+The last gate is the previous depth (depth - 1). Confirmed.
 
 ## Phase 6: Story, report, goals, collection, music (1.11.0)
 
@@ -136,9 +148,17 @@ Open item for you: define "last gate" precisely. My default is the previous dept
 | Floor identities skew pacing | Mean-1.0 tables, sim-verified at several seeds |
 | Risky Descent feels punishing | Opt-in only, exact penalty shown before confirming |
 
+## Decisions so far
+
+- Last gate on a failed Risky Descent: depth - 1. Confirmed.
+- Horn minigame: one minigame per stat line. Confirmed.
+- Golden Floor: 5% base, +2% per Golden Horn up to 15%, +10% flat on a successful Risky Descent. Confirmed.
+
 ## Open questions (defaults in brackets)
 
-1. "Last gate" for a failed Risky Descent: [depth − 1].
-2. Minigame style for horns and descents: [timing-based, one-button, works with touch and keyboard].
-3. Session goals reset: [local midnight].
-4. Phase order: [as above]. Phases 1 and 2 are independent and could ship in either order.
+1. **Golden Floor upgrades:** [a small set of Golden-only upgrades, bought only while on a Golden Floor, levels kept]. Or did you mean the floor itself levels up?
+2. **Golden Horns counted:** [owned, including unequipped, so the 15% cap takes 5 horns]. If only equipped horns count, the cap is out of reach with 1 to 3 slots.
+3. **Does the 15% cap include Risky Descent's +10%?** [No: the cap applies to base + horns, and Risky adds on top, up to 25%.]
+4. **Golden horn rate on a Golden Floor:** [every horn sounded there is golden]. Or a chance per sounding.
+5. **Session goals reset:** [local midnight].
+6. **Phase order:** [as above]. Phases 1 and 2 are independent.
