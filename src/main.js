@@ -23,8 +23,9 @@ import { createState } from './state.js';
     { ver: '1.9.8', date: '2026-10-09', head: 'The Sea Settles', items: [
       'Sea soundings now have a settling timer. It starts at ten minutes and shortens at 2, 5, 10 and 20 actual soundings, down to two minutes. Faster Tick speeds it in either world and while away.',
       'Later Heartstones need 20, 24, 28 and onward total Sea soundings. The first still opens the Sea. An already-met Sea milestone in an old save stays valid for its current Heartstone.',
+      'Fathom windfalls from very long waits now taper more sharply; rewards at the tide requirement stay the same.',
       'Tide requirements grow by three per sounding instead of four. Open the Ceiling has higher prices and a 15-level purchase limit; existing levels above 15 keep their bonuses.',
-      'The Undersong asks for 25 actual soundings and a larger fathom offering. Seashell discovery and its minigame are still to come.',
+      'The Undersong asks for 25 actual soundings and 50,000 fathoms. Seashell discovery and its minigame are still to come.',
     ] },
     { ver: '1.9.7', date: '2026-10-09', head: 'A Measured Haul', items: [
       'Fathoms grow more slowly when you stay beyond a Sea sounding’s tide requirement. The payout at the requirement is unchanged, as are cave fossil rewards and fathoms already earned.',
@@ -216,7 +217,7 @@ import { createState } from './state.js';
   const deepenAt = () => depthThreshold(S);
   // After every descent the floor has to settle. Only quests shorten it. All time gates run through tickRate().
   const LOCK_BASE = 600, LOCK_STEP = 120, LOCK_MIN = 120;
-  // Faster Tick speeds every time gate (the descent lock, horn timers). It never touches the floor's fade, which runs on real time.
+  // Faster Tick speeds every time gate (the descent lock, Sea settling, horn timers). It never touches the floor's fade, which runs on real time.
   const tickMax = () => 2 + 3 * S.hearts;
   const tickRate = () => Math.pow(1.1, S.strata.tick || 0);
   // Floor freshness: hum and lumen fade the longer you stay on one floor, from full strength toward a floor.
@@ -2061,7 +2062,7 @@ import { createState } from './state.js';
       get: () => S.strata[k], inc: () => { S.strata[k]++; }, ...extra,
     });
     st('tick', 'Faster Tick', ICONS.gear(), 3, 3.2, tickMax,
-      l => l >= tickMax() ? 'Time gates run as fast as this Heartstone allows. Another Heartstone raises the limit.' : `Time gates (the descent lock, horn timers) run ×${fmtX(Math.pow(1.1, l))} → ×${fmtX(Math.pow(1.1, l + 1))} faster. The floor's fade stays on real time.`,
+      l => l >= tickMax() ? 'Time gates run as fast as this Heartstone allows. Another Heartstone raises the limit.' : `Time gates (the descent lock, Sea settling, horn timers) run ×${fmtX(Math.pow(1.1, l))} → ×${fmtX(Math.pow(1.1, l + 1))} faster. The floor's fade stays on real time.`,
       () => S.depth >= 1 || S.strata.tick > 0);
     st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmtX(softPow(1.3, l))} → ×${fmtX(softPow(1.3, l + 1))}`);
     st('lungs', 'Deep Lungs', ICONS.lungs(), 2, 1.7, 1e9, l => `Every descent starts with Lungs Lv ${2 * l} → ${2 * (l + 1)}`);

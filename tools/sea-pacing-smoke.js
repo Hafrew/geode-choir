@@ -69,9 +69,21 @@ const KEY = 'geode-choir-v1';
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.sea.choir.open), 15);
         assert.equal(await page.evaluate(() => window.__geodeSimulation.items.find(it => it.name().startsWith('Open the Ceiling')).buy()), false);
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.songReqs()[0].need), 25);
+        const finale = await page.evaluate(() => {
+          const api = window.__geodeSimulation.api, S = api.S; api.endScene();
+          S.hearts = 3; S.sea.soundings = 24; S.sea.fathoms = api.SONG_COST;
+          S.feats = Object.fromEntries(api.FEATS.slice(0, 20).map(feat => [feat.id, 1]));
+          const blocked = api.songReady(); api.answerSong();
+          const held = S.sea.fathoms;
+          S.sea.soundings = 25;
+          const ready = api.songReady(); api.answerSong();
+          const paid = S.sea.fathoms; api.answerSong();
+          return { blocked, held, ready, paid, done: S.finale > 0, repeat: S.sea.fathoms };
+        });
+        assert.deepEqual(finale, { blocked: false, held: 50000, ready: true, paid: 0, done: true, repeat: 0 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
         assert.deepEqual(errors, []);
-        console.log(`PASS ${width}px: live Sea countdown, locked actions, offline/cave ticking, reload, once-only rewards, legacy Ceiling and purchase cap`);
+        console.log(`PASS ${width}px: live countdown, locked actions, offline/cave ticking, reload, once-only rewards, legacy Ceiling/cap and finale payment`);
       } finally { await context.close(); }
     }
   } finally { await browser?.close(); await server.close(); }

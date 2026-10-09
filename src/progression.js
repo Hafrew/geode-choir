@@ -3,7 +3,7 @@ import { shellDiscounts } from './seashells.js';
 const KNEE = 10;
 const SEA_MILESTONES = [2, 5, 10, 20];
 const FINALE_SOUNDINGS = 25;
-const SONG_FATHOMS = 5000;
+const SONG_FATHOMS = 50000;
 const CEILING_MAX = 15;
 const CEILING_BASE = 1500, CEILING_GROWTH = 3.5;
 const seaLock = soundings => Math.max(120, 600 - 120 * SEA_MILESTONES.filter(n => soundings >= n).length);
@@ -49,7 +49,7 @@ const soundingReady = S => S.sea.unlocked && S.sea.cool <= 0 && S.sea.run >= sea
 const bend = r => r <= 1 ? 1 : Math.pow(r, 0.3662);
 const FATHOM_EXPONENT = 0.25;
 // Settling forces overrun: after 10,000×, logarithmic growth limits camping windfalls.
-const fathomBend = ratio => ratio <= 1e4 ? Math.pow(ratio, FATHOM_EXPONENT) : 10 * (1 + Math.log10(ratio / 1e4));
+const fathomBend = ratio => ratio <= 1e4 ? Math.pow(ratio, FATHOM_EXPONENT) : Math.min(Math.pow(ratio, FATHOM_EXPONENT), 10 * (1 + Math.log10(ratio / 1e4)));
 function fossilReward(S, bonus, floorMultiplier, sunBonus) {
   const need = depthThreshold(S);
   return S.run < need ? 0 : Math.floor((1 + 0.5 * S.depth) * 2 * bend(S.run / need)

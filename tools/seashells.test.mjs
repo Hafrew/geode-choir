@@ -126,11 +126,12 @@ test('harsher fathoms preserve the threshold payout and fossil curve, and increa
   const seaNeed = seaThreshold(S), caveNeed = depthThreshold(S), bonus = 1.35;
   S.sea.run = seaNeed - 1; assert.equal(fathomReward(S, bonus), 0);
   let previous = 0;
-  for (const [ratio, factor] of [[1, 1], [2, 2 ** .25], [10, 10 ** .25], [100, 100 ** .25], [10000, 10], [1e8, 50]]) {
+  for (const [ratio, factor] of [[1, 1], [2, 2 ** .25], [10, 10 ** .25], [100, 100 ** .25], [10000, 10], [100000, 100000 ** .25], [1e8, 50]]) {
     S.sea.run = seaNeed * ratio; S.run = caveNeed * ratio;
     const reward = fathomReward(S, bonus);
     assert(reward >= previous); previous = reward;
     assert.equal(reward, Math.floor(6 * factor * 1.25 ** 3 * bonus));
+    assert(reward <= Math.floor(6 * ratio ** .25 * 1.25 ** 3 * bonus));
     assert(reward <= Math.floor(6 * ratio ** .3662 * 1.25 ** 3 * bonus));
     assert.equal(fossilReward(S, bonus, 1, 1), Math.floor(10 * ratio ** .3662 * 1.25 ** 2 * bonus));
   }

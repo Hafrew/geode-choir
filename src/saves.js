@@ -1,7 +1,6 @@
 import { createState, freshStats, freshSea } from './state.js';
 import { normalizeCaveAutomation } from './automation.js';
-import { normalizeShells } from './seashells.js';
-import { shellDiscounts } from './seashells.js';
+import { normalizeShells, shellDiscounts } from './seashells.js';
 import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState } from './horns.js';
 import { KNEE } from './progression.js';
 const cmpVer = (a, b) => {
