@@ -33,7 +33,8 @@ Current release: **1.10.1 beta** on `main`. All gameplay through 1.10.1 is merge
 | **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Delivered; manual tuning pending |
 | **1.10.1** | Stable 2D shell art in inventory and sounding | Delivered; released as **beta** |
 | **1.10.2** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI | **Next pass**; no balance changes |
-| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.2, using the natural shell-economy results |
+| **1.10.3** | Auto-buy horns, staged Patient Choir unlocks, longer Heartstone run (4 or 5 Heartstones) | Proposed; needs simulator rerun before numbers are final |
+| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.3, using the natural shell-economy results |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -124,6 +125,39 @@ The beta label is removed when 1.11.0 lands and this hardening is complete.
 4. Reward and cost formulas (`fossilGain`, `fathomGain`, `heartCost`, and related) into `progression.js`, so tests and the simulator import them directly instead of through `simulation.api`.
 
 Extraction never blocks a feature release, and the canvas/audio rewrite stays out of scope.
+
+## 1.10.3 — Auto-buy horns, staged automation, longer run
+
+Natural runs finish in about **4.25 hours** (3.96–4.85 h, seeds 1–5, see [playable shell validation](tools/sim/playable-seashells.md)). The goal here is a longer game, and automation that has to be earned instead of arriving as one flat unlock.
+
+### Auto-buy horns
+- A dedicated rack of up to **3 slots** for **Epic, Legendary, and Mythic** horns, used only to speed up Patient Choir shopping. Slotted horns give **no stat effect** anywhere; their only effect is a shorter shopping interval.
+- Slots: **1st** with Patient Choir, **2nd at Heartstone 3**, **3rd at Heartstone 4**. No fathom cost for the slots.
+- Interval: base 0.5 s, multiplied per horn (proposed Epic ×0.90, Legendary ×0.80, Mythic ×0.65), with a **0.1 s floor**. Gilded counts one rarity higher.
+- A slotted horn cannot also be in the normal or Primordial racks, and auto-salvage and fusing skip it. Ids are validated on load, so a missing or ineligible horn is dropped.
+- Offline behavior is unchanged (no offline shopping).
+
+### Staged Patient Choir
+Replace the single 100,000-fathom switch that opens all nine categories with a ladder. Costs and gates are **proposed** and must be tuned with the simulator.
+
+| Stage | Opens | Gate | Proposed price |
+|---|---|---|---|
+| Patient Choir | Voices, Tuning, Crystals | Heartstone 2 | 100,000 fathoms (unchanged) |
+| Second Verse | Wonders, Attunement | Heartstone 2 | ~250,000 fathoms |
+| Deep Verse | Strata, Illuminations | Heartstone 3 | ~1,000,000 fathoms |
+| Final Verse | Horn upgrades, Sunvein upgrades | Heartstone 4 | ~4,000,000 fathoms |
+
+Existing saves that already own Patient Choir keep what they have paid for: their categories open, no refund, no double charge, and the new stages are bought normally.
+
+### Longer run: more Heartstones
+- Raise the Heartstone requirement for the finale from **3 to 4 or 5**. **Recommended: 5.** With slots arriving at Heartstones 3 and 4, a target of 4 would hand over the last slot at the moment the finale is one step away; 5 gives the new slots time to matter.
+- The finale's actual-sounding requirement (currently 25) is already below the cumulative gate for later Heartstones (20/24/28/32…), so it must be raised with the Heartstone count (about 36 for five Heartstones), or the sounding requirement stops mattering.
+- Heartstone cost (`1e7 × 10^h` lumen) and depth (`12 + 22h`) keep growing, so Heartstone 4 and 5 are large steps. The sim decides whether they need easing.
+- Goal to measure: a mean natural finish of about **6–8 hours** (proposed), with no seed far outside that range. The 20-feat requirement and the 100,000-fathom entry price are re-checked.
+- Existing saves with three or four Heartstones keep them; a completed finale stays completed.
+
+### Validation
+Unit tests for the shopping interval and for loading bad ids. Browser smoke checks for slotting, unlocking at Heartstones 3 and 4, staged purchases, old-save migration, and reload. Seeds 1–5 rerun for finish time, with an automation-on and automation-off comparison. The unlock prices and the interval multipliers stay marked proposed until then.
 
 ## 1.11.0 — The Last Chorus
 
