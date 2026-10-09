@@ -2,6 +2,14 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.5.1: Sinking Deeper (2026-10-09)
+
+### Added
+- **Sinking Stone setting.** A − and + beside the Sinking Stone set how many times what the floor needs you must have sung before it descends on its own, from 1x to 10x. The default stays at 2x, so nothing changes until you touch it. Turning the stone off, or waiting longer, still pays more fossils than descending early, because fossils grow with how far past the threshold you sang.
+
+### Existing saves
+- Saves get 2x. Nothing is removed or refunded.
+
 ## 1.5.0: The Fading Update (2026-10-06)
 
 ### Added

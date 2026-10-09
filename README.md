@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a single static file (`index.html`) with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.5.0**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.5.1**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
