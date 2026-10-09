@@ -18,19 +18,34 @@ In: top status strip, hover lifetime/max stats, Horns tab rebuild, procedural th
 
 Out (by request): choose-1-of-3 on arrival, rhythm shouts, cave events, crystal resonance puzzles, settling mini-tasks.
 
-## Code map (all in `index.html`)
+## Code map
 
 | Area | Where |
 |---|---|
-| State | `fresh()` ~L840, `S`, `serialize()`/`load()` ~L3612/3660 |
-| Horns | `gainHorn` ~L2819, `renderHorns` ~L2862, `hornBoost` ~L855, shop items ~L2781, panel markup ~L496 |
-| Descent | `descend()` ~L2987, lock/`tickRate()` ~L900, quests ~L923 |
-| Heartstone | `kindle()` ~L3061 |
-| Tabs | nav ~L392, panels ~L496+ |
-| Chronicle | `renderChronicle` ~L3423 |
-| Sim | `tools/sim/{build,bot,run}.js`, Playwright + seeded `Math.random` |
+| State defaults | `src/state.js`: `createState(version)`, `freshCave`, `freshSea`, `freshStats` |
+| Runtime state and saves | `src/main.js`: `S`, `serialize`, `load`, `migrate`, `grantAway` |
+| Horns | `src/main.js`: `gainHorn`, `renderHorns`, `hornBoost`, `buildShop`; panel markup in `index.html` |
+| Descent | `src/main.js`: `descend`, `descentLock`, `tickRate`, `checkQuests` |
+| Heartstone | `src/main.js`: `kindle`, `canKindle` |
+| Tabs | markup in `index.html`; `src/main.js`: `setTab` |
+| Chronicle | `src/main.js`: `renderChronicle` |
+| Styles | `styles.css` |
+| Sim | `tools/sim/{bot,run}.js`, Playwright + seeded `Math.random`; `window.__geodeSimulation` is supplied only by the runner |
+| Browser checks | `tools/smoke.js`; ephemeral HTTP serving in `tools/serve.js` |
 
-The Descend and Heartstone panels currently live in the Glow tab column under the upgrade list. The Sunless Sea gets its own equivalent chip.
+The Descend and Heartstone panels live in status-strip popovers in `index.html`.
+
+### File layout refactor (in progress, before Phase 5)
+
+Completed first stage: extracted markup, styles, JavaScript, and independent state factories. The simulation now loads the real modules over HTTP through an opt-in interface instead of patching source text. No gameplay or save-format changes.
+
+Next stages, each validated independently:
+
+1. Separate save serialization and migration from DOM updates. Keep the storage key, backups, and existing save compatibility.
+2. Extract progression and horn rules with explicit state inputs and outcomes; UI code applies and presents those outcomes. Preserve seeded random draw order.
+3. Move canvas rendering, audio, and UI into modules after their dependencies are explicit. Avoid shared global variables or generic event plumbing just to split files.
+
+Static hosting stays build-free. A bundled single-file release can be added separately if needed; it is not required for development.
 
 ---
 
@@ -136,14 +151,14 @@ The last gate is the previous depth (depth - 1). Confirmed.
 - Optional upgrade over the SVG horns: a three.js tube/lathe geometry built from the same `{seed, rarity, stats}`.
 - Lazy-load three.js from a pinned CDN version, only when the Inventory or Collection is opened. If it fails to load or WebGL is missing, fall back to SVG.
 - Slow idle rotation, with a drag-to-rotate in the detail view. Keep the render loop paused when the view is hidden.
-- Keeps `index.html` as a single file with no build step.
+- Keeps static hosting build-free; load three.js from the Inventory/Collection module.
 
 ---
 
 ## Testing
 
 - `node tools/sim/run.js --hours 40 --seed N` before and after each phase, for seeds 1 to 5, comparing the marks (finish time, Heartstone times). Fail the phase if finish time moves more than ±2%.
-- Extend `bot.js` for auto-resolve of the horn and descent minigames, and a `--risk p` option to model a given success rate.
+- Extend `bot.js` for auto-resolve of the descent minigame, and a `--risk p` option to model a given success rate. Horn auto-resolve already exists.
 - Playwright smoke tests: each new screen opens at desktop and phone width with no `pageerror`, and an old save loads and migrates.
 - Manual: backgrounded tab, away for hours, fast clock changes, reduced-motion preference.
 
