@@ -138,14 +138,14 @@ Natural runs finish in about **4.25 hours** (3.96–4.85 h, seeds 1–5, see [pl
 - Offline behavior is unchanged (no offline shopping).
 
 ### Staged Patient Choir
-Replace the single 100,000-fathom switch that opens all nine categories with a ladder. Costs and gates are **proposed** and must be tuned with the simulator. They are scaled to a real mid-run save: with two Heartstones and about 32 soundings, a player held about 21.7 million fathoms and earned about 150,000 fathoms per sounding, so prices in the hundreds of thousands would be bought instantly. Aim for each stage to cost roughly 30–60 minutes of income at the time its Heartstone gate opens.
+Replace the single 100,000-fathom switch that opens all nine categories with a ladder. Costs and gates are **proposed** and must be tuned with the simulator. They are scaled to a real mid-run save (about 2.6 hours played, two Heartstones, 32 soundings): typical income was about 150,000 fathoms per sounding, one sounding per two-minute settling lock, so roughly 4–5 million fathoms an hour. The 21.7 million held in that save was mostly one old windfall (a recorded single haul of 21.1 million, from before the harsher fathom curve), so it is not typical income. Aim for each stage to cost roughly 30–60 minutes of income at the time its Heartstone gate opens.
 
 | Stage | Opens | Gate | Proposed price |
 |---|---|---|---|
 | Patient Choir | Voices, Tuning, Crystals | Heartstone 2 | 100,000 fathoms (unchanged) |
-| Second Verse | Wonders, Attunement | Heartstone 2 | ~10,000,000 fathoms |
-| Deep Verse | Strata, Illuminations | Heartstone 3 | ~50,000,000 fathoms |
-| Final Verse | Horn upgrades, Sunvein upgrades | Heartstone 4 | ~250,000,000 fathoms |
+| Second Verse | Wonders, Attunement | Heartstone 2 | ~3,000,000 fathoms |
+| Deep Verse | Strata, Illuminations | Heartstone 3 | ~15,000,000 fathoms |
+| Final Verse | Horn upgrades, Sunvein upgrades | Heartstone 4 | ~60,000,000 fathoms |
 
 Existing saves that already own Patient Choir keep what they have paid for: their categories open, no refund, no double charge, and the new stages are bought normally.
 
