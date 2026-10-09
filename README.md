@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a static browser game with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.10.0**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.10.1**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
@@ -26,7 +26,7 @@ Soundings need enough tide and an expired settling timer. The timer starts at 10
 
 ## Seashells
 
-After each successful Sea sounding, discovery has a 20% chance to find a shell (75% Common, 20% Epic, 5% Mythic among finds). In **The Deep → Seashells**, claim a Common directly; for Epic/Mythic complete three timing notes or choose **Finish with Auto**. Better timing improves depth reduction: Common 1, Epic 2–4, Mythic 5–10. Auto gives 1/3/8. Sounding reductions stay fixed at 0/1/3. Notes pause off-screen and partial results survive reloads.
+After each successful Sea sounding, discovery has a 20% chance to find a shell (75% Common, 20% Epic, 5% Mythic among finds). In **The Deep → Seashells**, claim a Common directly; for Epic/Mythic complete three timing notes or choose **Finish with Auto**. Better timing improves depth reduction: Common 1, Epic 2–4, Mythic 5–10. Auto gives 1/3/8. Sounding reductions stay fixed at 0/1/3. Notes pause off-screen and partial results survive reloads. Inventory and sounding cards display stable 2D SVG shell art, with distinct shapes and materials for each rarity.
 
 Equip one shell, or buy the permanent second slot for **500 fathoms**. Shell Listening costs **25/50/100/200/400/800 fathoms**, raising discovery by five percentage points per level to 50%. Equipped discounts add and apply only to Heartstone eligibility, never actual depth, milestones, rewards, or the finale's 25-sounding requirement. Distinct identical shells can equip together. Inventory has no cap or forced salvage in this pass. Shells, upgrades, and pending soundings survive every reset.
 
@@ -38,6 +38,7 @@ Equip one shell, or buy the permanent second slot for **500 fathoms**. Shell Lis
 - `src/automation.js`: cave shop category rules, currency reserves, and saved automation defaults.
 - `src/horns.js`: rarity curves, seeded horn rolling, stat/trait effects, dedicated rack rules, inventory automation, save normalization, and sounding difficulty.
 - `src/seashells.js`: shell discovery/scoring, dedicated slots, fixed sounding discounts, pending manual/Auto completion, and normalization.
+- `src/shell-art.js`: deterministic SVG seashell illustrations based on existing item identity and rarity.
 - `src/shell-ui.js`: shell result spinner, saved three-note timing presentation, inventory, and equipment controls.
 - `src/saves.js`: serialization, compatibility migration, and restoration without DOM or storage access.
 - `src/progression.js`: descent/sea rewards and thresholds, Heartstone eligibility and state resets, plus trait-aware decay/Gilt rules.
