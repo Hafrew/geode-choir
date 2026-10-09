@@ -18,19 +18,51 @@ In: top status strip, hover lifetime/max stats, Horns tab rebuild, procedural th
 
 Out (by request): choose-1-of-3 on arrival, rhythm shouts, cave events, crystal resonance puzzles, settling mini-tasks.
 
-## Code map (all in `index.html`)
+## Code map
 
 | Area | Where |
 |---|---|
-| State | `fresh()` ~L840, `S`, `serialize()`/`load()` ~L3612/3660 |
-| Horns | `gainHorn` ~L2819, `renderHorns` ~L2862, `hornBoost` ~L855, shop items ~L2781, panel markup ~L496 |
-| Descent | `descend()` ~L2987, lock/`tickRate()` ~L900, quests ~L923 |
-| Heartstone | `kindle()` ~L3061 |
-| Tabs | nav ~L392, panels ~L496+ |
-| Chronicle | `renderChronicle` ~L3423 |
-| Sim | `tools/sim/{build,bot,run}.js`, Playwright + seeded `Math.random` |
+| State defaults | `src/state.js`: `createState(version)`, `freshCave`, `freshSea`, `freshStats` |
+| Runtime state and saves | `src/main.js`: `S`, `serialize`, `load`, `migrate`, `grantAway` |
+| Horns | `src/main.js`: `gainHorn`, `renderHorns`, `hornBoost`, `buildShop`; panel markup in `index.html` |
+| Descent | `src/main.js`: `descend`, `descentLock`, `tickRate`, `checkQuests` |
+| Heartstone | `src/main.js`: `kindle`, `canKindle` |
+| Tabs | markup in `index.html`; `src/main.js`: `setTab` |
+| Chronicle | `src/main.js`: `renderChronicle` |
+| Styles | `styles.css` |
+| Sim | `tools/sim/{bot,run}.js`, Playwright + seeded `Math.random`; `window.__geodeSimulation` is supplied only by the runner |
+| Browser checks | `tools/smoke.js`; ephemeral HTTP serving in `tools/serve.js` |
 
-The Descend and Heartstone panels currently live in the Glow tab column under the upgrade list. The Sunless Sea gets its own equivalent chip.
+The Descend and Heartstone panels live in status-strip popovers in `index.html`.
+
+### File layout refactor (in progress, before Phase 5)
+
+Completed first stage: extracted markup, styles, JavaScript, and independent state factories. The simulation now loads the real modules over HTTP through an opt-in interface instead of patching source text. No gameplay or save-format changes.
+
+Next stages, each validated independently:
+
+1. Separate save serialization and migration from DOM updates. Keep the storage key, backups, and existing save compatibility.
+2. Extract progression and horn rules with explicit state inputs and outcomes; UI code applies and presents those outcomes. Preserve seeded random draw order.
+3. Move canvas rendering, audio, and UI into modules after their dependencies are explicit. Avoid shared global variables or generic event plumbing just to split files.
+
+Static hosting stays build-free. A bundled single-file release can be added separately if needed; it is not required for development.
+
+### QOL and balance backlog
+
+Requested after the first file-layout refactor. These are planned changes, not implemented features. Finish the save/progression module boundaries first, then deliver these in small, independently validated changes before adding more minigames.
+
+- [ ] **Auto-equip best horns.** Add an optional, saved setting that selects the best available loadout and re-evaluates it when horns or slots change. Define what "best" means across cave and sea stats; the simulator already scores and equips horns, but the actual game does not offer this automation.
+- [ ] **Automatic horn deletion by rarity.** Allow individual rarity selections in a saved setting. Prefer the existing salvage-for-ivory path over silently discarding rewards. Protect equipped horns; keep gilded horns separately controllable because owning them affects Sunvein chance. Decide whether the filter applies only to newly acquired horns or also to existing inventory, and make that behavior clear.
+- [ ] **Shorter Sunless Sea waits.** Investigate the reported ten-minute timer and reduce the wait as cave descent waits improve. Current `sound()` and the sea HUD do not impose a timed settling lock: sea progress is gated by `soundAt()` and tide earned. Identify the actual wait before choosing a timer or threshold change; do not add a new cooldown. Cover early and later soundings in pacing checks.
+- [ ] **Undersong fathom cost.** Increase the offering from its current **25 fathoms**, which is negligible beside the supplied example's 15.3K balance. Choose the replacement cost using late-game earning rates and simulation; no replacement amount has been specified yet.
+- [ ] **Undersong sea requirement: 25 soundings.** Raise "Sound the depths" from **6 to 25**; this is a progression count, separate from the offering's fathom cost. Update the UI and bot's sounding limit (currently defaults to 6), and check the effect of exponentially increasing sounding thresholds. Keep already-completed finales completed.
+- [ ] **Open the Ceiling cap and prices.** Cap at **level 15** and increase the level-scaled prices. Currently it has no explicit cap and costs `ceil(500 * 3^level)` tide. Specify the new cost curve and a migration policy for existing levels above 15 (the supplied save shows level 22), preserving the player's investment rather than silently deleting it.
+- [ ] **Sunless Sea canvas Fuse/Crush controls.** Add the same merge/delete drop zones available in the cave, operating on bells. Dragging a bell onto a twin already fuses it, but the explicit drop zones are currently cave-only. Preserve the top-tier merge limit and prevent unrelated sea objects from being deleted by bell controls.
+- [ ] **Complete cave upgrade automation.** Audit every manually purchasable cave upgrade: voices, tuning, attunement, Strata, Glow, wonders, and any remaining shop categories. Existing `Patient Hands`, `Crystal Seeker`, and `Sinking Stone` only automate crystal fusion, crystal purchases, and descents. Add automation for uncovered categories, available after **two Heartstones** as a persistent unlock costing **100,000 fathoms**. Use per-category controls so players can reserve currencies and avoid spending on unwanted upgrades; distinguish this in-game feature from the simulator's existing automatic shopping.
+
+Delivery order: horn inventory controls; sea canvas controls; broader cave automation; then a coordinated sea/Undersong/Open the Ceiling balance pass. Measure each balance change separately before combining them.
+
+The requested balance changes intentionally revise the earlier unchanged-duration goal. Report their effect on finish time rather than treating every pacing difference as a refactor regression. Refactor-only changes still require unchanged behavior. Preserve saves, test automation persistence through descents and Heartstones, and run representative cave/sea browser checks plus multi-seed pacing comparisons.
 
 ---
 
@@ -136,14 +168,14 @@ The last gate is the previous depth (depth - 1). Confirmed.
 - Optional upgrade over the SVG horns: a three.js tube/lathe geometry built from the same `{seed, rarity, stats}`.
 - Lazy-load three.js from a pinned CDN version, only when the Inventory or Collection is opened. If it fails to load or WebGL is missing, fall back to SVG.
 - Slow idle rotation, with a drag-to-rotate in the detail view. Keep the render loop paused when the view is hidden.
-- Keeps `index.html` as a single file with no build step.
+- Keeps static hosting build-free; load three.js from the Inventory/Collection module.
 
 ---
 
 ## Testing
 
 - `node tools/sim/run.js --hours 40 --seed N` before and after each phase, for seeds 1 to 5, comparing the marks (finish time, Heartstone times). Fail the phase if finish time moves more than ±2%.
-- Extend `bot.js` for auto-resolve of the horn and descent minigames, and a `--risk p` option to model a given success rate.
+- Extend `bot.js` for auto-resolve of the descent minigame, and a `--risk p` option to model a given success rate. Horn auto-resolve already exists.
 - Playwright smoke tests: each new screen opens at desktop and phone width with no `pageerror`, and an old save loads and migrates.
 - Manual: backgrounded tab, away for hours, fast clock changes, reduced-motion preference.
 

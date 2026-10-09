@@ -1,8 +1,8 @@
-// The bot runs inside the page next to the real game code (window.__sim, window.__items from build.js).
+// The bot runs inside the page through the game's opt-in simulation interface.
 // It only uses actions a player has: tap, fuse twins, buy shop items, descend, sound, kindle, wear horns.
 // Source of the in-page function is exported as a string so run.js can inject it.
 module.exports = function installBot(cfg) {
-  const sim = window.__sim;
+  const sim = window.__geodeSimulation.api;
   const CAVE = new Set(['shopCrystals', 'shopVoices', 'shopTuning', 'shopWonders', 'shopAttune', 'shopStrata', 'shopGlow', 'shopHorns', 'shopGold']);
   const SEA = new Set(['shopBells', 'shopSeaVoices', 'shopSeaTuning', 'shopOysters', 'shopPearlObjs', 'shopBellTune', 'shopDeep', 'shopChoir', 'shopHorns']);
   const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, budget: 0 };
@@ -41,7 +41,7 @@ module.exports = function installBot(cfg) {
     const parents = S.world === 'sea' ? SEA : CAVE;
     for (let n = 0; n < 8; n++) {
       let best = null, bestScore = Infinity;
-      for (const it of window.__items) {
+      for (const it of window.__geodeSimulation.items) {
         if (!parents.has(it.parent)) continue;
         if (it.show && !it.show()) continue;
         if (it.state && it.state()) continue;               // toggles already owned
