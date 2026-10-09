@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createState } from '../src/state.js';
 import { seaLock, seaThreshold, soundingReady, advanceSeaTimer, resetSounding, resetHeartstone,
-  heartSeaRequired, FINALE_SOUNDINGS } from '../src/progression.js';
+  heartSeaRequired, FINALE_SOUNDINGS, FINALE_HEARTS, HEART_LUMEN_GROWTH, PLUMB_STEP, heartLumenCost, fathomReward } from '../src/progression.js';
 import { serializeState, restoreState } from '../src/saves.js';
 const fresh = () => createState('1.9.8');
 const catalog = { WONDERS: {}, PEARLOBJ: {}, FLOORS: { still: {} }, OMENS: { steady: {} },
@@ -42,7 +42,7 @@ test('Heartstones use cumulative 0/20/24/28 gates; shells never change actual co
   S.shells.extraSlot = 1; S.shells.items = [{ id: 1, r: 2, depth: 10 }, { id: 2, r: 2, depth: 10 }];
   S.shells.equipped = [1, 2];
   assert.equal(heartSeaRequired(S), 14); assert.equal(S.sea.soundings, 14);
-  assert.equal(FINALE_SOUNDINGS, 25);
+  assert.equal(FINALE_SOUNDINGS, 36);
   assert.equal(seaLock(S.sea.soundings), 240);
 });
 
@@ -60,4 +60,19 @@ test('migration honors one met Sea gate and preserves paid levels, balances, and
   const notMet = fresh(); notMet.ver = '1.9.7'; notMet.hearts = 2; notMet.sea.soundings = 3;
   const migrated = restoreState(serializeState(notMet), '1.9.8', catalog).state;
   assert.equal(migrated.heartSeaLegacy, null); assert.equal(heartSeaRequired(migrated), 24);
+});
+
+test('1.10.2 balance: five-Heartstone finale, steeper lumen cost, softer Plumb Line', () => {
+  const S = fresh(), omen = { lumen: 1 };
+  assert.equal(FINALE_HEARTS, 5);
+  assert.ok(FINALE_SOUNDINGS > heartSeaRequired({ ...S, hearts: FINALE_HEARTS - 1, shells: S.shells, heartSeaLegacy: null }));
+  assert.equal(HEART_LUMEN_GROWTH, 25);
+  S.hearts = 0; assert.equal(heartLumenCost(S, omen), 1e7);
+  S.hearts = 2; assert.equal(heartLumenCost(S, omen), 1e7 * 625);
+  S.hearts = 4; assert.equal(heartLumenCost(S, omen), 1e7 * 25 ** 4);
+  assert.equal(PLUMB_STEP, 1.2);
+  const q = fresh(); q.sea.run = seaThreshold(q) * 2;
+  const base = fathomReward(q, 1e6); q.sea.deep.record = 10;
+  const ratio = fathomReward(q, 1e6) / base;
+  assert.ok(Math.abs(ratio - 1.2 ** 10) < 0.001, `Plumb Line ratio ${ratio}`);
 });

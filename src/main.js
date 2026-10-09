@@ -2,7 +2,7 @@ import { createShellUI } from './shell-ui.js';
 import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscoveryCost, shellDiscoveryChance } from './seashells.js';
 import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
-  soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
+  soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, FINALE_HEARTS, PLUMB_STEP, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   depthThreshold, seaThreshold, fossilReward, fathomReward, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
 import { serializeState, restoreState, cmpVer } from './saves.js';
 import { applyAutoEquip, acquireHorn, IVORY_LEVELS, discoveryIvory, grantDiscoveryIvory, RARITY, HSTATS, PRIMORDIAL, RARITY_LEVELS, PITY_AT, TRAITS, TRAIT_CHOICE_AT,
@@ -19,11 +19,16 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.1';
+  const VERSION = '1.10.2';
   // Release channel shown beside the version; saves and version checks use VERSION alone.
   const CHANNEL = 'beta';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.10.2', date: '2026-10-09', head: 'The Longer Road', items: [
+      'The Undersong now asks for five Heartstones and 36 actual soundings (it was three Heartstones and 25), with the same 20 feats and 50,000-fathom offering. Heartstones you already kindled still count.',
+      'Heartstones cost more lumen: each one multiplies the price by 25 instead of 10. The first is unchanged. Your next Heartstone may cost noticeably more than it did before this update.',
+      'Plumb Line now multiplies fathoms by 1.2 per level instead of 1.25, so fathom income grows more slowly the higher you push it. Levels you already bought are kept.',
+    ] },
     { ver: '1.10.1', date: '2026-10-09', head: 'Pearl and Pattern', items: [
       'Seashell inventory and sounding cards now show stable 2D art: ridged Common scallops, patterned Epic spirals, and pearlescent Mythic conches with gold details.',
       'Every shell keeps its appearance through sounding, equipment changes and reloads. Artwork is cosmetic; shell effects, discovery odds and costs are unchanged.',
@@ -2184,7 +2189,7 @@ import { createState } from './state.js';
     dp('rain', 'Old Rain', ICONS.drip('#9aa7ff'), 2, 1.7, 1e9, l => `Every sounding starts with ${2 * l} → ${2 * (l + 1)} extra rain`);
     dp('buoys', 'Long Moorings', ICONS.widen('#9aa7ff'), 5, 2.4, 6, l => `Room for 2 more bells (+${2 * l} → +${2 * (l + 1)})`);
     dp('beds', 'Pearl Beds', ICONS.oyster(), 4, 2, 12, l => `Oysters open after ${fmt(30 * Math.pow(0.8, l))} → ${fmt(30 * Math.pow(0.8, l + 1))} washing`);
-    dp('record', 'Plumb Line', ICONS.down('#9aa7ff'), 6, 2.3, 1e9, l => `Fathoms from each sounding ×${fmt(Math.pow(1.25, l))} → ×${fmt(Math.pow(1.25, l + 1))}`);
+    dp('record', 'Plumb Line', ICONS.down('#9aa7ff'), 6, 2.3, 1e9, l => `Fathoms from each sounding ×${fmt(Math.pow(PLUMB_STEP, l))} → ×${fmt(Math.pow(PLUMB_STEP, l + 1))}`);
     dp('light', 'Pale Lighthouse', ICONS.lighthouse(), 8, 1, 1, l => l ? 'Every sounding starts with a lighthouse already lit.' : 'Every sounding starts with a lighthouse already lit.', { single: true });
 
     addItem({ parent: 'shopShells', icon: ICONS.oyster(), unit: 'fathom',
@@ -3030,7 +3035,7 @@ import { createState } from './state.js';
   const SONG_COST = SONG_FATHOMS;
   const songReqs = () => [
     { label: 'Sound the depths', have: S.sea.soundings, need: FINALE_SOUNDINGS },
-    { label: 'Kindle Heartstones', have: S.hearts, need: 3 },
+    { label: 'Kindle Heartstones', have: S.hearts, need: FINALE_HEARTS },
     { label: 'Earn feats', have: Object.keys(S.feats).length, need: 20 },
   ];
   const songReady = () => songReqs().every(r => r.have >= r.need);
@@ -3751,7 +3756,7 @@ import { createState } from './state.js';
   if (simulation) simulation.api = {
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
-    descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, FINALE_HEARTS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
     shellTick: dt => shellUI.tick(dt),
     finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,

@@ -4,7 +4,7 @@ import { createState } from '../src/state.js';
 import { SHELL_RARITIES, shellDepth, shellSlots, shellDiscoveryChance, shellDiscounts,
   normalizeShells, equipShell, discoverShell, finishShell, hitShell, shellDiscoveryCost, SHELL_SLOT_COST } from '../src/seashells.js';
 import { resetDescent, resetSounding, resetHeartstone, heartDepthRequired, heartSeaRequired,
-  kindleReady, seaThreshold, depthThreshold, fathomReward, fossilReward } from '../src/progression.js';
+  kindleReady, seaThreshold, depthThreshold, fathomReward, fossilReward, PLUMB_STEP } from '../src/progression.js';
 import { serializeState, restoreState } from '../src/saves.js';
 import { rng32 } from '../src/horns.js';
 const fresh = () => createState('1.9.8');
@@ -49,7 +49,7 @@ test('one slot upgrades to two; distinct duplicate-rarity shells stack, spares d
 
 test('shells discount Heartstone eligibility without adding depth, soundings, or rewards', () => {
   const S = fresh();
-  S.hearts = 1; S.depth = 26; S.lumen = 1e8; S.sea.soundings = 17;
+  S.hearts = 1; S.depth = 26; S.lumen = 1e9; S.sea.soundings = 17;
   S.shells.items = [{ id: 1, r: 2, depth: 8 }];
   const before = { depth: S.depth, soundings: S.sea.soundings, fossils: S.fossils, fathoms: S.sea.fathoms };
   assert.equal(kindleReady(S, omen), false);
@@ -130,9 +130,9 @@ test('harsher fathoms preserve the threshold payout and fossil curve, and increa
     S.sea.run = seaNeed * ratio; S.run = caveNeed * ratio;
     const reward = fathomReward(S, bonus);
     assert(reward >= previous); previous = reward;
-    assert.equal(reward, Math.floor(6 * factor * 1.25 ** 3 * bonus));
-    assert(reward <= Math.floor(6 * ratio ** .25 * 1.25 ** 3 * bonus));
-    assert(reward <= Math.floor(6 * ratio ** .3662 * 1.25 ** 3 * bonus));
+    assert.equal(reward, Math.floor(6 * factor * PLUMB_STEP ** 3 * bonus));
+    assert(reward <= Math.floor(6 * ratio ** .25 * PLUMB_STEP ** 3 * bonus));
+    assert(reward <= Math.floor(6 * ratio ** .3662 * PLUMB_STEP ** 3 * bonus));
     assert.equal(fossilReward(S, bonus, 1, 1), Math.floor(10 * ratio ** .3662 * 1.25 ** 2 * bonus));
   }
 });
