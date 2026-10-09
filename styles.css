@@ -455,3 +455,14 @@
   #caveAutoReserves label { display: flex; flex-direction: column; gap: 5px; }
   #caveAutoReserves input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; color: var(--text); background: var(--slab); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
   #caveAutoCategories input { accent-color: var(--fathom); }
+
+/* Shell sounding keeps a steady target, including with reduced motion. */
+.shell-call { border: 1px solid var(--line, #d9d5e0); border-radius: 16px; padding: 16px; margin: 14px 0; }
+.shell-call button, .shell-card button { min-height: 44px; margin: 4px; }
+.shell-card { display: block; }
+.shell-track { height: 32px; border-radius: 16px; background: #dedbe7; position: relative; margin: 20px 12px; }
+.shell-target { position: absolute; height: 100%; left: 50%; transform: translateX(-50%); background: #88c6ba; border-radius: 12px; }
+.shell-track i { position: absolute; width: 4px; height: 44px; top: -6px; background: #352e48; transform: translateX(-50%); }
+.shell-spin { display: inline-block; animation: shell-reveal .7s ease-out; }
+@keyframes shell-reveal { from { transform: rotate(-360deg); } to { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .shell-spin { animation: none; } }

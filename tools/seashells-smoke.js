@@ -19,14 +19,14 @@ const KEY = 'geode-choir-v1';
             ver: '1.9.8', seenVer: '1.9.8', hum: 1, hearts: 1, depth: 26, lumen: 1e8,
             lore: { prologue: 1 }, saved: Date.now(), sea: { unlocked: true, soundings: 17, fathoms: 777 },
             shells: { items: [{ id: 1, r: 2, depth: 8 }], equipped: [],
-              pending: [{ id: 2, r: 1, sounding: 1 }], seq: 2, discovery: 6, extraSlot: 1, lastSounding: 1 },
+              pending: [{ id: 2, r: 1, sounding: 1 }], seq: 2, discovery: 0, extraSlot: 0, lastSounding: 1 },
           }));
         }, KEY);
         await page.goto(server.url); await page.waitForFunction(() => !!window.__geodeSimulation?.api);
         assert((await page.locator('#heartText').innerText()).includes('depth 34'));
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.canKindle()), false);
         await page.evaluate(() => { window.__geodeSimulation.api.setWorld('sea'); window.__geodeSimulation.api.setTab('deep'); window.__geodeSimulation.api.updateUI(); });
-        await page.locator('[data-shell-equip="1"]').click();
+        await page.locator('[data-shell-action="equip"][data-id="1"]').click();
         await page.evaluate(() => { window.__geodeSimulation.api.setWorld('cave'); window.__geodeSimulation.api.updateUI(); });
         assert((await page.locator('#heartText').innerText()).includes('depth 26'));
         assert((await page.locator('#heartText').innerText()).includes('17 soundings'));
@@ -40,6 +40,45 @@ const KEY = 'geode-choir-v1';
         assert.deepEqual(saved, { equipped: [1], pending: [{ id: 2, r: 1, sounding: 1 }],
           depth: 26, soundings: 17, fathoms: 777 });
         assert((await page.locator('#heartText').innerText()).includes('depth 26'));
+        await page.evaluate(() => { const api = window.__geodeSimulation.api; api.setWorld('sea'); api.setTab('deep'); api.updateUI(); });
+        await page.locator('[data-shell-action="start"][data-id="2"]').click();
+        // A perfect first note, then reload: preserve the partial result and do not pay again.
+        await page.evaluate(() => { const api = window.__geodeSimulation.api; api.S.shells.pending[0].elapsed = 1.6; api.updateUI(); });
+        await page.locator('[data-shell-action="hit"][data-id="2"]').click();
+        await page.reload(); await page.waitForFunction(() => !!window.__geodeSimulation?.api);
+        assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.shells.pending[0].notes.length), 1);
+        await page.evaluate(() => window.__geodeSimulation.api.updateUI());
+        await page.locator('[data-shell-action="auto"][data-id="2"]').click();
+        assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.shells.items.find(p => p.id === 2).depth), 3);
+        assert.equal(await page.locator('[data-shell-action="equip"][data-id="2"]').isDisabled(), true);
+        await page.locator('#shopShells .item').filter({ hasText: 'Shell Listening' }).click();
+        await page.locator('#shopShells .item').filter({ hasText: 'Second Shell Slot' }).click();
+        await page.locator('[data-shell-action="equip"][data-id="2"]').click();
+        assert.deepEqual(await page.evaluate(() => ({ equipped: window.__geodeSimulation.api.S.shells.equipped,
+          money: window.__geodeSimulation.api.S.sea.fathoms })), { equipped: [1, 2], money: 252 });
+        assert((await page.locator('#shellSummary').innerText()).includes('−11 depth'));
+        // A real sounding discovers once, grants its normal rewards once, then locks.
+        const sounding = await page.evaluate(() => {
+          const api = window.__geodeSimulation.api;
+          api.S.sea.cool = 0; api.S.sea.run = api.soundAt();
+          const random = Math.random; Math.random = () => 0;
+          try {
+            const ok = api.sound(), after = api.S.sea.fathoms, second = api.sound();
+            api.updateUI();
+            return { ok, second, after, money: api.S.sea.fathoms, pending: api.S.shells.pending,
+              result: api.S.shells.lastResult, count: api.S.sea.soundings };
+          } finally { Math.random = random; }
+        });
+        assert(sounding.ok); assert.equal(sounding.second, false);
+        assert.equal(sounding.after, sounding.money); assert.equal(sounding.count, 18);
+        assert.equal(sounding.pending.length, 1); assert.equal(sounding.pending[0].r, 0);
+        assert.deepEqual(sounding.result, { sounding: 18, r: 0 });
+        assert((await page.locator('#shellDiscovery').innerText()).includes('Common shell discovered'));
+        await page.reload(); await page.waitForFunction(() => !!window.__geodeSimulation?.api);
+        assert.deepEqual(await page.evaluate(() => window.__geodeSimulation.api.S.shells.lastResult), sounding.result);
+        assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.shells.pending.length), 1);
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+        assert.equal(overflow, false);
         assert.deepEqual(errors, []);
         console.log(`PASS ${width}px: shared Heartstone discounts, actual eligibility, pending shell and save persistence`);
       } finally { await context.close(); }

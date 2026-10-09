@@ -1,4 +1,5 @@
-import { discoverShell, finishShell, equipShell, shellDiscounts, shellDiscoveryChance, shellSlots } from './seashells.js';
+import { createShellUI } from './shell-ui.js';
+import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscoveryCost, shellDiscoveryChance } from './seashells.js';
 import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
   soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
@@ -1999,24 +2000,9 @@ import { createState } from './state.js';
     });
   }
 
-  let shellViewKey = '';
-  function renderShells() {
-    if (S.tab !== 'deep') return;
-    const key = JSON.stringify(S.shells);
-    if (key === shellViewKey) return;
-    shellViewKey = key;
-    const bonus = shellDiscounts(S);
-    $('shellSummary').textContent = `${S.shells.equipped.length}/${shellSlots(S)} equipped · −${bonus.depth} depth · −${bonus.soundings} Heartstone soundings · ${pct(shellDiscoveryChance(S))} discovery chance`;
-    $('shellDiscovery').textContent = S.shells.lastSounding ? `Discovery checked through sounding ${S.shells.lastSounding}.` : 'Your first Sea sounding can discover a shell.';
-    $('shellPending').innerHTML = S.shells.pending.map(p => `<p>Shell #${p.id} is waiting. <button type="button" data-shell-auto="${p.id}">Finish with Auto</button></p>`).join('');
-    $('shellInventory').innerHTML = S.shells.items.map(p => `<div class="stat"><b>${['Common','Epic','Mythic'][p.r]} shell #${p.id}</b><p>−${p.depth} depth · −${[0,1,3][p.r]} soundings</p><button type="button" data-shell-equip="${p.id}" ${!S.shells.equipped.includes(p.id) && S.shells.equipped.length >= shellSlots(S) ? 'disabled' : ''}>${S.shells.equipped.includes(p.id) ? 'Unequip' : 'Equip'}</button></div>`).join('') || '<p class="note">No shells yet. Discovery starts at 20% per successful Sea sounding.</p>';
-  }
-  $('shellSection').addEventListener('click', e => {
-    const auto = e.target.closest('[data-shell-auto]'), equip = e.target.closest('[data-shell-equip]');
-    if (auto) finishShell(S, +auto.dataset.shellAuto);
-    else if (equip) equipShell(S, +equip.dataset.shellEquip);
-    else return;
-    save(); updateUI();
+  const shellUI = createShellUI({ state: () => S,
+    active: () => S.tab === 'deep' && !document.hidden && !cinematic && !sceneOpen && !awayOpen && !newsOpen,
+    changed: () => { save(); updateUI(); },
   });
 
   function buildShop() {
@@ -2188,6 +2174,17 @@ import { createState } from './state.js';
     dp('beds', 'Pearl Beds', ICONS.oyster(), 4, 2, 12, l => `Oysters open after ${fmt(30 * Math.pow(0.8, l))} → ${fmt(30 * Math.pow(0.8, l + 1))} washing`);
     dp('record', 'Plumb Line', ICONS.down('#9aa7ff'), 6, 2.3, 1e9, l => `Fathoms from each sounding ×${fmt(Math.pow(1.25, l))} → ×${fmt(Math.pow(1.25, l + 1))}`);
     dp('light', 'Pale Lighthouse', ICONS.lighthouse(), 8, 1, 1, l => l ? 'Every sounding starts with a lighthouse already lit.' : 'Every sounding starts with a lighthouse already lit.', { single: true });
+
+    addItem({ parent: 'shopShells', icon: ICONS.oyster(), unit: 'fathom',
+      name: () => lvl('Shell Listening', S.shells.discovery), cost: () => shellDiscoveryCost(S),
+      desc: () => S.shells.discovery >= 6 ? 'Discovery is at its 50% maximum.' : `Shell discovery ${pct(shellDiscoveryChance(S))} → ${pct(shellDiscoveryChance(S) + .05)}. Rarity odds and item strength stay fixed.`,
+      buy: () => { const cost = shellDiscoveryCost(S); if (cost === null || !spend('fathom', cost)) return false; S.shells.discovery++; save(); return true; },
+    });
+    addItem({ parent: 'shopShells', icon: ICONS.oyster(), unit: 'fathom', name: () => 'Second Shell Slot',
+      cost: () => S.shells.extraSlot ? null : SHELL_SLOT_COST,
+      desc: () => S.shells.extraSlot ? 'Two permanent dedicated shell slots.' : 'Equip two shells at once. Their Heartstone discounts add; item strength stays fixed.',
+      buy: () => { if (S.shells.extraSlot || !spend('fathom', SHELL_SLOT_COST)) return false; S.shells.extraSlot = 1; save(); return true; },
+    });
 
     // ------------------------------- sea: the choir above (tide, never resets)
     lvItem({
@@ -3433,7 +3430,7 @@ import { createState } from './state.js';
     setH('choirInfo', `The cave above sings <b>${fmt(S.idleRate || 0)} hum/s</b> on its own, lifting all tide <b>×${fmtX(choirBonus())}</b>. Whichever world you aren't in keeps earning <b>${pct(quietEff())}</b> of its idle rate. Choir upgrades are never lost.`);
 
     renderCaveAutomation();
-    renderShells();
+    shellUI.render();
 
     // horns
     setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
@@ -3660,6 +3657,7 @@ import { createState } from './state.js';
     autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(); }
     if (S.cool > 0) S.cool = Math.max(0, S.cool - dt * tickRate());
     advanceSeaTimer(S, dt, tickRate());
+    shellUI.tick(dt);
     storyT += dt; if (storyT >= 0.5) { storyT = 0; checkStory(false); checkQuests(false); }
     if (holding) {
       holdT += dt;
@@ -3743,6 +3741,7 @@ import { createState } from './state.js';
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
     descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
     serialize, load, updateUI, setTab, rollPlan, buildHorn, startSounding, finishSounding, sndHit, renderSounding, renderInventory, renderColl, setHornSub,

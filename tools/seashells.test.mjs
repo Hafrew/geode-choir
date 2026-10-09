@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createState } from '../src/state.js';
 import { SHELL_RARITIES, shellDepth, shellSlots, shellDiscoveryChance, shellDiscounts,
-  normalizeShells, equipShell, discoverShell, finishShell } from '../src/seashells.js';
+  normalizeShells, equipShell, discoverShell, finishShell, hitShell, shellDiscoveryCost, SHELL_SLOT_COST } from '../src/seashells.js';
 import { resetDescent, resetSounding, resetHeartstone, heartDepthRequired, heartSeaRequired,
   kindleReady, seaThreshold, depthThreshold, fathomReward, fossilReward } from '../src/progression.js';
 import { serializeState, restoreState } from '../src/saves.js';
@@ -135,4 +135,23 @@ test('harsher fathoms preserve the threshold payout and fossil curve, and increa
     assert(reward <= Math.floor(6 * ratio ** .3662 * 1.25 ** 3 * bonus));
     assert.equal(fossilReward(S, bonus, 1, 1), Math.floor(10 * ratio ** .3662 * 1.25 ** 2 * bonus));
   }
+});
+
+
+test('manual notes persist and complete exactly once; early hits cannot score', () => {
+  let S = fresh(); S.sea.soundings = 1;
+  const rolls = [0, .99], plan = discoverShell(S, () => rolls.shift());
+  plan.notes = []; plan.elapsed = .5;
+  assert.equal(hitShell(S, plan.id), null);
+  plan.elapsed = 1.6; assert(hitShell(S, plan.id));
+  S = restoreState(serializeState(S), '1.9.8', catalog).state;
+  assert.equal(S.shells.pending[0].notes.length, 1);
+  assert.deepEqual(S.shells.lastResult, { sounding: 1, r: 2 });
+  for (let n = 0; n < 2; n++) { S.shells.pending[0].elapsed = 1.6; hitShell(S, plan.id); }
+  assert.equal(S.shells.items[0].depth, 10);
+  assert.equal(hitShell(S, plan.id), null); assert.equal(finishShell(S, plan.id), null);
+  assert.equal(S.sea.soundings, 1); assert.equal(S.sea.fathoms, 0);
+  assert.equal(shellDiscoveryCost(S), 25); S.shells.discovery = 5;
+  assert.equal(shellDiscoveryCost(S), 800); S.shells.discovery = 6;
+  assert.equal(shellDiscoveryCost(S), null); assert.equal(SHELL_SLOT_COST, 500);
 });
