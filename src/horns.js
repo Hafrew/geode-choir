@@ -14,7 +14,7 @@ const HSTATS = {
   crystal: { label: 'Crystal value',     kind: 'scale', of: 'Quartz' },
   wall:    { label: 'Stone echoes',      kind: 'scale', of: 'the Walls' },
   tide:    { label: 'Tide',              kind: 'scale', of: 'the Sunless Sea' },
-  pearls:  { label: 'Pearls',            kind: 'scale', of: 'the Oyster' },
+  pearls:  { label: 'Pearl dust',        kind: 'scale', of: 'the Oyster' },
   fathoms: { label: 'Fathoms',           kind: 'scale', of: 'the Plumb Line' },
   bell:    { label: 'Bell value',        kind: 'scale', of: 'Bronze' },
   interf:  { label: 'Crossing bonus',    kind: 'scale', of: 'Crossing Waves' },

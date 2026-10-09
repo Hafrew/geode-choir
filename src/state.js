@@ -1,5 +1,6 @@
 import { createCaveAutomation } from './automation.js';
 import { freshShells } from './seashells.js';
+import { freshPearls } from './pearls.js';
 const freshCave = () => ({
   hum: 0, run: 0, depth: 0, age: 0, wind: 0,
   crystals: [{ t: 0, x: 0, y: -0.12 }], bought: [0, 0, 0, 0],
@@ -34,6 +35,7 @@ const createState = version => ({
   hornInventory: { autoEquip: false, focus: 'balanced', salvage: [false, false, false, false, false, false], gilded: false },
   caveAutomation: createCaveAutomation(),
   shells: freshShells(),
+  pearls: freshPearls(),
   heartSeaLegacy: null,
   sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', ts: 1, saved: Date.now(), shouts: 0, tab: 'cave',
   lore: {}, feats: {}, stats: freshStats(),
