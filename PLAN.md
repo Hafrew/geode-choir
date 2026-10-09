@@ -1,20 +1,22 @@
-# Plan: less repetition between descents
+# Plan: progression, rewards, and less repetition
 
-Goal: make the gaps between descents more engaging **without changing how long the game takes**.
+Goal: make cave and Sea progression more engaging, with persistent equipment and controlled automation. The requested Sea gates, cooldown, and harsher fathom rewards intentionally change pacing; their combined effect must be measured.
+
+Status: gameplay through **1.9.5** is shipped. The Sea/seashell balance pass below and the descent minigame are **planned**, not implemented. This document integrates the latest requests and supersedes older conflicting timing/balance proposals. The user explicitly relaxed the old no-Sea-cooldown and unchanged-completion-time restrictions; this does not confirm the draft timer durations or reward exponent.
 
 ## Ground rules
 
-1. **Baseline equals today.** Every new mechanic has an auto path that pays exactly today's expected value. Skill moves you above or below it within a cap. `tools/sim` must still land at the same finish time (±2% over several seeds) with the bot on auto. **One deliberate exception:** the Golden Floor (Phase 4) is a real bonus. I'll measure how much it speeds the run up and report it, and we decide then whether to offset it.
-2. **Failure costs bonus, not progress**, except the opt-in Risky Descent.
-3. **Nothing important depends on being at the screen.** Minigames pause on a timestamp, not on frame ticks, and every one can be auto-resolved. Away time never triggers a failure.
-4. **Saves migrate silently.** Nothing is removed or refunded. Old horns get a seed and keep their stats.
-5. One version bump and one CHANGELOG entry per phase, plus the in-game "What's new" (see 1.5.0 for the format).
+1. **Separate refactors from balance changes.** Refactor-only changes must preserve seeded outcomes and finish times (±2% over several seeds). Intentional changes—including horn progression, seashells, Sea requirements/timers, fathom rewards, Sunvein, and purchase automation—must report their effect rather than satisfy an unchanged-duration target. Auto uses the documented baseline/average outcome for that mechanic, not an invented guarantee of the old full-game duration.
+2. **Failure costs bonus, not progress**, except the explicitly opt-in Risky Descent. Failed shell discovery consumes no additional payment and grants no shell.
+3. **No attention penalties.** Minigames have Auto/finish options, save their pending results, and never fail because the tab was backgrounded. Settling timers advance in both worlds and through the existing offline-rate policy; minigame lead-ins and cooldown work are separate clocks.
+4. **Preserve earned saves.** Keep currencies, lifetime counters, items, completed finales, and purchased upgrades. Back up before migration. Do not reroll rewards on reload, grant retroactive shells, or silently delete legacy levels above a new cap. Specify migration for newly increased requirements before implementation.
+5. One version bump, CHANGELOG entry, and in-game What's new per delivered gameplay release. Versions for unfinished phases remain tentative; a planning-only change does not bump the game version.
 
 ## Scope
 
-Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x) **1.6.0 Phase 1** (status strip and hover stats) and **1.7.0 Phase 2** (Horns tab rebuild, procedural SVG horns, Collection) and **1.8.0 Phase 3** (horn minigame), on this branch.
+Delivered: Sinking Stone controls, status strip and lifetime stats, horn inventory/Collection and minigame, floor identities/Sunvein/biomes, Rarity Weaving and Primordial traits/slots, Ivory Echo, horn auto-equip/salvage, live Sounding countdown, Sea Fuse/Crush, and Patient Choir cave automation (through 1.9.5).
 
-In: top status strip, hover lifetime/max stats, Horns tab rebuild, procedural then 3D horns, horn minigame, descent minigame with Risky Descent, floor identities, biomes, Chronicle drip, offline return report, horn sets, session goals, horn/bell music.
+In: seashell equipment and discovery minigame, higher Heartstone/Undersong Sea gates, Sea settling timer, harsher fathom rewards, optional Pearlbright Sea; top status strip, hover lifetime/max stats, Horns tab rebuild, procedural then 3D horns, horn minigame, descent minigame with Risky Descent, floor identities, biomes, Chronicle drip, offline return report, horn sets, session goals, horn/bell music.
 
 Out (by request): choose-1-of-3 on arrival, rhythm shouts, cave events, crystal resonance puzzles, settling mini-tasks.
 
@@ -26,21 +28,23 @@ Out (by request): choose-1-of-3 on arrival, rhythm shouts, cave events, crystal 
 | Horn rules | `src/horns.js`: rarity odds, rolling, trait effects, rack rules, difficulty |
 | Progression resets | `src/progression.js`: descent/sounding/Heartstone resets, decay/Gilt rules |
 | State defaults | `src/state.js`: `createState(version)`, `freshCave`, `freshSea`, `freshStats` |
-| Runtime state and saves | `src/main.js`: `S`, `serialize`, `load`, `migrate`, `grantAway` |
+| Runtime state and saves | `src/main.js`: `S`, `serialize`, `load`, `grantAway`; migration in `src/saves.js` |
 | Horns | `src/main.js`: `gainHorn`, `renderHorns`, `hornBoost`, `buildShop`; panel markup in `index.html` |
 | Descent | `src/main.js`: `descend`, `descentLock`, `tickRate`, `checkQuests` |
-| Heartstone | `src/main.js`: `kindle`, `canKindle` |
+| Heartstone | `src/main.js`: `kindle`, `canKindle`; pure requirements in `src/progression.js` |
+| Cave purchase automation | `src/automation.js`: categories, reserves, normalization, `runCaveShopping`; game shop rules supplied by `src/main.js` |
+| Seashells / Sea cooldown | Planned modules/state; do not add another independent requirement formula to UI or bot |
 | Tabs | markup in `index.html`; `src/main.js`: `setTab` |
 | Chronicle | `src/main.js`: `renderChronicle` |
 | Styles | `styles.css` |
 | Sim | `tools/sim/{bot,run}.js`, Playwright + seeded `Math.random`; `window.__geodeSimulation` is supplied only by the runner |
-| Browser checks | `tools/smoke.js`; ephemeral HTTP serving in `tools/serve.js` |
+| Browser checks | `tools/{smoke,horns-smoke,horn-inventory-smoke,qol-smoke}.js`; ephemeral HTTP serving in `tools/serve.js` |
 
 The Descend and Heartstone panels live in status-strip popovers in `index.html`.
 
 ### File layout refactor (in progress, before Phase 5)
 
-Completed: extracted markup, styles, JavaScript, and independent state factories; save serialization/restoration/migration (`src/saves.js`); horn rules (`src/horns.js`); and progression reset/decay rules (`src/progression.js`). The simulation loads the real modules over HTTP through an opt-in interface. The module extraction preserves level-zero gameplay and seeded draw order; new horn progression is an intentional gameplay change in 1.9.2.
+Completed: cave purchase automation rules (`src/automation.js`); extracted markup, styles, JavaScript, and independent state factories; save serialization/restoration/migration (`src/saves.js`); horn rules (`src/horns.js`); and progression reset/decay rules (`src/progression.js`). The simulation loads the real modules over HTTP through an opt-in interface. The module extraction preserves level-zero gameplay and seeded draw order; new horn progression is an intentional gameplay change in 1.9.2.
 
 Module boundary status:
 
@@ -61,16 +65,98 @@ Requested after the first file-layout refactor. Completed entries record deliver
 - [x] **Unlockable horn tier above Mythic.** Add one additional rarity, gated behind an explicit unlock, with a **special trait** beyond normal stat scaling. The tier and its unlock upgrade must stay completely hidden until the horn rarity-curve upgrade is maxed: no odds row, Collection silhouette, filter entry, or shop teaser before then. Maxing the rarity upgrade reveals a separate purchase that unlocks drops; reveal and purchase are distinct. The tier is **Primordial**. Awaken the First Voice costs 2,500 ivory and enables a 2% drop chance, taken from Epic (30% to 28%). These are initial tuning values. Keep Mythic around 15% and Common in single digits at max rarity upgrade after the new tier unlocks; allocate the new tier's probability explicitly and normalize the full distribution to 100%. Before unlock, its drop chance is zero. This rarity is separate from the existing Gilded modifier. Traits are included in simulator loadout scoring, inspect/equip UI, Collection, filters, and simulation. The in-game auto-equip/auto-salvage controls support the new tier. Migrate saves without changing existing horns and keep the upgrade/unlock persistent through descents and Heartstones.
 - [x] **Dedicated Primordial slots.** Unlocking Primordial horns grants **two dedicated equip slots**, separate from the normal horn rack. Primordial horns use these slots only; normal horns cannot occupy them. First Voice Rack is a one-time 4,000 ivory upgrade adding a third slot; these are initial tuning values. Keep the slots and their upgrade hidden until the rarity-curve upgrade is maxed, and enable equipping only after the Primordial unlock purchase. Include the separate capacity and trait interactions in auto-equip scoring, UI, saves, and simulation. Preserve equipped Primordials and slot upgrades through descents and Heartstones.
 - [x] **Primordial sounding and trait quality.** Primordial minigames are harder and slightly longer than ordinary horn minigames. Keep the per-stat-line sounding flow, with average overall performance giving the trait's base effect, poor performance reducing its percentage, and stronger performance increasing it continuously. Very strong overall performance additionally lets the player choose the trait; below that threshold, assign a random trait. Initial tuning: a 6–8 second lead-in per line, 35% narrower timing windows and a 10% faster needle, a trait multiplier of `0.5 + averagePerformance` (performance from 0 to 1), and trait choice at >=0.9. There is no miss timer. These values remain open to playtest tuning. Example for a base 10% trait: 0 performance gives 5%, 0.5 gives 10%, and 1 gives 15%, with continuous values between. Implemented base traits: Deep Memory (10% slower floor freshness decay), Resonance (other equipped horns' stat bonuses +10%), Golden Echo (Sunvein arrival Gilt +25%), and Undertow (tide production +15%). Duplicate traits use the strongest equipped copy; Resonance must not recursively amplify trait effects. Auto-resolve gives average stat and trait strength with a random trait. Away time cannot lower performance; persist unfinished soundings and pending trait choices across save/load, and keep auto-finish available. Persist each horn's chosen trait and quality rather than recalculating them on equip. Validate performance scaling, trait-choice eligibility, separate slot capacity, save compatibility, and the combined pacing effect.
-- [ ] **Shorter Sunless Sea waits.** Investigate the reported ten-minute timer and reduce the wait as cave descent waits improve. Current `sound()` and the sea HUD do not impose a timed settling lock: sea progress is gated by `soundAt()` and tide earned. Identify the actual wait before choosing a timer or threshold change; do not add a new cooldown. Cover early and later soundings in pacing checks.
-- [ ] **Undersong fathom cost.** Increase the offering from its current **25 fathoms**, which is negligible beside the supplied example's 15.3K balance. Choose the replacement cost using late-game earning rates and simulation; no replacement amount has been specified yet.
-- [ ] **Undersong sea requirement: 25 soundings.** Raise "Sound the depths" from **6 to 25**; this is a progression count, separate from the offering's fathom cost. Update the UI and bot's sounding limit (currently defaults to 6), and check the effect of exponentially increasing sounding thresholds. Keep already-completed finales completed.
-- [ ] **Open the Ceiling cap and prices.** Cap at **level 15** and increase the level-scaled prices. Currently it has no explicit cap and costs `ceil(500 * 3^level)` tide. Specify the new cost curve and a migration policy for existing levels above 15 (the supplied save shows level 22), preserving the player's investment rather than silently deleting it.
+- [ ] **Sea settling timer and tide thresholds.** Latest request supersedes the earlier instruction against a cooldown. Add a cave-style Sea lock while retuning the exponential tide requirement for 20–25 soundings. Canonical rules and draft numbers are in the Sea/seashell pass below.
+- [ ] **Undersong fathom cost.** Raise the current 25-fathom offering only after validating the harsher reward curve and competing Deep/shell/Patient Choir purchases. Price remains open; do not infer it from one large saved balance. Keep the 25-sounding count separate from this offering.
+- [ ] **Undersong sea requirement: 25 soundings.** Require 25 actual cumulative soundings; shells do not reduce this finale requirement. Retain the current three-Heartstone and 20-feat requirements. Replace the bot’s six-sounding stop with dynamic targets and preserve completed finales.
+- [ ] **Open the Ceiling cap and prices.** Limit new purchases to level 15 and raise level-scaled prices after the Sea curve comparison. Preserve existing levels/bonuses above 15 (including the supplied level-22 save), mark them as legacy, and prevent further purchases. Price curve remains open; cap plus harsher fathoms plus new tide gates must be tested together.
 - [x] **Sunless Sea canvas Fuse/Crush controls (1.9.5).** Canvas zones accept bells in the sea, crystals in the cave, and no other objects. Fuse joins any eligible same-tier twin, stops at Abyssal/Moonstone, and restores position when no twin exists. Crush removes only the dragged object without refund. Cave zones retain the first-descent gate; Sea zones are available once the sea is unlocked. Desktop/mobile pointer checks cover successful merges, absent twins, top tiers, removal, and protected oysters/pearl works.
 - [x] **Complete cave upgrade automation (1.9.5).** Audited every manually purchasable cave upgrade: voices, tuning, attunement, Strata, Glow, wonders, and any remaining shop categories. Existing `Patient Hands`, `Crystal Seeker`, and `Sinking Stone` only automate crystal fusion, crystal purchases, and descents. Patient Choir in Strata automates all nine cave shop categories, available after **two Heartstones** as a persistent unlock costing **100,000 fathoms**. All categories default off. Per-category controls and numeric reserves for hum/shards/fossils/lumen/ivory/Gilt keep spending under player control. One affordable purchase per enabled category every half-second uses the existing manual purchase rules. Horn calls are excluded; owned automation toggles are not changed. It runs only in the active cave, survives all resets/reloads, and makes existing Crystal Seeker honor the hum reserve. This in-game feature is separate from the simulator's automatic shopping.
 
-Completed first: horn rarity-curve upgrade and Primordial tier, as prioritized by the user. Horn inventory controls are now complete (1.9.4). The user will manually test pacing and sounding feel before further tuning. Sea canvas controls and broader cave automation are complete (1.9.5), along with the live horn countdown fix. Remaining delivery order: a coordinated sea/Undersong/Open the Ceiling balance pass after manual playtest feedback. Measure each balance change separately before combining them.
+Completed first: horn rarity-curve upgrade and Primordial tier, as prioritized by the user. Horn inventory controls are now complete (1.9.4). The user will manually test pacing and sounding feel before further tuning. Sea canvas controls and broader cave automation are complete (1.9.5), along with the live horn countdown fix. Remaining delivery order: the Sea/seashell pass below, then the descent minigame/Risky Descent, then remaining story/cosmetic/music/3D work. Preserve manual horn playtest feedback as a separate tuning input. Measure each balance component separately and then the combined pass.
 
 The requested balance changes intentionally revise the earlier unchanged-duration goal. Report their effect on finish time rather than treating every pacing difference as a refactor regression. Refactor-only changes still require unchanged behavior. Preserve saves, test automation persistence through descents and Heartstones, and run representative cave/sea browser checks plus multi-seed pacing comparisons.
+
+
+## Sea, seashells, and Heartstone balance pass (planned)
+
+The requested direction is confirmed; formulas labelled **draft** and prices/difficulty not specified by the user still need pacing validation. The earlier shell proposal that made sounding reductions depend on performance is superseded.
+
+### Seashell rules
+
+| Rarity (conditional on finding a shell) | Depth reduction | Fixed sounding reduction |
+|---|---:|---:|
+| Common · 75% | 1 | **0** |
+| Epic · 20% | 2–4, based on minigame performance | **1** |
+| Mythic · 5% | 5–10, based on minigame performance | **3** |
+
+- Only a successfully completed **Sunless Sea sounding** triggers discovery. A cosmetic spinner shows the already-determined result: **80% no shell / 20% shell**, upgradeable with fathoms to **50% / 50%**. The rarity roll happens only on success. Base per-sounding probabilities are therefore 80% none / 15% Common / 4% Epic / 1% Mythic; at max discovery, 50% none / 37.5% Common / 10% Epic / 2.5% Mythic.
+- First-pass depth scoring: quality `q` in [0,1]; Epic `2 + round(2*q)`, Mythic `5 + round(5*q)`. Common stays 1. Auto uses `q=0.5`, giving Common/Epic/Mythic **1/3/8 depth**, with **0/1/3 soundings**. Average-auto outcomes are explicit; integer rounding does not imply a uniform manual-quality distribution has the same expectation.
+- Sounding reductions depend only on rarity. Minigame quality, discovery upgrades, equipment upgrades, horns/Whetstone/Resonance, and a special Sea layer cannot change either reduction beyond its listed range. Save the final integer depth reduction on the item; equipping/reloading never recalculates it.
+- One dedicated equipped shell slot, with a permanent fathom purchase for a second. Equipped reductions add; owning spare shells grants no reduction. Two perfect Mythics can reduce depth by **20** and soundings by **6**, and can never go further. Slot/discovery upgrade prices and discovery level count remain open. Upgrades affect slots or chance only, never item potency.
+- Shells, equipped IDs, discovery/slot upgrades, and unfinished shell minigames persist through Sea soundings, cave descents, Heartstones, and saves. Keep inventory separate from the 30-horn cap and both horn racks. Allow two distinct shells with identical values to occupy both slots; duplicate rarity does not disable their reductions. Inventory capacity, duplicate handling, and Collection presentation remain open before implementation.
+- Do not make the minigame block further progression: a successful sounding grants its normal rewards and starts the next settling lock at once; its shell can wait to be played or finished with Auto. Save the discovery/rarity outcome once, associate it with that sounding, and persist pending work. Completing it cannot grant another sounding, horn, fathom payout, or discovery spin. No timeout penalty or reroll on reload. Minigame shape and difficulty remain open.
+
+### Heartstone and finale requirements
+
+Let `h` be Heartstones already kindled, `D` the sum of equipped depth reductions, and `R` the sum of equipped fixed sounding reductions. These are eligibility discounts only: never alter actual cave depth, Sea sounding count, fossils, tide multipliers, feats, unlocks, or rewards.
+
+- Existing depth baseline stays `12 + 22*h + omenDepth`; planned requirement is `max(1, baseline - D)`.
+- **Draft sounding baseline:** 0 before the first Heartstone; otherwise `20 + 4*(h-1)`, giving **20 / 24 / 28 / …** for the second / third / fourth Heartstone. Planned effective requirement is 0 at `h=0`, otherwise `max(1, baseline - R)`.
+- Use the existing **cumulative, persistent Sea sounding count**. These are total milestones, not 20 new soundings after every Heartstone. The first Heartstone still opens the Sea, so it cannot ask for a shell or a Sea sounding.
+- Lumen costs are unchanged by shells. Use one pure requirement calculation for `canKindle`, the Heartstone panel, chip, action labels, and bot. Recompute immediately on equip/unequip and at the actual kindle action; shell changes never subtract already-earned progression.
+- Example, ignoring omen depth: before the second Heartstone, an average Epic plus average Mythic lowers depth **34 − 11 = 23** and soundings **20 − 4 = 16**. Before the third, the same pair gives depth **56 − 11 = 45** and soundings **24 − 4 = 20**.
+- Undersong still needs **three Heartstones, 20 feats, and 25 actual cumulative soundings**, plus the separately tuned fathom offering. Shell discounts affect Heartstones only. This keeps finale progression beyond the discounted third-Heartstone gate rather than letting shells erase the finale milestone.
+
+### Sea settling and tide curve
+
+- Add a distinct persistent Sea cooldown, separate from cave `S.cool`. Successful sounding resets the Sea run, awards the normal horn/fathoms, resolves one shell discovery, and starts the next Sea settling lock. First Sea unlock has **no inherited cooldown**. Failed/locked action attempts do none of these.
+- **Draft timer:** 600 work-seconds, reduced by 120 for each Sea milestone at **2 / 5 / 10 / 20 actual soundings**, with a 120-work-second floor. Milestones persist and depend on actual counts, not shell-discounted requirements. They can all unlock before needing another Heartstone, avoiding a circular shortcut dependency. These milestone numbers are proposed tuning, not a user-specified requirement.
+- Existing Faster Tick speeds remaining Sea cooldown work through the shared `tickRate()`; it does not also shorten the stored base duration. Progress ticks in either world and with the existing offline efficiency. Preserve the remaining Sea lock across Heartstones, rather than resetting it to zero or restarting a full lock. Do not replay elapsed soundings/rewards while away.
+- A sounding needs both enough tide **and** an expired lock. Use the same eligibility predicate for button, chip, manual/automatic actions, and bot. Show live countdown/remaining tide; estimated real seconds are `remainingWork / tickRate`, with the lock's original work duration retained for progress display.
+- Current source uses threshold `50,000 * 4^n` and permanent Sea tide multiplier `1.6^n`. The effective gap grows about **2.5× per sounding**, before other income effects. The 20th sounding currently requires about **1.3744e16 tide** (at `n=19`). Keeping this curve while demanding 20–25 soundings, adding a lock, and capping Open the Ceiling would compound three barriers.
+- Retune the tide threshold independently of the harsher fathom reward. Choose the new curve against actual income, cave/Sea time share, Choir, Deep Current, shells, and the level-15 Ceiling cap. A lower tide requirement supports more distinct Sea stages; a lower fathom overrun exponent limits camping windfalls. No replacement threshold curve is fixed yet.
+- Clock-budget check at `tickRate=1`, excluding tide wait/offline effects: plain ten-minute locks after each sounding require **190 minutes to reach 20** and **240 to reach 25**, since the first sounding is unlocked. The draft milestones lower these timer-only floors to **104 / 114 minutes**. Shells reduce a Heartstone milestone, not these cooldowns or the 25-sounding finale. Validate whether these floors fit the desired full-game pace before fixing difficulty/prices.
+
+### Harsher fathom reward curve (requested balance fix)
+
+- Current reward: `floor(2 * (1 + 0.5*n) * max(1, r)^0.3662 * 1.25^PlumbLine * hornFathomBonus)`, for completed run ratio `r = tideRun / tideThreshold >= 1`. Below threshold, payout remains zero.
+- **First-pass proposal:** change only the **fathom** overrun exponent from **0.3662 to 0.25**. Keep the per-sounding base, Plumb Line, and horn multiplier for the first isolated comparison. Fossil rewards retain their own 0.3662 curve; split the shared helper so a Sea nerf cannot silently change cave rewards.
+- Before rounding and with the same modifiers: at `r=1`, payout is unchanged; at `r=10`, the overrun multiplier falls **2.324 → 1.778 (−23.5%)**; at `r=100`, **5.400 → 3.162 (−41.4%)**; at `r=10,000`, **29.161 → 10 (−65.7%)**; at `r=1e8`, **850.354 → 100 (−88.2%)**. The exponent is a concrete harsher candidate, not a claim of validated pacing.
+- Rewards must remain nonnegative, monotonic with tide earned, and at least the threshold payout on an eligible sounding. Preserve existing fathom balances and lifetime totals; apply the new curve to future rewards only.
+- The settling lock may force large overrun ratios while the player waits. Measure fathoms per real hour and per sounding, rather than declaring the nerf effective from exponent math alone. Plumb Line's uncapped `1.25^level` multiplier can still offset the nerf; audit its purchase loop without silently changing its curve in the isolated exponent comparison.
+- Fathoms fund Deep upgrades, shell discovery/slot upgrades, Patient Choir (**100,000**, an existing user-specified price), and Undersong. Resolve their affordability together. Do not reduce Patient Choir's price to hide a pacing failure; classify whether its unlock is intended before or after the finale. New shell prices and the increased offering remain open until this check.
+
+### Pearlbright Sea (optional draft)
+
+A special Sea layer was discussed, but its chance, reward multiplier, and implementation are not confirmed. Keep it optional for the first shell pass. Suggested direction: a rare arrival layer with a bounded fathom bonus and pearlescent artwork, while shells retain the three rarities, the 20%→50% discovery bounds, and fixed 0/1/3 sounding reductions. A rarity/material buff must not become an implicit item-potency upgrade.
+
+If introduced, the layer on the **departing** Sea determines that sounding's bonus; roll the next layer afterward and save it. Do not apply the arriving layer retroactively to the payout that rolled it, reward a visit twice, or alter the current floor from repeatedly loading. Validate separately because a fathom bonus may counteract the requested harsher reward curve. Chance/multiplier remain open.
+
+### Migration and delivery
+
+- Legacy saves start with no shells and no retrospective discovery rewards, while retaining all existing Sea counts, currencies, upgrades, horns, and finales. Introduce the new Sea cooldown at zero on migration. Preserve legacy Open the Ceiling levels/bonuses above 15; only new purchases are capped.
+- **Draft fairness policy:** if the old Sea prerequisite for the current pending Heartstone was already met, keep a one-use legacy requirement for that Heartstone and switch to the new curve after kindling. Store a requirement exception, not fabricated soundings. Confirm this migration policy before coding increased gates; completed Heartstones/finales stay completed in every case.
+- First establish shared shell/Heartstone/sounding rules and save fields; validate the fathom exponent in isolation. Next tune tide thresholds, timers, higher gates, and currency budgets together. Then add discovery/minigame/equipment UI and upgrades, followed by the optional layer. Deliver tested slices; do not ship the higher gate with the old tide curve or the bot's six-sounding cap.
+- Shells must be obtainable without buying a fathom-funded upgrade: first Sea entry is unlocked, threshold reward is positive, and base discovery is 20%. Neither shell ownership nor Patient Choir can be a prerequisite to producing the fathoms that purchase their upgrades.
+- Extend the bot to use real sounding eligibility, cumulative dynamic targets, average shell completion, and documented shell loadout choices; no granted counts/currencies/unlocks in natural runs. Record shell discovery, first Epic/Mythic, slot/chance upgrades, effective Heartstone gates, timer/tide stalls, Plumb Line levels, Patient Choir affordability, and finale offering reserves.
+
+### Full-plan logic review
+
+| Finding | Resolution / required check |
+|---|---|
+| Old unchanged-duration rule contradicted deliberate balance requests | Restrict equality checks to refactors/default-off QOL; measure intentional pacing changes |
+| Backlog said no new Sea cooldown | Latest request supersedes it; one shared cooldown/eligibility model |
+| Shells previously reduced soundings according to performance | Performance affects depth only; sounding reduction fixed at 0/1/3 |
+| A first-Heartstone Sea requirement would block unlocking the Sea | First requirement is 0; later counts are cumulative |
+| Shell discounts could become free progress/reward farming | Eligibility-only discounts; never change actual depth/counts or grant rewards |
+| Raising counts with ×4 thresholds could make the Sea unreachable | Retune thresholds alongside gates/timer/Level-15 Ceiling; verify stages 20–25 |
+| A harsher shared reward helper could nerf cave fossils too | Separate fathom exponent from fossil exponent |
+| Timer-driven overrun or Plumb Line could erase the fathom nerf | Compare real-hour income, multipliers, and all currency sinks |
+| Six-sounding bot / finite old simulator horizon would stall | Dynamic targets; allow horizons beyond 40h if required and report stalls |
+| New gates/caps could retroactively damage saves | Explicit legacy migration; preserve counters, paid levels and completed finales |
+| Descent failure/freshness rules were underspecified | Resolve below before implementing Risky Descent; never reuse a success reward path on failure |
+
+The dependency logic is consistent with these resolutions. **Pacing is not yet validated**: the tide curve, upgrade/offering prices, timer milestones, legacy-gate policy, and optional layer remain explicit open choices. Do not label the combined design balanced until natural multi-seed runs and manual playtests support it.
 
 ---
 
@@ -109,23 +195,23 @@ Sim impact: none (visual and UI only).
 
 Flow:
 1. When the horn timer expires, the chip pulses. Opening the **Sounding** screen **spins rarity first** (existing odds and pity unchanged).
-2. **One minigame per stat line.** A horn with 1 stat gives 1 minigame, 2 stats gives 2, and so on up to the line count for its rarity (Branching's extra stat adds one more). Each is short (about 4 to 6 s), and the performance of each sets that stat's roll within the rarity.
+2. **One minigame per stat line.** A horn with 1 stat gives 1 minigame, 2 stats gives 2, and so on up to the line count for its rarity (Branching's extra stat adds one more). Each has a timing window and no miss deadline; performance sets that stat's roll within the rarity. Primordial notes add the shipped 6–8 second lead-in.
 3. The average performance across the minigames also sets the chance of an extra horn.
 4. Horn upgrades scale it: Keen Ear shortens the wait and widens timing windows, Whetstone raises the ceiling, Branching adds a stat (and so a minigame), Rack adds a pick slot.
 
-EV neutrality:
+Auto baseline and skill bonus:
 - Performance maps to a stat multiplier in **0.5 to 1.5** (`0.5 + performance`), and an average performance of 0.5 is exactly 1.0. The extra-horn chance is `(avg - 0.5) * 0.5`, up to 25%.
-- **Auto-resolve** (a setting, and automatic after N minutes away) takes performance = the mean for every line. A "finish with auto" button skips the remaining lines mid-sounding. This is the sim bot's path.
+- **Auto-resolve** (the saved Sound horns automatically setting) takes performance = 0.5 for every line. Away time does not force-finish a manual pending horn. A "finish with auto" button skips the remaining lines mid-sounding. This is the sim bot's path.
 - A sounding that expires while you're away waits in the Sounding screen with no loss. Several can queue, up to a cap.
 
 Sim impact: the bot uses auto. Add an assertion that horn stat totals match the old averages over many seeded rolls.
 
 ## Phase 4: Floor identities, Sunvein and biomes (1.9.0, done)
 
-**Floor identities.** Rolled on arrival (from depth ~3), shown in the Descend chip and the cave header, stored as `S.floorId`. Examples: *Echoing* (shards x2, hum x0.85), *Glowworm bloom* (lumen x1.6, shards x0.8), *Cracked* (more fossil veins, slower decay), *Still* (steady, no modifiers). Each table averages 1.0 on income so the finish time doesn't move. They sit alongside the existing descent surprises (rubble, vein, double fall). The Chronicle records the identities you've met.
+**Floor identities.** Rolled on arrival (from depth ~3), shown in the Descend chip and the cave header, stored as `S.floor`. The shipped `FLOORS` table and normalized modifiers in `src/main.js` are authoritative: Echoing, Hushed, Glowworm Bloom, Cracked, and Still. Each table averages 1.0 on income so the finish time doesn't move. They sit alongside the existing descent surprises (rubble, vein, double fall). The Chronicle records the identities you've met.
 
 **Sunvein** (the Golden Floor; named *Sunvein*). A rare floor that can replace the normal roll on arrival.
-- **Chance:** 5% by default. Each Golden Horn you own (equipped or not) adds +2%, capped at 15% from that source. A successful Risky Descent adds a flat +10% to that one roll on top of the cap (25% at most).
+- **Chance:** 5% by default. Each Golden Horn you own (equipped or not) adds +2%, capped at 15% from that source. The planned Risky Descent would add a flat +10% to that one roll on top of the cap (25% at most); that minigame is not shipped.
 - **On a Golden Floor, base effects:** decay is 25% slower (decay rate x0.75), fossils from that floor get **+10%**, and **50%** of horn soundings there are Golden Horns.
 - **Golden upgrades** can only be bought while standing on a Golden Floor, and their levels persist:
   - *Rich Vein:* the fossil bonus rises from +10% to +30%.
@@ -133,13 +219,12 @@ Sim impact: the bot uses auto. Add an assertion that horn stat totals match the 
 - **Golden Horns:** the minigame result gets a further x1.25 on top, plus a distinct look (gold material, glow, particles) and their own Collection entries. Each one you own adds +2% to the Golden Floor chance, so a collection of 5 reaches the 15% cap.
 - Heartstone: the Golden Floor chance, Golden upgrades and owned Golden Horns carry over, since horns are kept.
 
-**Golden currency (proposal): Gilt.**
+**Golden currency (shipped): Gilt.**
 - A new currency that **only accrues while you are on a Golden Floor**, as time-based income: a steady trickle that fades with the floor's freshness, plus a small lump when you arrive. It's never earned on normal floors.
 - It is **never reset** by descents or Heartstones, so the Golden upgrades keep their levels and any unspent Gilt keeps too.
 - Golden upgrades cost Gilt only. Costs rise with each level, and the whole tree is sized to take about 4 to 6 Golden Floor visits to max. That keeps it a long-tail goal that doesn't need camping on the floor.
 - Why time-based and capped per floor: you pick when to leave, so a cap per floor stops "stay forever" from beating "descend and re-roll", which would stretch the game out.
 - Shown as a new pill (visible once you've seen a Golden Floor) with the same hover stats (held, lifetime, best per floor).
-- Alternative: pay in fossils (no new currency). Simpler, but then Golden upgrades compete with Strata, and it doesn't make the floor feel special.
 
 Pacing: this is a real bonus. The sim will model it and I'll report the speedup before shipping; you've said you're fine with a modest one.
 
@@ -147,31 +232,31 @@ Pacing: this is a real bonus. The sim will model it and I'll report the speedup 
 
 Sim impact: identities change variance, not mean. The Golden Floor changes the mean; test several seeds and the decay interaction.
 
-## Phase 5: Descent minigame and Risky Descent (1.10.0)
+## Phase 5: Descent minigame and Risky Descent (planned, after Sea pass)
 
 **Standard descent.** Pressing Descend opens a short minigame (a controlled drop, with timing or steering).
-- *Clean descent:* you land normally and receive a **bonus** (extra fossils and/or a freshness head start), scaled by performance up to a cap.
+- *Clean descent:* you land normally and receive a **bonus** (extra fossils and/or a bounded freshness benefit), scaled by performance up to a cap. A fresh floor already starts at age zero, so model a freshness extension/decay offset explicitly rather than using negative age or income above its defined maximum.
 - *Poor performance:* you still descend normally with no bonus. **No penalty.**
 - *Auto-descend / Sinking Stone:* the baseline, with no bonus.
 - The settling lock and quests are unchanged.
 
 **Risky Descent (opt-in).** A second button.
 - Success: a bigger bonus than a clean descent, **and +10% flat to the Golden Floor chance** for that landing.
-- Failure: you **fall back to the last gate**. All upgrades stay intact. The floor's decay carries over, and you take a lock of **current settling time ÷ 0.5** (that is, double). Good performance can raise the decay offset, per your note.
+- Failure: you **fall back to the last gate**, clamped at depth zero. All purchased upgrades and earned balances stay intact. The floor's decay carries over, and the lock is **twice the current base settling work**, with Faster Tick applied once when advancing time. Before implementation, specify placement/floor identity and reset the new floor's run counter so retained old-floor earnings cannot be claimed again. Award no success fossils, horn, shell, or arrival bonus on failure. Any good-performance decay offset needs an explicit cap.
 - Tuning: a player who succeeds about 70% of the time should come out modestly ahead, and a poor one behind. The sim models a player at a fixed success rate. The bot's default is to never take the risk.
 - Needs a clear confirm dialog showing the exact penalty.
 
 The last gate is the previous depth (depth - 1). Confirmed.
 
-## Phase 6: Story, report, goals, collection, music (1.11.0)
+## Phase 6: Story, report, goals, collection, music (planned)
 
 - **Chronicle drip.** Lore lines unlock one at a time over the settling timer. Pure flavor, with a "new page" marker on the Chronicle button.
-- **Offline return report.** A short scene on load showing what happened while away (hum, floors faded, horns waiting, quests completed). Reuses the existing away calculation, with no new rewards.
+- **Offline return report.** Extend the existing away report with a short scene showing what happened while away (hum, floors faded, horns waiting, quests completed). Reuses the existing away calculation, with no new rewards.
 - **Horn sets.** Complete a set of 3 related designs for a cosmetic or a small flat passive, capped so it can't snowball.
 - **Session goals.** Three small goals per day (local date). They pay **cosmetics only**: horn skins, cave tints, strip themes.
 - **Music.** Equipped horns and rung bells contribute notes to a procedural song, so a bigger collection sounds fuller. I'll read the existing audio code first and reuse its scale (minor pentatonic) and the Sound on/off setting.
 
-## Phase 7: 3D horns (1.12.0 or 2.0)
+## Phase 7: 3D horns (planned; version undecided)
 
 - Optional upgrade over the SVG horns: a three.js tube/lathe geometry built from the same `{seed, rarity, stats}`.
 - Lazy-load three.js from a pinned CDN version, only when the Inventory or Collection is opened. If it fails to load or WebGL is missing, fall back to SVG.
@@ -194,8 +279,9 @@ Eight rule tests and desktop/mobile checks pass, including base/upgraded rewards
 
 ## Testing
 
-- `node tools/sim/run.js --hours 40 --seed N` before and after each phase, for seeds 1 to 5, comparing the marks (finish time, Heartstone times). Fail the phase if finish time moves more than ±2%.
-- Extend `bot.js` for auto-resolve of the descent minigame, and a `--risk p` option to model a given success rate. Horn auto-resolve already exists.
+- Compare seeds 1–5 before/after each gameplay slice, recording finish and Heartstone times. Refactors/default-off QOL must match the baseline (±2%); deliberate balance passes must report their changes. Use 40h as an initial horizon, extend it when new gates require more, and distinguish a reachable slow run from a stalled/unreachable prerequisite.
+- Add rule checks for shell ranges and fixed sounding reductions, conditional odds, separate slots, once-only rewards, all resets, legacy migration, live eligibility, timer/offline semantics, fossil curve preservation, and monotonic harsher fathom rewards. Compare no shells / average natural shells / two best Mythics, base/max discovery, multiple Sea shares, and automation on/off. Test the combined 20–25-sounding gates, timer, tide curve, Plumb Line, all fathom sinks, and legacy level-22 Ceiling bonus.
+- Extend `bot.js` for shell completion/loadouts and real Sea cooldown eligibility, then descent Auto and a `--risk p` option for fixed success rates. Horn auto-resolve already exists. Risky failure must never replay success rewards.
 - Playwright smoke tests: each new screen opens at desktop and phone width with no `pageerror`, and an old save loads and migrates.
 - Manual: backgrounded tab, away for hours, fast clock changes, reduced-motion preference.
 
@@ -209,8 +295,15 @@ Eight rule tests and desktop/mobile checks pass, including base/upgraded rewards
 | 3D load weight or WebGL absence | Lazy-load, with SVG fallback |
 | Floor identities skew pacing | Mean-1.0 tables, sim-verified at several seeds |
 | Risky Descent feels punishing | Opt-in only, exact penalty shown before confirming |
+| More Sea stages plus cooldown become dead waiting | Retune tide thresholds; compare clock floors and real pacing; timers advance in both worlds |
+| Harsher fathoms strand shell upgrades or Patient Choir | Audit per-hour income, Plumb Line, reserves, and competing prices |
+| Shells bypass milestones or duplicate rewards | Eligibility-only discounts, fixed rarity values, persisted once-only discovery outcomes |
 
 ## Decisions so far
+
+- Seashells primarily reduce Heartstone depth; their sounding reductions are fixed at Common 0 / Epic 1 / Mythic 3. Discovery starts at 20% and caps at 50%; one slot can be upgraded to two. Item potency has no upgrade.
+- Raise later Heartstone Sea requirements toward 20 and add a Sea settling timer; exact 20/+4 curve and timer milestones remain drafts. Soundings remain cumulative; first Heartstone has no Sea prerequisite; Undersong targets 25 actual soundings.
+- Use a harsher future fathom gain curve; initial isolated candidate exponent 0.25, with cave fossils unchanged.
 
 - Last gate on a failed Risky Descent: depth - 1.
 - Horn minigame: one minigame per stat line.
