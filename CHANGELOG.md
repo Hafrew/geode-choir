@@ -5,6 +5,7 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 ## Unreleased
 
 ### Fixed
+- Importing a save no longer trusts horn data: horn and collection names are reduced to plain letters before they reach the page, ids/seeds/rarities/stat lines are validated, and bad entries are dropped. Normal saves are unchanged.
 - Fossil and fathom gains on the Descend and Sound buttons, the top strip chip, the panel text, and the descent and sounding messages now use the number format setting (for example 384M) instead of the raw number.
 
 ### Changed
