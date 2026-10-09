@@ -8,6 +8,14 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.9.7: A Measured Haul (2026-10-09)
+
+### Changed
+- Sea fathom overrun exponent is 0.25 instead of 0.3662. Payout at the tide requirement, Plumb Line and horn modifiers, existing balances, and cave fossil rewards are unchanged.
+
+### Development
+- Establish seashell scoring, conditional discovery rules, one/two-slot equipment discounts, once-only pending completion, and save/reset persistence. Shell discovery and its equipment/minigame UI are not enabled yet. Higher sounding gates, Sea cooldowns, and tide thresholds will be tuned together in the next slice.
+
 ## 1.9.6: A Faster Call (2026-10-09)
 
 ### Fixed

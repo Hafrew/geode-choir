@@ -16,9 +16,12 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.9.6';
+  const VERSION = '1.9.7';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.9.7', date: '2026-10-09', head: 'A Measured Haul', items: [
+      'Fathoms grow more slowly when you stay beyond a Sea sounding’s tide requirement. The payout at the requirement is unchanged, as are cave fossil rewards and fathoms already earned.',
+    ] },
     { ver: '1.9.6', date: '2026-10-09', head: 'A Faster Call', items: [
       'Faster Tick now speeds horn calls as described. The Horn chip and Sounding countdown show the time remaining at your current tick speed.',
     ] },
