@@ -2,8 +2,10 @@ import { freshCave, freshSea, createState } from './state.js';
 import { shellDiscounts } from './seashells.js';
 const KNEE = 10;
 const SEA_MILESTONES = [2, 5, 10, 20];
-const FINALE_SOUNDINGS = 25;
+const FINALE_SOUNDINGS = 36;
+const FINALE_HEARTS = 5;
 const SONG_FATHOMS = 50000;
+const PLUMB_STEP = 1.2;
 const CEILING_MAX = 15;
 const CEILING_BASE = 1500, CEILING_GROWTH = 3.5;
 const seaLock = soundings => Math.max(120, 600 - 120 * SEA_MILESTONES.filter(n => soundings >= n).length);
@@ -57,9 +59,10 @@ function fossilReward(S, bonus, floorMultiplier, sunBonus) {
 }
 function fathomReward(S, bonus) {
   const q = S.sea, need = seaThreshold(S);
-  return q.run < need ? 0 : Math.floor((1 + 0.5 * q.soundings) * 2 * fathomBend(q.run / need) * Math.pow(1.25, q.deep.record) * bonus);
+  return q.run < need ? 0 : Math.floor((1 + 0.5 * q.soundings) * 2 * fathomBend(q.run / need) * Math.pow(PLUMB_STEP, q.deep.record) * bonus);
 }
-const heartLumenCost = (S, omen) => 1e7 * Math.pow(10, S.hearts) * omen.lumen;
+const HEART_LUMEN_GROWTH = 25;
+const heartLumenCost = (S, omen) => 1e7 * Math.pow(HEART_LUMEN_GROWTH, S.hearts) * omen.lumen;
 const heartDepthRequired = (S, omen) => Math.max(1, 12 + 22 * S.hearts + omen.depth - shellDiscounts(S).depth);
 const heartSeaBaseline = hearts => hearts === 0 ? 0 : 20 + 4 * (hearts - 1);
 const heartSeaRequired = S => {
@@ -70,6 +73,6 @@ const heartSeaRequired = S => {
 };
 const kindleReady = (S, omen) => S.lumen >= heartLumenCost(S, omen) && S.depth >= heartDepthRequired(S, omen) && S.sea.soundings >= heartSeaRequired(S);
 export { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
-  SEA_MILESTONES, FINALE_SOUNDINGS, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
+  SEA_MILESTONES, FINALE_SOUNDINGS, FINALE_HEARTS, HEART_LUMEN_GROWTH, PLUMB_STEP, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   seaLock, advanceSeaTimer, soundingReady, heartSeaBaseline,
   depthThreshold, seaThreshold, fossilReward, fathomReward, FATHOM_EXPONENT, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady };

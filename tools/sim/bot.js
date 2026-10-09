@@ -128,16 +128,17 @@ module.exports = function installBot(cfg) {
   }
 
   // ---- progression ----
+  const finaleHearts = () => sim.FINALE_HEARTS || 3;
   function mark(k, S) { if (bot.marks[k] == null) bot.marks[k] = Math.round(bot.t); }
   function pickWorld(S) {
     if (!S.sea.unlocked) return 'cave';
-    if (S.hearts >= 3) return cfg.patientChoir && !S.caveAutomation.unlocked && S.sea.fathoms >= fathomReserve(S) ? 'cave' : 'sea';
+    if (S.hearts >= finaleHearts()) return cfg.patientChoir && !S.caveAutomation.unlocked && S.sea.fathoms >= fathomReserve(S) ? 'cave' : 'sea';
     const block = 600, phase = (bot.t % block) / block;     // each 10 minutes: cave first, then sea
     return phase < 1 - cfg.seaShare ? 'cave' : 'sea';
   }
   const soundingTarget = S => cfg.maxSoundings || Math.max(sim.FINALE_SOUNDINGS || 6,
-    sim.heartSea && S.hearts < 3 ? sim.heartSea() : 0,
-    (cfg.patientChoir && !S.caveAutomation.unlocked) || (S.hearts >= 3 && S.sea.fathoms < finaleBudget) ? S.sea.soundings + 1 : 0);
+    sim.heartSea && S.hearts < finaleHearts() ? sim.heartSea() : 0,
+    (cfg.patientChoir && !S.caveAutomation.unlocked) || (S.hearts >= finaleHearts() && S.sea.fathoms < finaleBudget) ? S.sea.soundings + 1 : 0);
   function progress(S) {
     const want = pickWorld(S);
     if (want !== S.world && canAct()) sim.setWorld(want);
@@ -172,11 +173,11 @@ module.exports = function installBot(cfg) {
     if (S.hornUp.firstRack) mark('primordialThirdSlot', S);
     if (S.depth >= 1) mark('depth1', S); if (S.depth >= 5) mark('depth5', S); if (S.depth >= 10) mark('depth10', S); if (S.depth >= 12) mark('depth12', S);
     for (const d of [20, 30, 40, 50]) if (S.depth >= d) mark('depth' + d, S);
-    for (let h = 1; h <= 3; h++) if (S.hearts >= h) mark('heart' + h, S);
+    for (let h = 1; h <= finaleHearts(); h++) if (S.hearts >= h) mark('heart' + h, S);
     for (let n = 1; n <= (sim.FINALE_SOUNDINGS || 6); n++) if (S.sea.soundings >= n) mark('sounding' + n, S);
     if (S.strata.nest) mark('nest', S);
     if (Object.keys(S.feats).length >= 20) mark('feats20', S);
-    if (S.hearts >= 3) mark('reqHearts', S); if (S.sea.soundings >= (sim.FINALE_SOUNDINGS || 6)) mark('reqSoundings', S);
+    if (S.hearts >= finaleHearts()) mark('reqHearts', S); if (S.sea.soundings >= (sim.FINALE_SOUNDINGS || 6)) mark('reqSoundings', S);
   }
 
   function manageShells(S) {

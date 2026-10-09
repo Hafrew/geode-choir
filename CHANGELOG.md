@@ -8,6 +8,17 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.10.2: The Longer Road (2026-10-09)
+
+### Changed
+- The Undersong asks for five Heartstones and 36 actual soundings (was three and 25); feats and the 50,000-fathom offering are unchanged. Saves that already completed the finale are untouched.
+- Heartstone lumen cost grows by ×25 per Heartstone instead of ×10 (the first is unchanged).
+- Plumb Line gives ×1.2 fathoms per level instead of ×1.25. Purchased levels are preserved.
+- The simulator reads the finale's Heartstone requirement from the game instead of assuming three.
+
+### Why
+A real mid-run save showed lumen was never the gate for Heartstones (about 430 million lumen per second against a cost near a billion), and fathoms had no meaningful sink. Natural simulations finished in about four hours.
+
 ## 1.10.1: Pearl and Pattern (2026-10-09)
 
 ### Added
