@@ -90,7 +90,6 @@ Sim impact: the bot uses auto. Add an assertion that horn stat totals match the 
 - **Golden upgrades** can only be bought while standing on a Golden Floor, and their levels persist:
   - *Rich Vein:* the fossil bonus rises from +10% to +30%.
   - *Gilded Breath:* the Golden Horn chance rises from 50% to 100%.
-  - *Slow Gold:* optional, a further slowdown of decay on Golden Floors.
 - **Golden Horns:** the minigame result gets a further x1.25 on top, plus a distinct look (gold material, glow, particles) and their own Collection entries. Each one you own adds +2% to the Golden Floor chance, so a collection of 5 reaches the 15% cap.
 - Heartstone: the Golden Floor chance, Golden upgrades and owned Golden Horns carry over, since horns are kept.
 
