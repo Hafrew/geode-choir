@@ -1,5 +1,6 @@
 import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
+  soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   depthThreshold, seaThreshold, fossilReward, fathomReward, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
 import { serializeState, restoreState, cmpVer } from './saves.js';
 import { applyAutoEquip, acquireHorn, IVORY_LEVELS, discoveryIvory, grantDiscoveryIvory, RARITY, HSTATS, PRIMORDIAL, RARITY_LEVELS, PITY_AT, TRAITS, TRAIT_CHOICE_AT,
@@ -16,9 +17,15 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.9.7';
+  const VERSION = '1.9.8';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.9.8', date: '2026-10-09', head: 'The Sea Settles', items: [
+      'Sea soundings now have a settling timer. It starts at ten minutes and shortens at 2, 5, 10 and 20 actual soundings, down to two minutes. Faster Tick speeds it in either world and while away.',
+      'Later Heartstones need 20, 24, 28 and onward total Sea soundings. The first still opens the Sea. An already-met Sea milestone in an old save stays valid for its current Heartstone.',
+      'Tide requirements grow by three per sounding instead of four. Open the Ceiling has higher prices and a 15-level purchase limit; existing levels above 15 keep their bonuses.',
+      'The Undersong asks for 25 actual soundings and a larger fathom offering. Seashell discovery and its minigame are still to come.',
+    ] },
     { ver: '1.9.7', date: '2026-10-09', head: 'A Measured Haul', items: [
       'Fathoms grow more slowly when you stay beyond a Sea sounding’s tide requirement. The payout at the requirement is unchanged, as are cave fossil rewards and fathoms already earned.',
     ] },
@@ -307,6 +314,7 @@ import { createState } from './state.js';
   const oysterCost = () => Math.ceil(300 * Math.pow(1.8, S.sea.oBought));
   const pobjCost = k => Math.ceil(PEARLOBJ[k].base * Math.pow(PEARLOBJ[k].g, S.sea.pBought[k] || 0));
   const soundAt = () => seaThreshold(S);
+  const canSound = () => soundingReady(S);
   const fathomGain = () => fathomReward(S, HB.fathoms);
   const quietEff = () => 0.25 + 0.1 * S.sea.choir.listen;
   const choirK = () => 0.1 * (1 + S.sea.choir.open);
@@ -2161,9 +2169,9 @@ import { createState } from './state.js';
 
     // ------------------------------- sea: the choir above (tide, never resets)
     lvItem({
-      parent: 'shopChoir', icon: ICONS.choir(), unit: 'tide', name: 'Open the Ceiling', base: 500, g: 3,
+      parent: 'shopChoir', icon: ICONS.choir(), unit: 'tide', name: 'Open the Ceiling', base: CEILING_BASE, g: CEILING_GROWTH, max: CEILING_MAX,
       get: () => S.sea.choir.open, inc: () => { S.sea.choir.open++; },
-      desc: l => `The cave's song lifts tide by ${fmtX(0.1 * (1 + l))} → ${fmtX(0.1 * (2 + l))} per power of ten of its hum/s`,
+      desc: l => l >= CEILING_MAX ? (l > CEILING_MAX ? `Legacy level ${l}: your full bonus is kept. New purchases stop at level ${CEILING_MAX}.` : `The Ceiling is fully open at level ${CEILING_MAX}.`) : `The cave's song lifts tide by ${fmtX(0.1 * (1 + l))} → ${fmtX(0.1 * (2 + l))} per power of ten of its hum/s`,
     });
     lvItem({
       parent: 'shopChoir', icon: ICONS.stones(), unit: 'tide', name: 'Listening Stones', base: 2000, g: 3.2, max: 5,
@@ -2712,7 +2720,7 @@ import { createState } from './state.js';
   });
   $('descBtn').addEventListener('click', () => {
     if (S.world !== 'sea' && S.cool > 0) { whisper(`The floor is still settling: ${mmss(S.cool)} to go. Quests shorten it.`); return; }
-    const ready = S.world === 'sea' ? fathomGain() > 0 : fossilGain() > 0;
+    const ready = S.world === 'sea' ? canSound() : fossilGain() > 0;
     if (!ready) return;
     if (Date.now() - descArmed > 3000) {
       descArmed = Date.now(); $('descBtn').textContent = S.world === 'sea' ? 'Click again to sound' : 'Click again to descend';
@@ -2792,7 +2800,7 @@ import { createState } from './state.js';
 
   function sound() {
     const q = S.sea, got = fathomGain();
-    if (got <= 0) return;
+    if (!canSound() || got <= 0) return false;
     resetSounding(S, got);
     S.sea.lv.rain = S.sea.soundings + 2 * S.sea.deep.rain;
     S.sea.lv.light = S.sea.deep.light ? 1 : 0;
@@ -2802,6 +2810,7 @@ import { createState } from './state.js';
     const h = gainHorn(0);
     whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}`);
     save();
+    return true;
   }
 
   // ---------- the Heartstone: press and hold ----------
@@ -2986,9 +2995,9 @@ import { createState } from './state.js';
   ];
 
   // ---------- the Undersong ----------
-  const SONG_COST = 25; // fathoms: a small offering, not a wall
+  const SONG_COST = SONG_FATHOMS;
   const songReqs = () => [
-    { label: 'Sound the depths', have: S.sea.soundings, need: 6 },
+    { label: 'Sound the depths', have: S.sea.soundings, need: FINALE_SOUNDINGS },
     { label: 'Kindle Heartstones', have: S.hearts, need: 3 },
     { label: 'Earn feats', have: Object.keys(S.feats).length, need: 20 },
   ];
@@ -3261,7 +3270,7 @@ import { createState } from './state.js';
   }
   function updateStrip(sea, prog, locked, got) {
     const ready = prog >= 1 && !locked;
-    chip('chipDesc', locked ? 'Settling' : sea ? 'Sound' : 'Descend', locked ? mmss(S.cool) : ready ? '+' + got : Math.floor(prog * 100) + '%', prog, ready);
+    chip('chipDesc', locked ? 'Settling' : sea ? 'Sound' : 'Descend', locked ? mmss(sea ? S.sea.cool / tickRate() : S.cool) : ready ? '+' + got : Math.floor(prog * 100) + '%', prog, ready);
     $('chipDesc').classList.toggle('sea', sea);
     const showHeart = !sea && (S.lumenTotal >= 1e4 || S.hearts > 0);
     setHid('chipHeart', !showHeart);
@@ -3390,7 +3399,7 @@ import { createState } from './state.js';
       const cost = heartCost(), can = canKindle();
       const tick = ok => ok ? '✓' : '·';
       setT('heartCount', S.hearts ? `${S.hearts} kindled` : '');
-      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}), <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)})${S.hearts ? ` and <b>${tick(S.sea.soundings >= heartSea())} ${heartSea()} soundings</b> of the sea (you have ${S.sea.soundings})` : ''}. ${S.hearts ? `The mountain feels <b>${omen().name.toLowerCase()}</b> this time. ${omen().text} ` : ''}Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}. Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn. It also unlocks <b>${nextOffset()[0]}</b>: ${nextOffset()[1]}.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
+      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}), <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)})${S.hearts ? ` and <b>${tick(S.sea.soundings >= heartSea())} ${heartSea()} soundings</b> of the sea (you have ${S.sea.soundings})` : ''}. ${S.hearts ? `The mountain feels <b>${omen().name.toLowerCase()}</b> this time. ${omen().text} ` : ''}Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}.${S.heartSeaLegacy ? ' Your already-met Sea milestone is preserved for this Heartstone; the next uses the new requirement.' : ''} Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn. It also unlocks <b>${nextOffset()[0]}</b>: ${nextOffset()[1]}.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
       heartBtn.classList.toggle('poor', !can);
       setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < heartDepth() ? `Reach depth ${heartDepth()} first` : S.sea.soundings < heartSea() ? `Sound the sea ${heartSea()} times first` : 'Not enough lumen');
     }
@@ -3413,12 +3422,16 @@ import { createState } from './state.js';
     // prestige panel
     let need, prog, got, locked = false;
     if (sea) {
-      need = soundAt(); prog = Math.min(1, q.run / need); got = fathomGain();
+      need = soundAt(); const tideProg = Math.min(1, q.run / need); got = fathomGain();
+      locked = q.cool > 0;
+      prog = locked ? Math.min(tideProg, 1 - q.cool / Math.max(1, q.coolTotal)) : tideProg;
       setT('descTitle', 'Sound the depths');
-      setH('descText', prog < 1
-        ? `Ring <b>${fmt(need)}</b> tide in this sea to sound deeper. You lose its bells, voices, oysters and pearls, but gain <b class="fat">fathoms</b> for the Deep, tide ×2 per sounding, and a horn.`
+      setH('descText', locked
+        ? `The sea is still settling: <b>${mmss(q.cool / tickRate())}</b> before you can sound again. Faster Tick speeds it; 2, 5, 10 and 20 total soundings shorten it.${tideProg < 1 ? ` Ring <b>${fmt(need)}</b> tide to reach the depths.` : ''}`
+        : tideProg < 1
+        ? `Ring <b>${fmt(need)}</b> tide in this sea to sound deeper. You lose its bells, voices, oysters and pearls, but gain <b class="fat">fathoms</b> for the Deep, tide ×1.6 per sounding, and a horn.`
         : `Sound now for <b class="fat">${got} fathom${got > 1 ? 's' : ''}</b> and a horn, or keep ringing: fathoms grow more slowly the more you ring here.`);
-      if (prog >= 1) once('canSound');
+      if (canSound()) once('canSound');
     } else {
       need = deepenAt(); const humProg = Math.min(1, S.run / need); got = fossilGain();
       locked = S.cool > 0;
@@ -3448,7 +3461,7 @@ import { createState } from './state.js';
     if (!descArmed || Date.now() - descArmed > 3000) {
       descArmed = 0;
       const unit = sea ? 'fathom' : 'fossil';
-      btn.textContent = locked ? `Settling · ${mmss(S.cool)}` : prog < 1 ? (sea ? 'Sound the depths' : 'Descend') : `${sea ? 'Sound' : 'Descend'} · +${got} ${unit}${got > 1 ? 's' : ''}`;
+      btn.textContent = locked ? `Settling · ${mmss(sea ? q.cool / tickRate() : S.cool)}` : prog < 1 ? (sea ? 'Sound the depths' : 'Descend') : `${sea ? 'Sound' : 'Descend'} · +${got} ${unit}${got > 1 ? 's' : ''}`;
     }
     if (!resetArmed || Date.now() - resetArmed > 3000) { resetArmed = 0; if ($('resetBtn').textContent !== 'Forget everything') $('resetBtn').textContent = 'Forget everything'; }
     renderTip();
@@ -3543,6 +3556,7 @@ import { createState } from './state.js';
     if (seconds >= 3600) S.stats.longAway++;
     const eff = offlineEff(), qe = quietEff(), q = S.sea, sea = S.world === 'sea';
     if (S.cool > 0) S.cool = Math.max(0, S.cool - seconds * eff * tickRate());
+    advanceSeaTimer(S, seconds, tickRate(), eff);
     // The rate you left at was measured at your floor's freshness then; the fade carries on while you are away.
     const fadeK = freshAvg(S.age, S.age + seconds) / Math.max(1e-9, freshAt(S.age));
     S.age += seconds;
@@ -3620,6 +3634,7 @@ import { createState } from './state.js';
     liteT += dt; if (liteT > 0.25) { liteT = 0; updateLite(); govern(); }
     autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(); }
     if (S.cool > 0) S.cool = Math.max(0, S.cool - dt * tickRate());
+    advanceSeaTimer(S, dt, tickRate());
     storyT += dt; if (storyT >= 0.5) { storyT = 0; checkStory(false); checkQuests(false); }
     if (holding) {
       holdT += dt;
@@ -3702,7 +3717,7 @@ import { createState } from './state.js';
   if (simulation) simulation.api = {
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
-    descend, sound, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
     serialize, load, updateUI, setTab, rollPlan, buildHorn, startSounding, finishSounding, sndHit, renderSounding, renderInventory, renderColl, setHornSub,

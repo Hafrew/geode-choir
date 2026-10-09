@@ -8,7 +8,7 @@ const installBot = require('./bot');
 const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : d; };
 const cfg = {
   policy: arg('policy', 'smart'), clicks: +arg('clicks', 3), seaShare: +arg('sea', 0.25), k: +arg('k', 2),
-  hornStart: arg('hornStart', 'base'), hornUpgrades: arg('hornUpgrades', '1') !== '0', maxSoundings: +arg('maxSoundings', 6), autobuy: arg('autobuy', '0') === '1',
+  hornStart: arg('hornStart', 'base'), hornUpgrades: arg('hornUpgrades', '1') !== '0', maxSoundings: +arg('maxSoundings', 0), autobuy: arg('autobuy', '0') === '1',
   stepMs: +arg('step', 50), actionGap: +arg('gap', 0), noBuy: arg('noBuy', '0') === '1', noFuse: arg('noFuse', '0') === '1', noDescend: arg('noDescend', '0') === '1',
 };
 const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
@@ -51,7 +51,7 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
         process.stderr.write(`  game ${(t / 3600).toFixed(1)}h  wall ${((Date.now() - wall0) / 1000).toFixed(0)}s\n`);
         if (arg('out', null)) {                                // hourly snapshot so long runs can be inspected while running
           const snap = await pg.evaluate(() => { const b = window.__bot, S = window.__geodeSimulation.api.S; return { marks: b.marks, log: b.log.slice(-6), gameSeconds: b.t,
-            final: { depth: S.depth, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length, fathoms: S.sea.fathoms, world: S.world, lumen: S.lumen, fossils: S.fossils, rate: S.rate, tideRate: S.sea.rate } }; });
+            final: { depth: S.depth, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length, fathoms: S.sea.fathoms, fathomsEarned: S.sea.fathomsTotal, seaCool: S.sea.cool || 0, ceilingLevel: S.sea.choir.open, deep: S.sea.deep, world: S.world, lumen: S.lumen, fossils: S.fossils, rate: S.rate, tideRate: S.sea.rate } }; });
           fs.mkdirSync(path.dirname(arg('out', null)), { recursive: true });
           fs.writeFileSync(arg('out', null).replace(/\.json$/, '.snap.json'), JSON.stringify(snap, null, 1));
         }
@@ -59,8 +59,8 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
     }
     const out = await pg.evaluate(() => {
       const b = window.__bot, S = window.__geodeSimulation.api.S;
-      return { marks: b.marks, log: b.log, buys: b.buys, descents: b.descents, soundings: b.soundings, gameSeconds: b.t,
-        final: { depth: S.depth, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length, fathoms: S.sea.fathoms, world: S.world, hornUp: S.hornUp, ivory: S.ivory, hornsFound: S.stats.hornsFound, ivoryLifetime: S.stats.ivoryLife, rarityLevel: S.hornUp.rarity || 0, primordialUnlocked: !!S.hornUp.firstVoice, primordialHeld: S.horns.filter(h => h.r === 5).length } };
+      return { marks: b.marks, log: b.log, buys: b.buys, descents: b.descents, soundings: b.soundings, soundingLog: b.soundingLog, timerWaitSeaSec: b.timerWaitSeaSec, tideWaitSeaSec: b.tideWaitSeaSec, gameSeconds: b.t,
+        final: { depth: S.depth, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length, fathoms: S.sea.fathoms, fathomsEarned: S.sea.fathomsTotal, seaCool: S.sea.cool || 0, ceilingLevel: S.sea.choir.open, deep: S.sea.deep, world: S.world, hornUp: S.hornUp, ivory: S.ivory, hornsFound: S.stats.hornsFound, ivoryLifetime: S.stats.ivoryLife, rarityLevel: S.hornUp.rarity || 0, primordialUnlocked: !!S.hornUp.firstVoice, primordialHeld: S.horns.filter(h => h.r === 5).length } };
     });
     out.cfg = cfg; out.seed = seed; out.wallSeconds = (Date.now() - wall0) / 1000; out.errors = errs.slice(0, 5); out.finished = status === 'done';
     const file = arg('out', null);

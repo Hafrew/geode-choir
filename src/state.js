@@ -20,6 +20,7 @@ const freshSeaRun = () => ({
 });
 const freshSea = () => ({
   ...freshSeaRun(), unlocked: false, soundings: 0, fathoms: 0, fathomsTotal: 0,
+  cool: 0, coolTotal: 0,
   deep: { current: 0, rain: 0, buoys: 0, beds: 0, record: 0, light: 0 },
   choir: { open: 0, listen: 0 },
   total: 0, idleRate: 0, rate: 0, throws: 0,
@@ -33,6 +34,7 @@ const createState = version => ({
   hornInventory: { autoEquip: false, focus: 'balanced', salvage: [false, false, false, false, false, false], gilded: false },
   caveAutomation: createCaveAutomation(),
   shells: freshShells(),
+  heartSeaLegacy: null,
   sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', ts: 1, saved: Date.now(), shouts: 0, tab: 'cave',
   lore: {}, feats: {}, stats: freshStats(),
   ver: version, seenVer: version, refund: null, numfmt: 'short', finale: 0, omen: 'steady', rubble: 0, cool: 0, quests: {},

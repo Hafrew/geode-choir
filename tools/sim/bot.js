@@ -9,7 +9,7 @@ module.exports = function installBot(cfg) {
   if (cfg.hornStart === 'max' || cfg.hornStart === 'primordial') sim.refreshAll();
   const CAVE = new Set(['shopCrystals', 'shopVoices', 'shopTuning', 'shopWonders', 'shopAttune', 'shopStrata', 'shopGlow', 'shopHorns', 'shopGold']);
   const SEA = new Set(['shopBells', 'shopSeaVoices', 'shopSeaTuning', 'shopOysters', 'shopPearlObjs', 'shopBellTune', 'shopDeep', 'shopChoir', 'shopHorns']);
-  const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, budget: 0 };
+  const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, soundingLog: [], timerWaitSeaSec: 0, tideWaitSeaSec: 0, budget: 0 };
   const strip = h => String(h).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
   // ---- purchase weights: effective price = cost / weight, cheapest wins ----
@@ -131,6 +131,7 @@ module.exports = function installBot(cfg) {
     const block = 600, phase = (bot.t % block) / block;     // each 10 minutes: cave first, then sea
     return phase < 1 - cfg.seaShare ? 'cave' : 'sea';
   }
+  const soundingTarget = S => cfg.maxSoundings || Math.max(sim.FINALE_SOUNDINGS || 6, sim.heartSea && S.hearts < 3 ? sim.heartSea() : 0);
   function progress(S) {
     const want = pickWorld(S);
     if (want !== S.world && canAct()) sim.setWorld(want);
@@ -138,11 +139,26 @@ module.exports = function installBot(cfg) {
       if (sim.canKindle()) { if (canAct()) bot.kindleNow = true; return; }
       if (!cfg.noDescend && S.cool <= 0 && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt() && canAct()) { sim.descend(); bot.descents++; }
     } else {
-      if (sim.fathomGain() > 0 && S.sea.run >= cfg.k * sim.soundAt() && S.sea.soundings < cfg.maxSoundings && canAct()) { sim.sound(); bot.soundings++; }
+      if (S.sea.soundings < soundingTarget(S)) {
+        if ((S.sea.cool || 0) > 0 && S.sea.run >= sim.soundAt()) bot.timerWaitSeaSec += .5;
+        if (S.sea.run < sim.soundAt()) bot.tideWaitSeaSec += .5;
+        const ready = sim.canSound ? sim.canSound() : sim.fathomGain() > 0;
+        if (ready && S.sea.run >= cfg.k * sim.soundAt() && canAct()) {
+          const n = S.sea.soundings, earned = S.sea.fathomsTotal, ratio = S.sea.run / sim.soundAt();
+          sim.sound();
+          if (S.sea.soundings > n) {
+            bot.soundings++;
+            bot.soundingLog.push({ n: S.sea.soundings, t: Math.round(bot.t), fathoms: S.sea.fathomsTotal - earned, ratio });
+          }
+        }
+      }
     }
     if (S.finale === 0 && sim.songReady() && S.sea.fathoms >= sim.SONG_COST) { mark('finaleReady', S); bot.done = true; }
   }
   function marks(S) {
+    if (S.hearts >= 2 && S.sea.fathoms >= 100000) mark('patientChoirAffordable', S);
+    if (S.sea.fathoms >= 1575) mark('shellBudget1575', S);
+    if (S.sea.choir.open >= 15) mark('ceiling15', S);
     if (S.hornUp.rarity >= 10) mark('rarityMax', S);
     if (S.hornUp.firstVoice) mark('primordialUnlock', S);
     if ((S.primordialEquipped || []).length) mark('primordialEquipped', S);
@@ -150,10 +166,10 @@ module.exports = function installBot(cfg) {
     if (S.depth >= 1) mark('depth1', S); if (S.depth >= 5) mark('depth5', S); if (S.depth >= 10) mark('depth10', S); if (S.depth >= 12) mark('depth12', S);
     for (const d of [20, 30, 40, 50]) if (S.depth >= d) mark('depth' + d, S);
     for (let h = 1; h <= 3; h++) if (S.hearts >= h) mark('heart' + h, S);
-    for (let n = 1; n <= 6; n++) if (S.sea.soundings >= n) mark('sounding' + n, S);
+    for (let n = 1; n <= (sim.FINALE_SOUNDINGS || 6); n++) if (S.sea.soundings >= n) mark('sounding' + n, S);
     if (S.strata.nest) mark('nest', S);
     if (Object.keys(S.feats).length >= 20) mark('feats20', S);
-    if (S.hearts >= 3) mark('reqHearts', S); if (S.sea.soundings >= 6) mark('reqSoundings', S);
+    if (S.hearts >= 3) mark('reqHearts', S); if (S.sea.soundings >= (sim.FINALE_SOUNDINGS || 6)) mark('reqSoundings', S);
   }
 
   function decide() {
