@@ -2,7 +2,7 @@ import { createState, freshStats, freshSea } from './state.js';
 import { normalizeCaveAutomation } from './automation.js';
 import { normalizeShells, shellDiscounts } from './seashells.js';
 import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState } from './horns.js';
-import { KNEE } from './progression.js';
+import { KNEE, SUN_GUARANTEE } from './progression.js';
 const cmpVer = (a, b) => {
   const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
   for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d < 0 ? -1 : 1; }
@@ -60,6 +60,7 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   S.lore = d.lore && typeof d.lore === 'object' ? d.lore : {};
   S.feats = d.feats && typeof d.feats === 'object' ? d.feats : {};
   S.stats = mergeObj(freshStats(), d.stats);
+  S.stats.sunDry = Math.max(0, Math.min(SUN_GUARANTEE - 1, Math.floor(+S.stats.sunDry) || 0));
   // Lifetime counters that older saves did not keep: start from what the save still knows.
   S.stats.fossilsLife = Math.max(+S.stats.fossilsLife || 0, +d.fossilsTotal || 0);
   S.stats.lumenLife = Math.max(+S.stats.lumenLife || 0, +d.lumenTotal || 0);

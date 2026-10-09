@@ -6,6 +6,11 @@ const FINALE_SOUNDINGS = 36;
 const FINALE_HEARTS = 5;
 const SONG_FATHOMS = 50000;
 const PLUMB_STEP = 1.2;
+// Sunvein bad-luck protection: each eligible descent without a Sunvein adds a step to the chance (up to a maximum),
+// and the 30th such descent is a Sunvein.
+const SUN_PITY_STEP = 0.01, SUN_PITY_MAX = 0.05, SUN_GUARANTEE = 30;
+const sunPityBonus = dry => Math.min(SUN_PITY_MAX, SUN_PITY_STEP * Math.max(0, Math.floor(dry) || 0));
+const sunveinRoll = (dry, chance, roll) => (Math.max(0, Math.floor(dry) || 0) + 1 >= SUN_GUARANTEE) || roll < chance + sunPityBonus(dry);
 const CEILING_MAX = 15;
 const CEILING_BASE = 1500, CEILING_GROWTH = 3.5;
 const seaLock = soundings => Math.max(120, 600 - 120 * SEA_MILESTONES.filter(n => soundings >= n).length);
@@ -73,6 +78,6 @@ const heartSeaRequired = S => {
 };
 const kindleReady = (S, omen) => S.lumen >= heartLumenCost(S, omen) && S.depth >= heartDepthRequired(S, omen) && S.sea.soundings >= heartSeaRequired(S);
 export { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
-  SEA_MILESTONES, FINALE_SOUNDINGS, FINALE_HEARTS, HEART_LUMEN_GROWTH, PLUMB_STEP, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
+  SEA_MILESTONES, FINALE_SOUNDINGS, FINALE_HEARTS, HEART_LUMEN_GROWTH, PLUMB_STEP, SUN_PITY_STEP, SUN_PITY_MAX, SUN_GUARANTEE, sunPityBonus, sunveinRoll, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   seaLock, advanceSeaTimer, soundingReady, heartSeaBaseline,
   depthThreshold, seaThreshold, fossilReward, fathomReward, FATHOM_EXPONENT, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady };

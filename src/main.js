@@ -3,7 +3,7 @@ import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscovery
 import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
   soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, FINALE_HEARTS, PLUMB_STEP, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
-  depthThreshold, seaThreshold, fossilReward, fathomReward, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
+  depthThreshold, seaThreshold, fossilReward, fathomReward, sunPityBonus, sunveinRoll, SUN_GUARANTEE, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
 import { serializeState, restoreState, cmpVer } from './saves.js';
 import { applyAutoEquip, acquireHorn, IVORY_LEVELS, discoveryIvory, grantDiscoveryIvory, RARITY, HSTATS, PRIMORDIAL, RARITY_LEVELS, PITY_AT, TRAITS, TRAIT_CHOICE_AT,
   hash32, rng32, FAMS, FAM_OF, famOf, rarityOdds, rarityRevealed, primordialUnlocked, visibleRarities,
@@ -19,11 +19,15 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.2';
+  const VERSION = '1.10.3';
   // Release channel shown beside the version; saves and version checks use VERSION alone.
   const CHANNEL = 'beta';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.10.3', date: '2026-10-09', head: 'Luck Evens Out', items: [
+      'Sunveins now have bad-luck protection. Every descent from depth 3 down that is not a Sunvein adds one point to the chance, up to five extra points, and the 30th descent in a row without one is always a Sunvein.',
+      'The counter resets when a Sunvein arrives and is kept in your save. Open the Gilt chip to see your chance and how many dry descents you have had. Saves from before this update start the count at zero.',
+    ] },
     { ver: '1.10.2', date: '2026-10-09', head: 'The Longer Road', items: [
       'The Undersong now asks for five Heartstones and 36 actual soundings (it was three Heartstones and 25), with the same 20 feats and 50,000-fathom offering. Heartstones you already kindled still count.',
       'Heartstones cost more lumen: each one multiplies the price by 25 instead of 10. The first is unchanged. Your next Heartstone may cost noticeably more than it did before this update.',
@@ -2799,11 +2803,11 @@ import { createState } from './state.js';
     // The next floor: from depth 3 it has a character, and now and then it is a Sunvein.
     S.floor = 'still'; S.giltFloor = 0;
     if (S.depth >= 3) {
-      if (Math.random() < sunChance(opts && opts.goldBonus || 0)) {
-        S.floor = 'sunvein';
+      if (sunveinRoll(S.stats.sunDry, sunChance(opts && opts.goldBonus || 0), Math.random())) {
+        S.floor = 'sunvein'; S.stats.sunDry = 0;
         const arrival = sunveinArrival(GILT_LUMP, HB.traits.golden || 0);
         S.gilt += arrival; S.giltFloor = arrival; S.stats.giltLife += arrival; S.stats.sunveins++;
-      } else S.floor = rollFloor();
+      } else { S.floor = rollFloor(); S.stats.sunDry = Math.min(SUN_GUARANTEE - 1, S.stats.sunDry + 1); }
     }
     S.cool = descentLock(); S.stats.descents++;
     S.stats.fossilsLife += got + vein; S.stats.bestHaul = Math.max(S.stats.bestHaul, got + vein);
@@ -3335,7 +3339,7 @@ import { createState } from './state.js';
       case 'fathom': return { t: 'Fathoms', rows: [['Held now', F(q.fathoms)], ['Lifetime', F(q.fathomsTotal)], ['Best sounding', F(st.bestFathomHaul)]] };
       case 'ivory': return { t: 'Ivory', rows: [['Held now', F(S.ivory)], ['Lifetime', F(st.ivoryLife)], ['Horns found', F(st.hornsFound)]] };
       case 'gilt': return { t: 'Gilt', rows: [['Held now', F(Math.floor(S.gilt))], ['Lifetime', F(Math.floor(st.giltLife))], ['This floor', onSun() ? `${Math.floor(S.giltFloor)} / ${GILT_CAP}` : 'not on a Sunvein'],
-        ['Sunvein chance', Math.round(sunChance() * 100) + '% a descent'], ['Gilded horns owned', F(goldHorns())], ['Sunveins found', F(st.sunveins)]] };
+        ['Sunvein chance', Math.round((sunChance() + sunPityBonus(st.sunDry)) * 100) + '% a descent'], ['Dry descents', `${F(st.sunDry)} of ${SUN_GUARANTEE - 1} (a Sunvein is guaranteed after ${SUN_GUARANTEE})`], ['Gilded horns owned', F(goldHorns())], ['Sunveins found', F(st.sunveins)]] };
       case 'hearts': return { t: 'Heartstones', rows: [['Kindled', F(S.hearts)], ['Deepest cave', F(st.maxDepth)], ['Descents', F(st.descents)]] };
     }
     return null;
