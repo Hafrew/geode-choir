@@ -37,7 +37,15 @@ Run on scratch copies of `main`, seeds 1–3, same bot flags.
 
 The Sea gates never bind: the soundings are done 0.5–1.5h before Heartstone 5, so the finish time does not move (differences are seed noise). Binding would need about 80+ soundings, which would be a chore of identical actions, so this lever is not used.
 
-Depth step (`12 + 22 × hearts`) variants of 24 and 26 per Heartstone were also simulated; see the results below if present. A longer depth leg adds more of the repetitive cave loop that players already find flat, so lengthening by depth is not the preferred direction (see PLAN.md, 1.10.4).
+Depth step (`12 + 22 × hearts`) variants, same seeds and flags:
+
+| Variant | Seed 1 | Seed 2 | Seed 3 | Mean | Change vs 1.10.2 |
+|---|---:|---:|---:|---:|---:|
+| Step 22 (1.10.2) | 6.26h | 6.87h | 6.54h | 6.56h | - |
+| Step 24 | 6.50h | 7.08h | 6.72h | 6.77h | +0.21h |
+| Step 26 | 6.69h | 7.52h | 7.05h | 7.09h | +0.53h |
+
+The effect is much smaller than the naive estimate (about +0.9h and +1.8h from the extra levels): levels get cheaper as lumen and hum income grow with depth, so deeper levels take less time each. A depth step is therefore a weak and nonlinear lever, and it adds more of the repetitive cave loop that players already find flat. It is not the preferred direction (see PLAN.md, 1.10.4).
 
 ## Reproduce
 
