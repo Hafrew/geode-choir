@@ -32,9 +32,10 @@ Current release: **1.10.1 beta** on `main`. All gameplay through 1.10.1 is merge
 | 1.9.8 | Sea settling, cumulative Heartstone gates, tide curve, Ceiling cap, 50k finale offering | Delivered |
 | **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Delivered; manual tuning pending |
 | **1.10.1** | Stable 2D shell art in inventory and sounding | Delivered; released as **beta** |
-| **1.10.2** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI | **Next pass**; no balance changes |
-| **1.10.3** | Auto-buy horns, staged Patient Choir unlocks, longer Heartstone run (4 or 5 Heartstones) | Proposed; needs simulator rerun before numbers are final |
-| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.3, using the natural shell-economy results |
+| **1.10.2** | The Longer Road: five-Heartstone finale (36 soundings), lumen cost ×25 per Heartstone, Plumb Line ×1.2 | Delivered; finish-time effect still being measured |
+| **1.10.3** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI | **Next pass**; no balance changes |
+| **1.10.4** | Auto-buy horns, staged Patient Choir unlocks, longer Heartstone run (finale already at 5 Heartstones in 1.10.2) | Proposed; needs simulator rerun before numbers are final |
+| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.4, using the natural shell-economy results |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -103,7 +104,7 @@ Original delivery intent: wire existing `src/seashells.js` rules into the real s
 
 Validate natural discovery and purchases, first Epic/Mythic timing, both slots, effective Heartstone gates, reload/reset behavior, and desktop/mobile interaction. Run the bot using actual drops, Auto quality, real purchase prices, and a **proposed 100,000-fathom finale reserve**. Include Patient Choir and Deep purchases as competing sinks; shell upgrades must be optional to reaching the finale.
 
-## 1.10.2 — Beta hardening
+## 1.10.3 — Beta hardening
 
 From the post-merge code review of 1.10.1. No balance or progression changes; the seeded parity rule applies.
 
@@ -126,7 +127,7 @@ The beta label is removed when 1.11.0 lands and this hardening is complete.
 
 Extraction never blocks a feature release, and the canvas/audio rewrite stays out of scope.
 
-## 1.10.3 — Auto-buy horns, staged automation, longer run
+## 1.10.4 — Auto-buy horns, staged automation
 
 Natural runs finish in about **4.25 hours** (3.96–4.85 h, seeds 1–5, see [playable shell validation](tools/sim/playable-seashells.md)). The goal here is a longer game, and automation that has to be earned instead of arriving as one flat unlock.
 
