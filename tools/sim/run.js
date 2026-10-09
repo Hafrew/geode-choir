@@ -49,6 +49,10 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
         status = 'ok';
       }
       t = await pg.evaluate(() => window.__bot.t);
+      if (arg('stopAtSunvein', '0') === '1') {                // sanity check: stop at the first Sunvein
+        const sun = await pg.evaluate(() => { const S = window.__geodeSimulation.api.S; return S.stats.sunveins > 0 ? { sunveins: S.stats.sunveins, floor: S.floor, giltFloor: S.giltFloor, gilt: S.gilt, depth: S.depth, descents: S.stats.descents } : null; });
+        if (sun) { console.log('FIRST SUNVEIN at', (t / 3600).toFixed(2) + 'h game', JSON.stringify(sun)); status = 'done'; break; }
+      }
       if (Math.round(t) % 3600 < CH) {
         process.stderr.write(`  game ${(t / 3600).toFixed(1)}h  wall ${((Date.now() - wall0) / 1000).toFixed(0)}s\n`);
         if (arg('out', null)) {                                // hourly snapshot so long runs can be inspected while running
