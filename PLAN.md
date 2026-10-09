@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current release: **1.10.3 beta** (Sunvein pity). Everything through the number-format fix is merged; 1.10.3 is in #33. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations now finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current release: **1.10.4 beta** (Pearl Case, in #35). Everything through 1.10.3 (Sunvein pity) and the number-format fix is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -35,12 +35,13 @@ Current release: **1.10.3 beta** (Sunvein pity). Everything through the number-f
 | **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Delivered; manual tuning pending |
 | **1.10.1** | Stable 2D shell art in inventory and sounding | Delivered; released as **beta** |
 | **1.10.2** | The Longer Road: five-Heartstone finale (36 soundings), lumen cost ×25 per Heartstone, Plumb Line ×1.2 | Delivered; measured mean 6.56 h to finale readiness |
-| Unreleased | Fossil and fathom gains follow the number format setting | Delivered (#31); audit for other raw numbers is in 1.10.4 |
+| Unreleased | Fossil and fathom gains follow the number format setting | Delivered (#31); audit for other raw numbers is in 1.10.5 |
 | **1.10.3** | Luck Evens Out: Sunvein pity (+1 point per dry descent up to +5, guaranteed on the 30th) | Delivered (#33); the per-descent step is an assumption to confirm |
-| **1.10.4** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | **Next pass**; no balance changes |
-| **1.10.5** | Variety pass, part 2: skippable descents and cave events | Proposed; replaces the earlier pacing-lever ideas (see findings) |
-| **1.10.6** | Auto-buy horns and staged Patient Choir unlocks | Proposed; prices depend on measured pacing |
-| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.6, using the measured economy |
+| **1.10.4** | Pearl Case: pearl items that feel like horns (rarities, art, three-slot strand, grind to pearl dust) | Delivered in #35 (draft pending pacing check) |
+| **1.10.5** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | **Next pass**; no balance changes |
+| **1.10.6** | Variety pass, part 2: skippable descents and cave events | Proposed; replaces the earlier pacing-lever ideas (see findings) |
+| **1.10.7** | Auto-buy horns and staged Patient Choir unlocks | Proposed; prices depend on measured pacing |
+| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.7, using the measured economy |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -126,12 +127,23 @@ Mean **6.56h**, up from **4.25h**. Findings that shape the next passes:
 - **The 36 soundings are done 1.6–2.2h early**, so the Sea side does not pace the run. The Sea settling timer cost about 0.77h per run.
 - **Sea gates do not pace the run.** Tested on seeds 1–3: cumulative sounding gates 20/28/36/44 with a 52-sounding finale finished in a mean 6.39h, and 20/30/40/50 with 60 soundings in 6.45h, against 6.56h for the 1.10.2 balance. The bot finishes the soundings 0.5–1.5h before Heartstone 5 even then, so the extra soundings never bind; making them bind would need about 80+ identical soundings. Not shipped.
 - **A bigger depth step lengthens the run only slightly and adds the repetition players already feel** (see player feedback below). Depth steps of 24 and 26 were simulated (seeds 1–3): means of 6.77h and 7.09h against 6.56h, so each +2 on the step adds only about 0.2–0.3h, much less than the extra levels suggest, because deeper levels take less time each as income grows with depth. A weak lever; see [tools/sim/longer-road.md](tools/sim/longer-road.md).
-- **Player feedback: the cave depth leg is repetitive** ("flat clicking", no events), and a real run had 65 descents with no Sunvein. The response is variety, not length: see the variety pass (1.10.3 and 1.10.5).
+- **Player feedback: the cave depth leg is repetitive** ("flat clicking", no events), and a real run had 65 descents with no Sunvein. The response is variety, not length: see the variety pass (1.10.3 and 1.10.6).
 - **Real saves are faster than the bot early.** One save had two Heartstones at 2.6h played, against 3.5–3.7h for the bot. Expect real finishes below 6.5h; calibrate with player saves.
-- **Fathoms have little to spend on.** Typical income is about 150,000 per sounding; a large held balance in one save was a single old windfall, not income. Staged Patient Choir prices (1.10.5) are the planned sink.
+- **Fathoms have little to spend on.** Typical income is about 150,000 per sounding; a large held balance in one save was a single old windfall, not income. Staged Patient Choir prices (1.10.6) are the planned sink.
 - **Sunveins work as designed.** A save with a recorded 9.02 arrival lump but a 2.64 balance was explained by gilt spent on Sunvein upgrades (Rich Vein and Gilded Breath), not a bug. Forced-descent testing gave 7.4% with one Gilded horn (expected 7%); a 0-in-65 dry spell is about a 4% event. The system has no bad-luck protection and no way to raise the 5% base other than Gilded horns, which only Sunveins produce.
 
-## 1.10.4 — Beta hardening
+## 1.10.4 — Pearl Case
+
+Pearls become collectible items, like horns. Decisions (agreed): items **persist** through Soundings and Heartstones while the pearl currency still resets with each Sounding; item stats are **Sea-only, small and capped**; the old currency is renamed **pearl dust** with balances unchanged, and the case starts empty.
+
+- **Discovery:** a pearl forms after two minutes spent in the Sea and the next oyster to open reveals it (a per-opening chance was rejected: the bot opens about 40,000 oysters an hour). Open: tune the two-minute interval, and whether offline time or the Pearl Beds upgrade should affect it.
+- **Items:** five rarities (Common 62%, Rare 26%, Epic 9%, Legendary 2.5%, Mythic 0.5%) with 1/1/2/2/3 lines drawn from tide, bell value, crossing bonus, fathoms and pearl dust yield. Per-line size: Common +2–5%, Rare +5–9%, Epic +9–15%, Legendary +15–22%, Mythic +22–32% (a horn line is ×2.5–5 at the top, so pearls are far weaker).
+- **Strand:** three slots; bonuses multiply and any one stat is capped at +60%. New pearls are worn automatically while a slot is free. Grinding returns 5/15/45/120/400 pearl dust (like ivory from horns).
+- **Saves:** names come from the saved seed, lines are range-checked on load, ids are unique, and older saves get an empty case.
+- **Validation:** unit tests for odds, determinism, caps, grinding, reset persistence and tampered saves; a browser test for wearing, oyster reveal, Sounding persistence, grinding and reload at 1100px and 390px; a sim run confirming the pearl count and that the finish time is unchanged within noise.
+- **Open follow-ups:** a Collection view for pearls (like the horn Collection), more strand slots from Heartstones or a Deep upgrade, pearl traits or sets, and a pity rule if rare pearls turn out too scarce.
+
+## 1.10.5 — Beta hardening
 
 From the post-merge code review of 1.10.1. No balance or progression changes; the seeded parity rule applies.
 
@@ -144,7 +156,7 @@ From the post-merge code review of 1.10.1. No balance or progression changes; th
 
 The beta label is removed when 1.11.0 lands and this hardening is complete.
 
-## 1.10.3 (pity) and 1.10.5 (skips, events) — Variety pass
+## 1.10.3 (pity) and 1.10.6 (skips, events) — Variety pass
 
 Why: the cave depth leg is the pacing gate (see findings) and is also the repetitive part: a run has roughly 250–280 descents of the same sing, wait, descend, rebuy loop, with no events, and one real run reached 65 descents without a single Sunvein. Making the run longer would add more of the same, so this pass keeps the length near **6.5 hours** and adds variety and fairness. Order: Sunvein pity first (small, testable), then skippable descents, then cave events.
 
@@ -171,9 +183,9 @@ Players like the idea of skipping descents, but the descent settling lock is wha
 
 Process for the whole pass: simulate seeds 1–5 with `tools/sim/run.js`, compare finish times and per-Heartstone gaps, check the Heartstone saves in `tools/saves` still load, and gather real player timings to calibrate. Changes preserve earned balances, items, and paid levels; existing saves keep their Heartstones.
 
-## 1.10.6 — Auto-buy horns, staged automation
+## 1.10.7 — Auto-buy horns, staged automation
 
-The goal is automation that has to be earned instead of arriving as one flat unlock. Staged prices depend on the pacing chosen in the variety pass (1.10.3 and 1.10.5) and should be set from measured income at the time each Heartstone gate opens.
+The goal is automation that has to be earned instead of arriving as one flat unlock. Staged prices depend on the pacing chosen in the variety pass (1.10.3 and 1.10.6) and should be set from measured income at the time each Heartstone gate opens.
 
 ### Auto-buy horns
 - A dedicated rack of up to **3 slots** for **Epic, Legendary, and Mythic** horns, used only to speed up Patient Choir shopping. Slotted horns give **no stat effect** anywhere; their only effect is a shorter shopping interval.
@@ -199,7 +211,7 @@ Unit tests for the shopping interval and for loading bad ids. Browser smoke chec
 
 ## 1.11.0 — The Last Chorus
 
-Replace immediate first-time finale completion with a **roughly 30-minute interactive expedition** after paying the entry offering. Proposed cost **100,000 fathoms**, subject to 1.10.0 natural-economy checks; current cost remains 50,000 until a gameplay release changes it. No further mandatory payments. Entry requires **36 actual soundings, five Heartstones** (set in 1.10.2; 1.10.4 may raise the soundings), and 20 feats. The 100,000-fathom entry price is trivial at measured mid-run balances and is rescaled with the staged automation prices.
+Replace immediate first-time finale completion with a **roughly 30-minute interactive expedition** after paying the entry offering. Proposed cost **100,000 fathoms**, subject to 1.10.0 natural-economy checks; current cost remains 50,000 until a gameplay release changes it. No further mandatory payments. Entry requires **36 actual soundings, five Heartstones** (set in 1.10.2; 1.10.5 may raise the soundings), and 20 feats. The 100,000-fathom entry price is trivial at measured mid-run balances and is rescaled with the staged automation prices.
 
 | Chapter, about six minutes each | Interaction |
 |---|---|
@@ -307,7 +319,7 @@ Extraction never blocks a feature release, and the canvas/audio rewrite stays ou
 | The 36-sounding finale requirement stopped mattering | Tested raising the Sea gates (finale 52 and 60): no change in finish time, so it is not used for pacing |
 | Sunveins have no bad-luck protection and Gilded horns only come from Sunveins | 1.10.3: pity (+ up to 5 points) with a guarantee on the 30th dry descent, delivered; base rates verified by forced-descent testing |
 | Dropping several levels per descent could break pacing because fossils and lumen grow with depth | Skips charge the descent lock per level skipped and pay landing rewards only; verify finish time stays within about ±2% |
-| Lengthening the run with a larger depth step adds repetition | Not used; the variety pass (1.10.3 and 1.10.5) adds variety and keeps the length near 6.5h |
+| Lengthening the run with a larger depth step adds repetition | Not used; the variety pass (1.10.3 and 1.10.6) adds variety and keeps the length near 6.5h |
 | A version bump opens the What's-new dialog in browser tests | Bump `seenVer` in smoke fixtures with each release |
 | Full module refactor blocks feature delivery | Extract necessary boundaries incrementally; canvas/audio/UI split remains ongoing work |
 
