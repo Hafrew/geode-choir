@@ -25,6 +25,20 @@ A player save at 2.58h played had two Heartstones, 32 soundings, 50 descents, be
 
 A forced-descent check of 4,000 descents from depth 3 gave a Sunvein rate of 7.4% with one Gilded horn, matching the 5% + 2% rule.
 
+## Pacing lever experiments (not shipped)
+
+Run on scratch copies of `main`, seeds 1–3, same bot flags.
+
+| Variant | Seed 1 | Seed 2 | Seed 3 | Mean | Soundings done at |
+|---|---:|---:|---:|---:|---:|
+| 1.10.2 (gates 20/24/28/32, finale 36) | 6.26h | 6.87h | 6.54h | 6.56h | 4.65h |
+| Sea gates 20/28/36/44, finale 52 | 6.12h | 6.86h | 6.20h | 6.39h | 5.3h |
+| Sea gates 20/30/40/50, finale 60 | 6.12h | 7.00h | 6.22h | 6.45h | 5.5–5.65h |
+
+The Sea gates never bind: the soundings are done 0.5–1.5h before Heartstone 5, so the finish time does not move (differences are seed noise). Binding would need about 80+ soundings, which would be a chore of identical actions, so this lever is not used.
+
+Depth step (`12 + 22 × hearts`) variants of 24 and 26 per Heartstone were also simulated; see the results below if present. A longer depth leg adds more of the repetitive cave loop that players already find flat, so lengthening by depth is not the preferred direction (see PLAN.md, 1.10.4).
+
 ## Reproduce
 
 ```

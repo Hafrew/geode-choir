@@ -37,7 +37,7 @@ Current release: **1.10.2 beta** on `main` (plus an unreleased number-format fix
 | **1.10.2** | The Longer Road: five-Heartstone finale (36 soundings), lumen cost ×25 per Heartstone, Plumb Line ×1.2 | Delivered; measured mean 6.56 h to finale readiness |
 | Unreleased | Fossil and fathom gains follow the number format setting | Delivered (#31); audit for other raw numbers is in 1.10.3 |
 | **1.10.3** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | **Next pass**; no balance changes |
-| **1.10.4** | Pacing pass II: time-gated Sea requirements, depth and omen tuning, Sunvein pity | Proposed; decision pending, numbers need sim and real-save checks |
+| **1.10.4** | Variety pass: Sunvein pity, cave events, skippable descents | Proposed; Sunvein pity design agreed, numbers to confirm. Replaces the earlier pacing-lever ideas (see findings) |
 | **1.10.5** | Auto-buy horns and staged Patient Choir unlocks | Proposed; prices depend on the 1.10.4 pacing |
 | **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.5, using the measured economy |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
@@ -123,6 +123,9 @@ Mean **6.56h**, up from **4.25h**. Findings that shape the next passes:
 - **Depth is the gate.** After Heartstone 1, each Heartstone takes about 0.8–1.1h. Depth needed is `12 + 22h + omen - shell`; the omen swings it from -6 (Generous) to +8 (Stubborn).
 - **Lumen is not a gate and cannot be made one.** Lumen income grows with depth, so costs in the trillions only add minutes; see the principle above. The ×25 growth stays as a mild check.
 - **The 36 soundings are done 1.6–2.2h early**, so the Sea side does not pace the run. The Sea settling timer cost about 0.77h per run.
+- **Sea gates do not pace the run.** Tested on seeds 1–3: cumulative sounding gates 20/28/36/44 with a 52-sounding finale finished in a mean 6.39h, and 20/30/40/50 with 60 soundings in 6.45h, against 6.56h for the 1.10.2 balance. The bot finishes the soundings 0.5–1.5h before Heartstone 5 even then, so the extra soundings never bind; making them bind would need about 80+ identical soundings. Not shipped.
+- **A bigger depth step lengthens the run but adds the repetition players already feel** (see player feedback below). Depth steps of 24 and 26 were simulated; results are recorded in [tools/sim/longer-road.md](tools/sim/longer-road.md) when complete.
+- **Player feedback: the cave depth leg is repetitive** ("flat clicking", no events), and a real run had 65 descents with no Sunvein. The response is variety, not length: see 1.10.4.
 - **Real saves are faster than the bot early.** One save had two Heartstones at 2.6h played, against 3.5–3.7h for the bot. Expect real finishes below 6.5h; calibrate with player saves.
 - **Fathoms have little to spend on.** Typical income is about 150,000 per sounding; a large held balance in one save was a single old windfall, not income. Staged Patient Choir prices (1.10.5) are the planned sink.
 - **Sunveins work as designed.** Forced-descent testing gave 7.4% with one Gilded horn (expected 7%); a 0-in-65 dry spell is about a 4% event. The system has no bad-luck protection and no way to raise the 5% base other than Gilded horns, which only Sunveins produce.
@@ -141,20 +144,32 @@ From the post-merge code review of 1.10.1. No balance or progression changes; th
 
 The beta label is removed when 1.11.0 lands and this hardening is complete.
 
-## 1.10.4 — Pacing pass II (proposed, decision pending)
+## 1.10.4 — Variety pass (proposed)
 
-Goal: a mean natural finish of about **6–8 hours** with a spread across seeds, while a human who plays well can land a little earlier. 1.10.2 landed at 6.56h on the bot, so this pass may be small or skipped. Candidate levers; none are built, and every number is **proposed**:
+Why: the cave depth leg is the pacing gate (see findings) and is also the repetitive part: a run has roughly 250–280 descents of the same sing, wait, descend, rebuy loop, with no events, and one real run reached 65 descents without a single Sunvein. Making the run longer would add more of the same, so this pass keeps the length near **6.5 hours** and adds variety and fairness. Order: Sunvein pity first (small, testable), then skippable descents, then cave events.
 
-| Lever | Change | Intended effect | Notes and risks |
-|---|---|---|---|
-| Time-gated Sea requirements | Cumulative sounding gates 20/28/36/44 (instead of 20/24/28/32) and a finale of about 52 soundings | Makes the Sea a real gate: soundings are limited by the 2-minute settling timer, which power cannot shorten | Today the 36 soundings finish 1.6–2.2h early. Measure first; the bot's Sea share affects the result. Recommended first lever |
-| Depth step | `22h` to about `26–28h` | Lengthens each cave leg by roughly a quarter | Most grind; use only if the Sea lever is not enough |
-| Omen swing | Cap Stubborn +8 / Generous -6 at about ±4 | Removes a 14-level luck swing per Heartstone | Reduces randomness; small effect on the mean |
-| Sunvein pity | +1 percentage point per descent since the last Sunvein, reset on arrival, capped | Removes long dry spells (the base 5% is the only source until a Gilded horn exists) | A feel fix more than a pacing lever (Sunveins give +10% fossils); decide whether pity counts toward the 15% cap |
-| Descent value | More fossils per descent or a shorter descent lock | Eases the depth grind | Only if the run is judged too long |
-| Lumen cost | Keep ×25; no further increase | None | Do not make lumen the main gate (see principle) |
+### Sunvein pity (design agreed; some numbers to confirm)
+- A saved counter of consecutive eligible descents (depth 3 or deeper) without a Sunvein. It resets when a Sunvein arrives and is kept in the save with the stats; it is not reset by Heartstones.
+- **Pity bonus:** each dry descent adds to the arrival chance, up to a maximum of **+5 percentage points** (agreed maximum). The per-descent step is not yet fixed; proposed **+1 point per dry descent**, so the maximum is reached after five dry descents.
+- **Hard guarantee:** the **30th** consecutive dry eligible descent is a Sunvein.
+- Base chance stays 5% plus 2 points per Gilded horn, capped at 15%. Open: whether the pity bonus counts inside that cap or on top of it, and how it stacks with a future Risky Descent bonus (proposed: pity on top of the cap, Risky Descent unchanged).
+- Open: the counter starts at zero for existing saves (proposed) or is seeded from a save's recorded descents and Sunveins.
+- Validation: unit tests for the counter, the maximum bonus, the guarantee, and migration; a forced-descent check of rates with and without pity; the longest dry streak never exceeds 29; sim finish times unchanged within noise (Sunvein effects are modest: 25% slower decay, 10% more fossils).
 
-Process: pick levers, rerun seeds 1–5 with `tools/sim/run.js`, compare finish times and per-Heartstone gaps, and check the Heartstone saves in `tools/saves` still load. Gather finish and Heartstone times from real players to calibrate the bot's early pace. Changes preserve earned balances, items, and paid levels; existing saves keep their Heartstones.
+### Skippable descents (idea agreed; must not shorten the run)
+Players like the idea of skipping descents, but the descent settling lock is what keeps the game from being quick, and fossils and lumen grow steeply with depth, so a descent that drops several levels for the price of one would break pacing. Constraints:
+- **Time to depth must not drop.** A skip of N levels charges the settling lock for each skipped level (N locks, paid up front or as a lock debt), so skipping saves clicks, not time. Simulate before and after; the finish time must stay within about ±2% for the same play.
+- **Rewards are not multiplied.** Fossils come from the landing only (or a reduced share for skipped floors); no per-level rewards are paid twice. Lumen and hum keep accruing normally. No skipped floor can strand a quest or milestone that needs landing on it (events and the Heartstone depth are checked at the landing depth).
+- **Forms to choose from:** a "Dive" control that lets you pay several locks at once; skip charges earned from events or a Sunvein arrival (still charging the lock); or an automation option that batches ready descents. Auto-descend remains available and must not silently skip more than the player allows.
+- Open: whether Sunveins and floor identities are rolled only at the landing floor (proposed) and how skipped floors count for stats such as best depth.
+
+### Cave events (proposed; reverses the earlier exclusion of ordinary cave events)
+- Milestone floors: every fifth level, a short event of about 10–20 seconds with a real choice and a trade-off (for example freshness against fossils, or a one-off hum boost against a longer lock), not extra clicking.
+- Auto mode picks the safe option, in line with the rule that every challenge has an accessible Auto path. Outcomes are saved, once-only, and cannot be rerolled by reloading. Events do not change the Heartstone depth requirement or strand progress.
+- Open: the shape (small choices, or a timing or aiming moment), the number of event types for a first pass, and how events interact with skippable descents and the future descent minigame (1.12.0).
+- Validation: seeded sim with Auto choices; finish time stays near 6.5h; no event can be skipped to lose a reward permanently.
+
+Process for the whole pass: simulate seeds 1–5 with `tools/sim/run.js`, compare finish times and per-Heartstone gaps, check the Heartstone saves in `tools/saves` still load, and gather real player timings to calibrate. Changes preserve earned balances, items, and paid levels; existing saves keep their Heartstones.
 
 ## 1.10.5 — Auto-buy horns, staged automation
 
@@ -289,8 +304,10 @@ Extraction never blocks a feature release, and the canvas/audio rewrite stays ou
 | Old scope excluded puzzles/events | Ordinary cave events, choose-three arrival choices, rhythm shouts, resonance puzzles, and settling tasks remain excluded. Approved Last Chorus encounters/pulse alignment are a finale-specific exception |
 | Raising the lumen cost to trillions looked like an easy way to lengthen the run | Lumen grows exponentially with depth; the cost converts to a few depth levels, so pacing uses depth and Sea gates instead |
 | A real save and the bot disagree on early pace | Measure against both; calibrate with player saves before locking numbers |
-| The 36-sounding finale requirement stopped mattering | 1.10.4 candidate: time-gated Sea requirements so soundings pace the run |
-| Sunveins have no bad-luck protection and Gilded horns only come from Sunveins | 1.10.4 candidate: pity counter; verified the 5%/7% rates by forced-descent testing |
+| The 36-sounding finale requirement stopped mattering | Tested raising the Sea gates (finale 52 and 60): no change in finish time, so it is not used for pacing |
+| Sunveins have no bad-luck protection and Gilded horns only come from Sunveins | 1.10.4: pity (+ up to 5 points) with a guarantee on the 30th dry descent; base rates verified by forced-descent testing |
+| Dropping several levels per descent could break pacing because fossils and lumen grow with depth | Skips charge the descent lock per level skipped and pay landing rewards only; verify finish time stays within about ±2% |
+| Lengthening the run with a larger depth step adds repetition | Not used; 1.10.4 adds variety and keeps the length near 6.5h |
 | A version bump opens the What's-new dialog in browser tests | Bump `seenVer` in smoke fixtures with each release |
 | Full module refactor blocks feature delivery | Extract necessary boundaries incrementally; canvas/audio/UI split remains ongoing work |
 
