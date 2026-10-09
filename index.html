@@ -82,7 +82,7 @@
         <span class="pill shard" id="pillShard" data-tip="shard" tabindex="0" hidden><b id="shardVal">0</b> shards</span>
         <span class="pill fossil" id="pillFossil" data-tip="fossil" tabindex="0" hidden><b id="fossilVal">0</b> fossils</span>
         <span class="pill lumen" id="pillLumen" data-tip="lumen" tabindex="0" hidden><b id="lumenVal">0</b> lumen <span id="lumenRate"></span></span>
-        <span class="pill pearl" id="pillPearl" data-tip="pearl" tabindex="0" hidden><b id="pearlVal">0</b> pearls</span>
+        <span class="pill pearl" id="pillPearl" data-tip="pearl" tabindex="0" hidden><b id="pearlVal">0</b> pearl dust</span>
         <span class="pill fathom" id="pillFathom" data-tip="fathom" tabindex="0" hidden><b id="fathomVal">0</b> fathoms</span>
         <span class="pill ivory" id="pillIvory" data-tip="ivory" tabindex="0" hidden><b id="ivoryVal">0</b> ivory</span>
         <span class="pill gilt" id="pillGilt" data-tip="gilt" tabindex="0" hidden><b id="giltVal">0</b> gilt</span>
@@ -172,13 +172,20 @@
     <div class="panel" id="panel-pearls" role="tabpanel" hidden>
       <section>
         <h2>Oysters</h2>
-        <p class="note">Oysters open after enough ripples wash over them and give up a pearl.</p>
+        <p class="note">Oysters open after enough ripples wash over them and give up pearl dust, and now and then a real pearl.</p>
         <div class="list" id="shopOysters"></div>
+      </section>
+      <section id="pearlSection">
+        <h2>Pearl case</h2>
+        <p class="note">Oysters sometimes hold a real pearl. Pearls are kept through every Sounding; wear up to three for small Sea bonuses, or grind one into pearl dust.</p>
+        <div id="pearlSummary" class="note"></div>
+        <div id="pearlStrand" class="pearl-strand"></div>
+        <div id="pearlInventory" class="statgrid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"></div>
       </section>
       <section><h2>Pearl works</h2><div class="list" id="shopPearlObjs"></div></section>
       <section>
         <h2>Bell casting</h2>
-        <p class="note">Recast a whole kind of bell with pearls. Each level doubles what it rings for.</p>
+        <p class="note">Recast a whole kind of bell with pearl dust. Each level doubles what it rings for.</p>
         <div class="list" id="shopBellTune"></div>
       </section>
     </div>

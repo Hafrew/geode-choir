@@ -199,6 +199,15 @@ module.exports = function installBot(cfg) {
     if (S.shells.discovery === 6) mark('shellDiscoveryMax', S);
   }
 
+  // Keep the three strongest pearls on the strand, as a player would.
+  function managePearls(S) {
+    if (!S.pearls || !sim.bestPearls) return;
+    const best = sim.bestPearls();
+    if (JSON.stringify([...S.pearls.equipped].sort()) === JSON.stringify([...best].sort())) return;
+    for (const id of [...S.pearls.equipped]) sim.equipPearl(id);
+    for (const id of best) sim.equipPearl(id);
+  }
+
   function decide() {
     const S = sim.S;
     if (sim.sceneOpen) sim.endScene();
@@ -206,6 +215,7 @@ module.exports = function installBot(cfg) {
     if (cfg.actionGap) bot.budget = Math.min(2, bot.budget + 0.5 / cfg.actionGap);
     S.toggles.autodescend = 0; S.toggles.autobuy = cfg.autobuy ? 1 : 0;
     manageShells(S);
+    managePearls(S);
     progress(S);                                  // descend / sound / kindle / switch world come first, or shopping eats every action
     if (!cfg.noFuse) fuseAll(S);
     if (S.hearts >= 2 && S.sea.fathoms >= 100000) mark('patientChoirAffordable', S);

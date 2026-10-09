@@ -11,6 +11,21 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.10.4: Pearl Case (2026-10-09)
+
+### Added
+- **Pearl items.** About every two minutes spent in the Sea a pearl forms, and the next oyster to open reveals it. Pearls have five rarities (Common to Mythic), a name and art derived from a saved seed, and one to three small Sea bonuses (tide, bell value, crossing bonus, fathoms, pearl dust yield). Sizes per line: Common +2–5%, Rare +5–9%, Epic +9–15%, Legendary +15–22%, Mythic +22–32%.
+- **Pearl case** in the Pearls tab: a three-slot strand (bonuses multiply; any one stat is capped at +60%), the full inventory, take off, and grind (5, 15, 45, 120, 400 pearl dust by rarity). The first pearls you find are worn automatically while a slot is free.
+
+### Changed
+- The pearl currency is now called **pearl dust**. Amounts, sources, uses and the reset on Sounding are unchanged; pearl items are kept through Soundings and Heartstones.
+
+### Saves
+- The pearl case is saved with the game. Names are regenerated from each pearl's seed and every line is range-checked on load, so a save file cannot supply its own text or out-of-range bonuses. Older saves start with an empty case.
+
+### Tools
+- The simulator wears the strongest three pearls and reports oyster openings and pearls found.
+
 ## 1.10.3: Luck Evens Out (2026-10-09)
 
 ### Added

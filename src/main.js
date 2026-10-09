@@ -1,4 +1,6 @@
 import { createShellUI } from './shell-ui.js';
+import { createPearlUI } from './pearl-ui.js';
+import { PEARL_RARITY, PEARL_SLOTS, tickPearls, openOyster, applyPearls, bestPearls, equipPearl as equipPearlItem, grindPearl as grindPearlItem } from './pearls.js';
 import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscoveryCost, shellDiscoveryChance } from './seashells.js';
 import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
@@ -19,11 +21,16 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.3';
+  const VERSION = '1.10.4';
   // Release channel shown beside the version; saves and version checks use VERSION alone.
   const CHANNEL = 'beta';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.10.4', date: '2026-10-09', head: 'Pearl Case', items: [
+      'Oysters now sometimes hold a real pearl. Time spent in the Sea slowly forms one (about two minutes), and the next oyster to open reveals it. Each pearl has a rarity, its own name and art, and one to three small Sea bonuses: tide, bell value, crossing bonus, fathoms, or more pearl dust from oysters.',
+      'The new Pearl case in the Pearls tab holds every pearl you find. Wear up to three on the strand (bonuses multiply, and any one stat tops out at +60%), take them off, or grind one into pearl dust.',
+      'Pearls are kept through every Sounding and Heartstone. The old pearl number is now called pearl dust: it still comes from oysters, still pays for Pearl works and bell casting, and still resets when you sound the depths. Your current dust is unchanged.',
+    ] },
     { ver: '1.10.3', date: '2026-10-09', head: 'Luck Evens Out', items: [
       'Sunveins now have bad-luck protection. Every descent from depth 3 down that is not a Sunvein adds one point to the chance, up to five extra points, and the 30th descent in a row without one is always a Sunvein.',
       'The counter resets when a Sunvein arrives and is kept in your save. Open the Gilt chip to see your chance and how many dry descents you have had. Saves from before this update start the count at zero.',
@@ -221,7 +228,7 @@ import { createState } from './state.js';
   let HB = {};
   const hornBoost = h => hornRuleBoost(S, h);
   const lineVal = (h, l) => lineValue(S, h, l);
-  function computeHB() { HB = hornBonuses(S); }
+  function computeHB() { HB = applyPearls(hornBonuses(S), S); }
   computeHB();
 
   // Multipliers that never cap grow at full strength up to a knee, then at half strength.
@@ -1100,9 +1107,7 @@ import { createState } from './state.js';
           o.wash = (o.wash || 0) + rp.e * Math.min(rp.w, 4);
           if (o.wash >= SK.open) {
             o.wash -= SK.open; o.open = 1;
-            const n = SK.pearl; q.pearls += n; S.stats.pearls += n;
-            pushFloat({ x: o.px, y: o.py - o.r * 1.8, s: `+${fmt(n)} pearl`, life: 1.2, col: '239,230,216' });
-            once('firstPearl');
+            oysterOpened(o);
           }
         } else if (rp.gen < 2) {
           o.ring = 1;
@@ -1914,7 +1919,7 @@ import { createState } from './state.js';
     choir: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M3 12h24" stroke="#86d8e6" stroke-width="1" opacity=".5"/><polygon points="10,2 13,5 13,9 10,11 7,9 7,5" fill="#b58cff"/><polygon points="20,3 22,5 22,8 20,10 18,8 18,5" fill="#e3edf5"/><path d="M4 22q3-3 6 0t6 0 6 0 6 0" fill="none" stroke="#86d8e6" stroke-width="1.5"/></svg>`,
     stones: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><ellipse cx="10" cy="20" rx="6" ry="4" fill="#5b5566"/><ellipse cx="20" cy="19" rx="5" ry="3.5" fill="#6a6577"/><path d="M15 4v8M11 8l4 4 4-4" stroke="#ffcf86" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
   };
-  const UNIT_LABEL = { hum: '', tide: '', shard: ' shards', fossil: ' fossils', lumen: ' lumen', pearl: ' pearls', fathom: ' fathoms', ivory: ' ivory', gilt: ' gilt' };
+  const UNIT_LABEL = { hum: '', tide: '', shard: ' shards', fossil: ' fossils', lumen: ' lumen', pearl: ' pearl dust', fathom: ' fathoms', ivory: ' ivory', gilt: ' gilt' };
 
   const shopEls = [], shopSpecs = [];
   // spec: { parent, icon, unit | unit(), name(), cost() -> number|null, desc(), show(), buy() -> bool, state()?, blocked()? }
@@ -2021,10 +2026,30 @@ import { createState } from './state.js';
     });
   }
 
+  const pearlUI = createPearlUI({ state: () => S,
+    active: () => S.tab === 'pearls' && !document.hidden && !cinematic && !sceneOpen && !awayOpen && !newsOpen,
+    changed: () => { refreshAll(); save(); updateUI(); },
+  });
   const shellUI = createShellUI({ state: () => S,
     active: () => S.tab === 'deep' && !document.hidden && !cinematic && !sceneOpen && !awayOpen && !newsOpen,
     changed: () => { save(); updateUI(); },
   });
+
+  // An oyster has washed open: it pays pearl dust, and reveals a pearl when one has formed.
+  function oysterOpened(o) {
+    const q = S.sea, n = SK.pearl; q.pearls += n; S.stats.pearls += n;
+    pushFloat({ x: o.px, y: o.py - o.r * 1.8, s: `+${fmt(n)} dust`, life: 1.2, col: '239,230,216' });
+    once('firstPearl');
+    const found = openOyster(S);
+    if (found) pearlFound(found, o);
+  }
+  function pearlFound(p, o) {
+    const spec = PEARL_RARITY[p.r];
+    if (S.pearls.equipped.length < PEARL_SLOTS) equipPearlItem(S, p.id);
+    pushFloat({ x: o.px, y: o.py - o.r * 2.6, s: `${spec.name} pearl!`, life: 1.8, col: '255,230,170' });
+    toast('Pearl', `${spec.name}: the ${p.name}. Wear it from the Pearls tab.`, p.r >= 2 ? 'lore' : '');
+    delete S.seen.tab_pearls; computeHB(); refreshSK();
+  }
 
   function buildShop() {
     $('caveAutoCategories').innerHTML = Object.entries(CAVE_CATEGORIES).map(([k, c]) =>
@@ -2163,7 +2188,7 @@ import { createState } from './state.js';
       parent: 'shopOysters', icon: ICONS.oyster(), unit: 'tide',
       name: () => lvl('Oyster', `${S.sea.oysters.length}/6`, ''),
       cost: () => S.sea.oysters.length >= 6 ? null : oysterCost(),
-      desc: () => `Opens after ${fmt(SK.open)} ripples' worth of washing and gives up ${fmt(SK.pearl)} pearl${SK.pearl >= 2 ? 's' : ''}.`,
+      desc: () => `Opens after ${fmt(SK.open)} ripples' worth of washing and gives up ${fmt(SK.pearl)} pearl dust.`,
       buy: () => buyOyster(),
     });
     const pIcon = { breakwater: ICONS.breakwater(), raft: ICONS.raft(), whirlpool: ICONS.whirl() };
@@ -2765,7 +2790,7 @@ import { createState } from './state.js';
     if (Date.now() - descArmed > 3000) {
       descArmed = Date.now(); $('descBtn').textContent = S.world === 'sea' ? 'Click again to sound' : 'Click again to descend';
       whisper(S.world === 'sea'
-        ? 'Sounding resets your bells, tide, pearls and tide upgrades. You keep fathoms, the Deep and the Choir.'
+        ? 'Sounding resets your bells, tide, pearl dust and tide upgrades. Your pearls stay. You keep fathoms, the Deep and the Choir.'
         : `Descending resets your crystals, hum, shards, attunement and hum upgrades${S.illum.carry ? '' : ', and your wonders'}. You keep fossils, strata, lumen and glow.`);
       return;
     }
@@ -3251,7 +3276,7 @@ import { createState } from './state.js';
       ['Hum sung, all told', fmt(S.total)], ['Tide rung, all told', fmt(S.sea.total)],
       ['Deepest cave', st.maxDepth], ['Soundings', S.sea.soundings], ['Heartstones', S.hearts],
       ['Crystals fused', fmt(st.fuses)], ['Biggest chord', st.maxChord], ['Gong booms', fmt(st.booms)],
-      ['Shards shed', fmt(st.shards)], ['Crossings rung', fmt(st.crossings)], ['Pearls opened', fmt(st.pearls)],
+      ['Shards shed', fmt(st.shards)], ['Crossings rung', fmt(st.crossings)], ['Pearl dust gathered', fmt(st.pearls)],
       ['Horns found', fmt(st.hornsFound)], ['Horns held', S.horns.length],
       ...visibleRarities(S).map((r, i) => [`${r.name} horns held`, held[i]]),
       ['The Song', S.finale ? new Date(S.finale).toLocaleDateString() : 'Unsung'],
@@ -3335,7 +3360,7 @@ import { createState } from './state.js';
       case 'shard': return { t: 'Shards', rows: [['Held now', F(S.shards)], ['Lifetime', F(st.shards)]] };
       case 'fossil': return { t: 'Fossils', rows: [['Held now', F(S.fossils)], ['This Heartstone', F(S.fossilsTotal)], ['Lifetime', F(st.fossilsLife)], ['Best haul', F(st.bestHaul)]] };
       case 'lumen': return { t: 'Lumen', rows: [['Held now', F(S.lumen)], ['This Heartstone', F(S.lumenTotal)], ['Lifetime', F(st.lumenLife)], ['Best rate', F(st.bestLumenRate) + '/s']] };
-      case 'pearl': return { t: 'Pearls', rows: [['Held now', F(q.pearls)], ['Lifetime', F(st.pearls)]] };
+      case 'pearl': return { t: 'Pearl dust', rows: [['Held now', F(q.pearls)], ['Lifetime', F(st.pearls)], ['Pearls kept', F(S.pearls.items.length)], ['Oysters opened', F(S.pearls.opens)]] };
       case 'fathom': return { t: 'Fathoms', rows: [['Held now', F(q.fathoms)], ['Lifetime', F(q.fathomsTotal)], ['Best sounding', F(st.bestFathomHaul)]] };
       case 'ivory': return { t: 'Ivory', rows: [['Held now', F(S.ivory)], ['Lifetime', F(st.ivoryLife)], ['Horns found', F(st.hornsFound)]] };
       case 'gilt': return { t: 'Gilt', rows: [['Held now', F(Math.floor(S.gilt))], ['Lifetime', F(Math.floor(st.giltLife))], ['This floor', onSun() ? `${Math.floor(S.giltFloor)} / ${GILT_CAP}` : 'not on a Sunvein'],
@@ -3451,6 +3476,7 @@ import { createState } from './state.js';
 
     renderCaveAutomation();
     shellUI.render();
+    pearlUI.render();
 
     // horns
     setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
@@ -3471,7 +3497,7 @@ import { createState } from './state.js';
       setH('descText', locked
         ? `The sea is still settling: <b>${mmss(q.cool / tickRate())}</b> before you can sound again. Faster Tick speeds it; 2, 5, 10 and 20 total soundings shorten it.${tideProg < 1 ? ` Ring <b>${fmt(need)}</b> tide to reach the depths.` : ''}`
         : tideProg < 1
-        ? `Ring <b>${fmt(need)}</b> tide in this sea to sound deeper. You lose its bells, voices, oysters and pearls, but gain <b class="fat">fathoms</b> for the Deep, tide ×1.6 per sounding, and a horn.`
+        ? `Ring <b>${fmt(need)}</b> tide in this sea to sound deeper. You lose its bells, voices, oysters and pearl dust (your pearls stay), but gain <b class="fat">fathoms</b> for the Deep, tide ×1.6 per sounding, and a horn.`
         : `Sound now for <b class="fat">${fmt(got)} fathom${got > 1 ? 's' : ''}</b> and a horn, or keep ringing: fathoms grow more slowly the more you ring here.`);
       if (canSound()) once('canSound');
     } else {
@@ -3677,6 +3703,7 @@ import { createState } from './state.js';
     autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(); }
     if (S.cool > 0) S.cool = Math.max(0, S.cool - dt * tickRate());
     advanceSeaTimer(S, dt, tickRate());
+    tickPearls(S, dt);
     shellUI.tick(dt);
     storyT += dt; if (storyT >= 0.5) { storyT = 0; checkStory(false); checkQuests(false); }
     if (holding) {
@@ -3762,6 +3789,7 @@ import { createState } from './state.js';
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
     descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, FINALE_HEARTS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
     shellTick: dt => shellUI.tick(dt),
+    oysterOpened, bestPearls: () => bestPearls(S), equipPearl: id => equipPearlItem(S, id), grindPearl: id => grindPearlItem(S, id),
     finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
