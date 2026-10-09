@@ -16,7 +16,7 @@ const KEY = 'geode-choir-v1';
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
           if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({
-            ver: '1.9.8', seenVer: '1.10.0', hum: 1, hearts: 1, depth: 26, lumen: 1e8,
+            ver: '1.9.8', seenVer: '1.10.1', hum: 1, hearts: 1, depth: 26, lumen: 1e8,
             lore: { prologue: 1 }, saved: Date.now(), sea: { unlocked: true, soundings: 17, fathoms: 777 },
             shells: { items: [{ id: 1, r: 2, depth: 8 }], equipped: [],
               pending: [{ id: 2, r: 1, sounding: 1 }], seq: 2, discovery: 0, extraSlot: 0, lastSounding: 1 },
@@ -26,7 +26,10 @@ const KEY = 'geode-choir-v1';
         assert((await page.locator('#heartText').innerText()).includes('depth 34'));
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.canKindle()), false);
         await page.evaluate(() => { window.__geodeSimulation.api.setWorld('sea'); window.__geodeSimulation.api.setTab('deep'); window.__geodeSimulation.api.updateUI(); });
+        const mythicArt = await page.locator('#shellInventory [data-shell-art-id="1"]').evaluate(el => el.outerHTML);
+        const epicArt = await page.locator('#shellPending [data-shell-art-id="2"] g').evaluate(el => el.outerHTML.replaceAll('shell-pending-2', 'shell-item-2'));
         await page.locator('[data-shell-action="equip"][data-id="1"]').click();
+        assert.equal(await page.locator('#shellInventory [data-shell-art-id="1"]').evaluate(el => el.outerHTML), mythicArt);
         await page.evaluate(() => { window.__geodeSimulation.api.setWorld('cave'); window.__geodeSimulation.api.updateUI(); });
         assert((await page.locator('#heartText').innerText()).includes('depth 26'));
         assert((await page.locator('#heartText').innerText()).includes('17 soundings'));
@@ -62,6 +65,8 @@ const KEY = 'geode-choir-v1';
         await page.evaluate(() => window.__geodeSimulation.api.updateUI());
         await page.locator('[data-shell-action="auto"][data-id="2"]').click();
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.shells.items.find(p => p.id === 2).depth), 3);
+        assert.equal(await page.locator('#shellInventory [data-shell-art-id="1"]').evaluate(el => el.outerHTML), mythicArt);
+        assert.equal(await page.locator('#shellInventory [data-shell-art-id="2"] g').evaluate(el => el.outerHTML.replaceAll('shell-inventory-2', 'shell-item-2')), epicArt);
         assert.equal(await page.locator('[data-shell-action="equip"][data-id="2"]').isDisabled(), true);
         await page.locator('#shopShells .item').filter({ hasText: 'Shell Listening' }).click();
         await page.locator('#shopShells .item').filter({ hasText: 'Second Shell Slot' }).click();
@@ -93,6 +98,10 @@ const KEY = 'geode-choir-v1';
         await page.locator('[data-shell-action="claim"][data-id="3"]').click();
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.shells.items.find(p => p.id === 3).depth), 1);
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.sea.soundings), 18);
+        assert.equal(await page.locator('#shellInventory .shell-art').count(), 3);
+        assert.equal(await page.locator('#shellInventory .shell-art').evaluateAll(nodes => nodes.every(el => {
+          const box = el.getBoundingClientRect(); return box.width > 0 && box.height > 0 && box.right <= innerWidth;
+        })), true);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
         assert.equal(overflow, false);
         await page.locator('#shellSection').screenshot({ path: `/tmp/geode-shells-${width}.png` });

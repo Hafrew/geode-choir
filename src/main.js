@@ -19,9 +19,13 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.0';
+  const VERSION = '1.10.1';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.10.1', date: '2026-10-09', head: 'Pearl and Pattern', items: [
+      'Seashell inventory and sounding cards now show stable 2D art: ridged Common scallops, patterned Epic spirals, and pearlescent Mythic conches with gold details.',
+      'Every shell keeps its appearance through sounding, equipment changes and reloads. Artwork is cosmetic; shell effects, discovery odds and costs are unchanged.',
+    ] },
     { ver: '1.10.0', date: '2026-10-09', head: 'Shells Answer', items: [
       'Each successful Sea sounding checks once for a seashell. Discovery starts at 20%; Common, Epic and Mythic are 75%, 20% and 5% of finds. The saved spinner result cannot reroll on reload.',
       'In The Deep, claim Common shells directly. For Epic/Mythic, sound three notes to set depth reduction, or finish with average-quality Auto. Notes pause when you leave. Sounding reductions are fixed at 0, 1 and 3; horn upgrades cannot strengthen shells.',

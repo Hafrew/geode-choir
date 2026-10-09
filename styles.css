@@ -469,3 +469,8 @@
 .shell-spin { display: inline-block; animation: shell-reveal .7s ease-out; }
 @keyframes shell-reveal { from { transform: rotate(-360deg); } to { transform: rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .shell-spin { animation: none; } }
+
+.shell-art { display: block; width: min(100%, 180px); height: auto; margin: 0 auto 8px; }
+.shell-call-art { float: right; width: 140px; margin: 0 0 8px 16px; }
+.shell-call::after { content: ''; display: block; clear: both; }
+@media (max-width: 520px) { .shell-call-art { float: none; width: 160px; margin: 0 auto; } }

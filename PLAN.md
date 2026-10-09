@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current workspace: **1.10.0**, on `feature/playable-seashells`. Gameplay through **1.9.5** was last verified merged; 1.9.6–1.10.0 are implemented on the stacked branches. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current workspace: **1.10.1**, on `feature/seashell-art`. Gameplay through **1.9.5** was last verified merged; 1.9.6–1.10.1 are implemented on the stacked branches. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -31,6 +31,7 @@ Current workspace: **1.10.0**, on `feature/playable-seashells`. Gameplay through
 | 1.9.7 | Seashell rules/save foundations, isolated harsher fathom curve | Implemented on `feature/sea-shell-foundations`; shell drops/UI disabled |
 | 1.9.8 | Sea settling, cumulative Heartstone gates, tide curve, Ceiling cap, 50k finale offering | Implemented on `feature/sea-pacing`; tested |
 | **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Implemented on `feature/playable-seashells`; review and manual tuning pending |
+| **1.10.1** | Stable 2D shell art in inventory and sounding | Implemented on `feature/seashell-art`; cosmetic follow-up |
 | **1.11.0** | The Last Chorus finale expedition and entry-price tuning | **Next pass**, using the natural shell-economy results |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |

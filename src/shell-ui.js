@@ -1,3 +1,4 @@
+import { shellSVG } from './shell-art.js';
 import { SHELL_RARITIES, shellSlots, shellDiscoveryChance, shellDiscounts,
   finishShell, equipShell, shellNeedle, hitShell } from './seashells.js';
 
@@ -42,7 +43,7 @@ export function createShellUI({ state, active, changed }) {
       }
       $('shellPending').innerHTML = sh.pending.map(p => {
         const r = SHELL_RARITIES[p.r], started = Array.isArray(p.notes);
-        return `<article class="shell-call"><h3>${r.name} shell #${p.id}</h3>
+        return `<article class="shell-call"><div class="shell-call-art">${shellSVG(p, 'pending')}</div><h3>${r.name} shell #${p.id}</h3>
           <p>Depth reduction ${r.minDepth === r.maxDepth ? r.minDepth : `${r.minDepth}–${r.maxDepth}`} · sounding reduction ${r.soundings}, fixed.</p>
           ${p.r === 0 ? '<p>Common shells always reduce depth by one. Claim it directly.</p>' : started ? `<p>Note ${p.notes.length + 1} of 3. Sound when the needle meets the center. You can wait for another pass.</p>
             <div class="shell-track" aria-hidden="true"><span class="shell-target" style="width:${p.r === 2 ? 28 : 40}%"></span><i id="shellNeedle${p.id}"></i></div>
@@ -54,7 +55,7 @@ export function createShellUI({ state, active, changed }) {
       // Strongest first, keep every distinct item: there is no inventory cap or forced salvage.
       $('shellInventory').innerHTML = [...sh.items].sort((a, b) => b.r - a.r || b.depth - a.depth || a.id - b.id).map(p => {
         const worn = sh.equipped.includes(p.id), full = sh.equipped.length >= shellSlots(S);
-        return `<article class="stat shell-card"><b>${rarity(p.r)} shell #${p.id}${worn ? ' · Equipped' : ''}</b><p>−${p.depth} depth · −${SHELL_RARITIES[p.r].soundings} soundings</p>
+        return `<article class="stat shell-card">${shellSVG(p)}<b>${rarity(p.r)} shell #${p.id}${worn ? ' · Equipped' : ''}</b><p>−${p.depth} depth · −${SHELL_RARITIES[p.r].soundings} soundings</p>
           <button type="button" data-shell-action="equip" data-id="${p.id}" ${!worn && full ? 'disabled' : ''}>${worn ? 'Unequip' : 'Equip'}</button></article>`;
       }).join('') || '<p class="note">No shells yet. Discovery starts at 20% per successful Sea sounding.</p>';
     }
