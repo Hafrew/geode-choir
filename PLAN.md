@@ -47,6 +47,23 @@ Next stages, each validated independently:
 
 Static hosting stays build-free. A bundled single-file release can be added separately if needed; it is not required for development.
 
+### QOL and balance backlog
+
+Requested after the first file-layout refactor. These are planned changes, not implemented features. Finish the save/progression module boundaries first, then deliver these in small, independently validated changes before adding more minigames.
+
+- [ ] **Auto-equip best horns.** Add an optional, saved setting that selects the best available loadout and re-evaluates it when horns or slots change. Define what "best" means across cave and sea stats; the simulator already scores and equips horns, but the actual game does not offer this automation.
+- [ ] **Automatic horn deletion by rarity.** Allow individual rarity selections in a saved setting. Prefer the existing salvage-for-ivory path over silently discarding rewards. Protect equipped horns; keep gilded horns separately controllable because owning them affects Sunvein chance. Decide whether the filter applies only to newly acquired horns or also to existing inventory, and make that behavior clear.
+- [ ] **Shorter Sunless Sea waits.** Investigate the reported ten-minute timer and reduce the wait as cave descent waits improve. Current `sound()` and the sea HUD do not impose a timed settling lock: sea progress is gated by `soundAt()` and tide earned. Identify the actual wait before choosing a timer or threshold change; do not add a new cooldown. Cover early and later soundings in pacing checks.
+- [ ] **Undersong fathom cost.** Increase the offering from its current **25 fathoms**, which is negligible beside the supplied example's 15.3K balance. Choose the replacement cost using late-game earning rates and simulation; no replacement amount has been specified yet.
+- [ ] **Undersong sea requirement: 25 soundings.** Raise "Sound the depths" from **6 to 25**; this is a progression count, separate from the offering's fathom cost. Update the UI and bot's sounding limit (currently defaults to 6), and check the effect of exponentially increasing sounding thresholds. Keep already-completed finales completed.
+- [ ] **Open the Ceiling cap and prices.** Cap at **level 15** and increase the level-scaled prices. Currently it has no explicit cap and costs `ceil(500 * 3^level)` tide. Specify the new cost curve and a migration policy for existing levels above 15 (the supplied save shows level 22), preserving the player's investment rather than silently deleting it.
+- [ ] **Sunless Sea canvas Fuse/Crush controls.** Add the same merge/delete drop zones available in the cave, operating on bells. Dragging a bell onto a twin already fuses it, but the explicit drop zones are currently cave-only. Preserve the top-tier merge limit and prevent unrelated sea objects from being deleted by bell controls.
+- [ ] **Complete cave upgrade automation.** Audit every manually purchasable cave upgrade: voices, tuning, attunement, Strata, Glow, wonders, and any remaining shop categories. Existing `Patient Hands`, `Crystal Seeker`, and `Sinking Stone` only automate crystal fusion, crystal purchases, and descents. Add automation for uncovered categories, available after **two Heartstones** as a persistent unlock costing **100,000 fathoms**. Use per-category controls so players can reserve currencies and avoid spending on unwanted upgrades; distinguish this in-game feature from the simulator's existing automatic shopping.
+
+Delivery order: horn inventory controls; sea canvas controls; broader cave automation; then a coordinated sea/Undersong/Open the Ceiling balance pass. Measure each balance change separately before combining them.
+
+The requested balance changes intentionally revise the earlier unchanged-duration goal. Report their effect on finish time rather than treating every pacing difference as a refactor regression. Refactor-only changes still require unchanged behavior. Preserve saves, test automation persistence through descents and Heartstones, and run representative cave/sea browser checks plus multi-seed pacing comparisons.
+
 ---
 
 ## Phase 1: Chrome and visibility (1.6.0, done)
