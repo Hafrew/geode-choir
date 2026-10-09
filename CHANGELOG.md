@@ -2,6 +2,11 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.8.2: A Note for Phones (2026-10-09)
+
+### Added
+- **Device note.** On a small screen (820px wide or less) or a touch device, a small note at the top says the game is made to be played on a computer, with a Got it button. Dismissing it is remembered on that device, outside the save. It never shows on a desktop window.
+
 ## 1.8.1: A Wider Ledger (2026-10-09)
 
 ### Added
