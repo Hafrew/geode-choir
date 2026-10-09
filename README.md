@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a static browser game with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.9.1**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.9.4**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
@@ -21,7 +21,10 @@ Open the server's address in your browser. Keep `styles.css` and `src/` alongsid
 - `index.html`: page markup.
 - `styles.css`: page styling.
 - `src/state.js`: independent factories for fresh cave, sea, and lifetime state. `createState(version)` takes the release version explicitly.
-- `src/main.js`: initialization and the game loop; currently also contains gameplay, rendering, audio, UI, and save migration. These will move into modules incrementally as their dependencies are separated.
+- `src/horns.js`: rarity curves, seeded horn rolling, stat/trait effects, dedicated rack rules, inventory automation, save normalization, and sounding difficulty.
+- `src/saves.js`: serialization, compatibility migration, and restoration without DOM or storage access.
+- `src/progression.js`: descent/sea rewards and thresholds, Heartstone eligibility and state resets, plus trait-aware decay/Gilt rules.
+- `src/main.js`: initialization, the game loop, gameplay orchestration, rendering, audio, and UI. Canvas, audio, and UI extraction remains a later refactor.
 - `tools/sim/`: seeded gameplay simulation through an explicit, opt-in interface. It serves the real application over HTTP without rewriting source files.
 
 The next module boundaries and function navigation anchors are in [PLAN.md](PLAN.md).
@@ -32,10 +35,15 @@ Browser checks and simulations require Node and Playwright. Install Playwright w
 
 ```bash
 node tools/smoke.js
+node --test tools/horns.test.mjs
+node tools/horns-smoke.js
+node tools/horn-inventory-smoke.js
 node tools/sim/run.js --hours 0.1 --seed 1 --out /tmp/geode-smoke.json
 ```
 
 Both commands start and stop their own temporary local server. The smoke test covers desktop and mobile gameplay, settings, saved progress, and legacy save migration. Both checks use fallback fonts to avoid external network dependencies; they do not test Google Fonts delivery.
+
+Use `--hornStart primordial` for a diagnostic run with the rarity upgrade and Primordial rack already unlocked (no free horns or currency). This measures the maximum-upgrade effect, not natural unlock timing. Use `--hornUpgrades 0` to disable Rarity Weaving and Primordial purchases while retaining the current ivory economy. Fast simulations skip canvas painting while retaining the physics and seeded gameplay draws.
 
 The short simulation checks setup and early progression. For balance work, run the longer, multi-seed comparisons described in `PLAN.md`. `finished: false` is expected when a short run stops before the finale; JavaScript errors cause a failing exit status.
 

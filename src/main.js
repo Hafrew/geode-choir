@@ -1,4 +1,12 @@
-import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './state.js';
+import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
+  depthThreshold, seaThreshold, fossilReward, fathomReward, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
+import { serializeState, restoreState, cmpVer } from './saves.js';
+import { applyAutoEquip, acquireHorn, IVORY_LEVELS, discoveryIvory, grantDiscoveryIvory, RARITY, HSTATS, PRIMORDIAL, RARITY_LEVELS, PITY_AT, TRAITS, TRAIT_CHOICE_AT,
+  hash32, rng32, FAMS, FAM_OF, famOf, rarityOdds, rarityRevealed, primordialUnlocked, visibleRarities,
+  normalSlots, primordialSlots, equippedIds, AUTO_P, traitValue, traitQuality, activeTraits,
+  hornBoost as hornRuleBoost, lineValue, hornBonuses, recordCollection,
+  rollHornPlan, createHorn, soundingDifficulty } from './horns.js';
+import { createState } from './state.js';
 
 (() => {
   // Only the simulation runner supplies this object, before the module loads.
@@ -7,9 +15,24 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.9.1';
+  const VERSION = '1.9.4';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.9.4', date: '2026-10-08', head: 'A Listening Rack', items: [
+      'Inventory can now equip horns automatically, with Balanced, Cave or Sea priorities. It compares stat and trait effects across both racks, including caps and duplicate traits. Turn it off to wear horns manually.',
+      'Choose rarities to salvage newly found spare horns automatically. Equipped horns are kept, and Gilded horns need a separate permission. Filters leave your existing inventory alone. At full capacity, auto-equip keeps a stronger new horn by salvaging the weakest unprotected spare; if everything is protected, the new horn is salvaged instead.',
+      'Both settings are off by default and persist through reloads, descents and Heartstones.',
+    ] },
+    { ver: '1.9.3', date: '2026-10-08', head: 'Ivory Echoes', items: [
+      'Every new horn now brings 5 ivory, even when you keep it. Ivory Echo in the Horns upgrades adds 5 per level, up to 30 ivory per horn. It works for manual sounding, auto sounding and progression rewards, and persists through descents and Heartstones.',
+      'Salvage now pays 3 ivory for Common, 10 for Rare, 35 for Epic, 75 for Legendary, 250 for Mythic, and 500 for the awakened tier. This is separate from the discovery ivory, so a full inventory pays both. Existing horns keep their stats and can be salvaged at the new prices.',
+    ] },
+    { ver: '1.9.2', date: '2026-10-08', head: 'The First Voice', items: [
+      'Rarity Weaving shifts horn odds upward over ten ivory upgrades. At its peak: Common 5%, Rare 25%, Epic 30%, Legendary 25%, Mythic 15%. The shop shows current and next odds; the Epic-or-better guarantee stays.',
+      'Max Rarity Weaving to reveal Awaken the First Voice. Buy it to unlock Primordial horns at 2% (Epic becomes 28%), with Mythic-strength stats and one special passive trait. They have two slots of their own; First Voice Rack adds a third. Gilded Primordials can still appear on Sunveins.',
+      'Primordial notes have narrower timing windows and a 6–8 second lead-in. Trait strength scales smoothly from half to one and a half times its base effect. Average gives the base effect; 90% overall performance lets you choose the trait. Auto gives average strength with a random trait. Duplicate traits use the strongest worn copy.',
+      'Your horns, slot upgrades, unlock and unfinished soundings carry through descents and Heartstones. Pending trait choices survive save and reload.',
+    ] },
     { ver: '1.9.1', date: '2026-10-09', head: 'Text That Scales', items: [
       'The Text size setting now works everywhere. Before, only a few things followed it, because almost all the text was set in fixed pixels. Small, Normal, Large and Huge now scale the side panel, the status strip and its panels, tooltips, buttons, the Horns pages and every dialog. The cave itself stays the same size.',
     ] },
@@ -103,11 +126,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
       'Slower pacing, staged unlocks, the Heartstone gate, horns, the Chronicle and feats, light mode and settings.',
     ] },
   ];
-  const cmpVer = (a, b) => {
-    const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
-    for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d < 0 ? -1 : 1; }
-    return 0;
-  };
+
 
   // =====================================================================
   // content
@@ -143,40 +162,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     { name: 'Whole tone',       steps: [0, 2, 4, 6, 8, 10] },
     { name: 'Lydian',           steps: [0, 2, 4, 6, 7, 9, 11] },
   ];
-  const RARITY = [
-    { name: 'Common',    col: '#bdb5cc', p: 0.58, lines: 1, pct: [5, 15],    flatK: 1, ivory: 1 },
-    { name: 'Rare',      col: '#7fb8ff', p: 0.27, lines: 1, pct: [15, 40],   flatK: 2, ivory: 3 },
-    { name: 'Epic',      col: '#b58cff', p: 0.10, lines: 2, pct: [40, 90],   flatK: 3, ivory: 10, mult: [1.2, 1.5], multP: 0.3 },
-    { name: 'Legendary', col: '#ffcf86', p: 0.04, lines: 2, pct: [90, 200],  flatK: 4, ivory: 30, mult: [1.5, 2.5], multP: 0.5 },
-    { name: 'Mythic',    col: '#ff8fa3', p: 0.01, lines: 3, pct: [200, 400], flatK: 6, ivory: 100, mult: [2.5, 4], multP: 1 },
-  ];
-  const HSTATS = {
-    hum:     { label: 'Hum',               kind: 'scale', of: 'the Deep Choir' },
-    lumen:   { label: 'Lumen',             kind: 'scale', of: 'the Glowworm' },
-    shards:  { label: 'Shards',            kind: 'scale', of: 'Cracked Stone' },
-    fossils: { label: 'Fossils',           kind: 'scale', of: 'Old Bones' },
-    crystal: { label: 'Crystal value',     kind: 'scale', of: 'Quartz' },
-    wall:    { label: 'Stone echoes',      kind: 'scale', of: 'the Walls' },
-    tide:    { label: 'Tide',              kind: 'scale', of: 'the Sunless Sea' },
-    pearls:  { label: 'Pearls',            kind: 'scale', of: 'the Oyster' },
-    fathoms: { label: 'Fathoms',           kind: 'scale', of: 'the Plumb Line' },
-    bell:    { label: 'Bell value',        kind: 'scale', of: 'Bronze' },
-    interf:  { label: 'Crossing bonus',    kind: 'scale', of: 'Crossing Waves' },
-    lungs:   { label: 'Echoes per shout',  kind: 'flat', per: 1, of: 'Great Lungs' },
-    skips:   { label: 'Stone skips',       kind: 'flat', per: 0.5, of: 'the Skipping Stone' },
-    offline: { label: 'Away earnings',     kind: 'flatpct', per: 4, of: 'Long Sleep' },
-    cost:    { label: 'Crystal & bell prices', kind: 'discount', per: 3, of: 'the Haggler' },
-  };
-  const ANIMALS = ['Ram', 'Stag', 'Ibex', 'Oryx', 'Kudu', 'Narwhal', 'Markhor', 'Auroch', 'Conch', 'Wyrm'];
-  const ADJ = [
-    ['Chipped', 'Plain', 'Dusty', 'Worn'],
-    ['Carved', 'Polished', 'Humming', 'Banded'],
-    ['Singing', 'Spiral', 'Moonlit', 'Hollow'],
-    ['Gilded', 'Thundering', 'Ancient', 'Crowned'],
-    ['Starborn', 'Worldsong', 'Unending', 'First'],
-  ];
   const MAX_P = 1400, GONG_CAP = 25, MAX_R = 220, HORN_CAP = 30;
-  const PITY_AT = 25; // horns in a row below Epic before the next one is guaranteed Epic or better
   // Live budgets. The governor shrinks these when frames run slow; extra voices fold into the survivors.
   let capP = 900, capR = 160, frameMs = 6;
 
@@ -190,35 +176,12 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   // derived numbers
   // =====================================================================
   let HB = {};
-  function hornBoost(h) { return 1 + S.hornUp.whet * 0.08 * (1 + h.r * 0.5); }
-  function lineVal(h, l) {
-    const b = hornBoost(h);
-    if (l.kind === 'mult') return 1 + (l.v - 1) * b;
-    return l.v * b;
-  }
-  function computeHB() {
-    const add = {}, mul = {}; let lungs = 0, skips = 0, offline = 0, cost = 0;
-    const eq = new Set(S.equipped);
-    for (const h of S.horns) {
-      if (!eq.has(h.id)) continue;
-      for (const l of h.lines) {
-        const st = HSTATS[l.stat]; if (!st) continue;
-        const v = lineVal(h, l);
-        if (st.kind === 'scale') {
-          if (l.kind === 'mult') mul[l.stat] = (mul[l.stat] || 1) * v; else add[l.stat] = (add[l.stat] || 0) + v;
-        } else if (l.stat === 'lungs') lungs += Math.round(v);
-        else if (l.stat === 'skips') skips += Math.round(v);
-        else if (l.stat === 'offline') offline += v;
-        else if (l.stat === 'cost') cost += v;
-      }
-    }
-    HB = { lungs, skips, offline: Math.min(0.5, offline / 100), cost: Math.min(0.6, cost / 100) };
-    for (const k of Object.keys(HSTATS)) if (HSTATS[k].kind === 'scale') HB[k] = (1 + (add[k] || 0) / 100) * (mul[k] || 1);
-  }
+  const hornBoost = h => hornRuleBoost(S, h);
+  const lineVal = (h, l) => lineValue(S, h, l);
+  function computeHB() { HB = hornBonuses(S); }
   computeHB();
 
   // Multipliers that never cap grow at full strength up to a knee, then at half strength.
-  const KNEE = 10;
   const softPow = (b, l) => Math.pow(b, Math.min(l, KNEE)) * Math.pow(1 + (b - 1) / 2, Math.max(0, l - KNEE));
   const featMult = () => 1 + FEATS.reduce((a, f) => a + (S.feats[f.id] ? (f.w || 2) : 0), 0) / 100;
   const heartMult = () => Math.pow(3, S.hearts) * featMult();
@@ -231,7 +194,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   const polishAt = l => Math.pow(1.4, l);
   const humMult = () => Math.pow(1.6, S.depth) * softPow(1.3, S.strata.old) * softPow(1.3, S.illum.lantern) * heartMult() * HB.hum;
   const sinkMult = () => { const m = Math.round(+S.toggles.sinkMult); return m >= 1 && m <= 10 ? m : 2; };
-  const deepenAt = () => 2e4 * Math.pow(3.5, S.depth) * (S.rubble ? 1.5 : 1);
+  const deepenAt = () => depthThreshold(S);
   // After every descent the floor has to settle. Only quests shorten it. All time gates run through tickRate().
   const LOCK_BASE = 600, LOCK_STEP = 120, LOCK_MIN = 120;
   // Faster Tick speeds every time gate (the descent lock, horn timers). It never touches the floor's fade, which runs on real time.
@@ -239,9 +202,8 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   const tickRate = () => Math.pow(1.1, S.strata.tick || 0);
   // Floor freshness: hum and lumen fade the longer you stay on one floor, from full strength toward a floor.
   // Each Heartstone unlocks something that offsets it. Descending or kindling starts a fresh floor.
-  const DECAY_TAU = 600;
   const decayFloor = () => 0.15 + (S.hearts >= 1 ? 0.15 : 0) + 0.05 * Math.max(0, S.hearts - 3);
-  const decayTau = () => DECAY_TAU * (S.hearts >= 2 ? 2 : 1) * (1 + 0.25 * Math.max(0, S.hearts - 3)) * floorTau();
+  const decayTau = () => decayTime(S, floorTau(), HB.traits.memory || 0);
   const freshAt = t => { const f = decayFloor(); return f + (1 - f) * Math.exp(-t / decayTau()); };
   const freshAvg = (t0, t1) => {
     if (t1 - t0 < 1e-6) return freshAt(t0);
@@ -305,9 +267,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   const questsDone = () => QUESTS.filter(q => S.quests[q.id]).length;
   const descentLock = () => Math.max(LOCK_MIN, LOCK_BASE - LOCK_STEP * questsDone());
   // Gains from a long run bend: a bigger run is still worth more, but ever more slowly.
-  const bend = r => r <= 1 ? 1 : Math.pow(r, 0.3662);
-  const fossilGain = () => S.run < deepenAt() ? 0 :
-    Math.floor((1 + 0.5 * S.depth) * 2 * bend(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils * floorMod('fossils') * (onSun() ? 1 + sunFossilBonus() : 1));
+  const fossilGain = () => fossilReward(S, HB.fossils, floorMod('fossils'), onSun() ? 1 + sunFossilBonus() : 1);
   const maxCrystals = () => 8 + S.lv.chisel + 3 * S.strata.wide;
   const crackAt = () => 40 * Math.pow(0.8, S.strata.fault);
   const shardsOn = () => S.depth >= 3;
@@ -316,7 +276,6 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   const wonderCost = k => Math.ceil(WONDERS[k].base * Math.pow(WONDERS[k].g, S.wBought[k] || 0));
   const attuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.attune[t]));
   // Each Heartstone asks for a deeper cave and more lumen, and the mountain rolls a mood for the next one when you kindle.
-  const HEART_STEP = 22;
   const OMENS = {
     steady:   { name: 'Steady',   p: 0.4, depth: 0,  lumen: 1, text: 'It asks what it always asks.' },
     generous: { name: 'Generous', p: 0.2, depth: -6, lumen: 1, text: 'The stone is thin: a shallower cave will do.' },
@@ -325,21 +284,18 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   };
   const omen = () => OMENS[S.omen] || OMENS.steady;
   const rollOmen = () => { let x = Math.random(); for (const k of Object.keys(OMENS)) { if (x < OMENS[k].p) return k; x -= OMENS[k].p; } return 'steady'; };
-  const heartCost = () => 1e7 * Math.pow(10, S.hearts) * omen().lumen;
-  const heartDepth = () => 12 + HEART_STEP * S.hearts + omen().depth;
+  const heartCost = () => heartLumenCost(S, omen());
+  const heartDepth = () => heartDepthRequired(S, omen());
   // The first Heartstone opens the sea. Each one after that asks the sea to have been sounded 2 more times.
-  const heartSea = () => 2 * S.hearts;
+  const heartSea = () => heartSeaRequired(S);
   // sea
   const bellCap = () => 8 + S.sea.lv.line + 2 * S.sea.deep.buoys;
   const bellCost = t => Math.ceil(BELLS[t].base * Math.pow(BELLS[t].g, S.sea.bought[t] || 0) * priceK());
   const tuneCost = t => Math.ceil(4 * (t + 1) * Math.pow(2.1, S.sea.tune[t]));
   const oysterCost = () => Math.ceil(300 * Math.pow(1.8, S.sea.oBought));
   const pobjCost = k => Math.ceil(PEARLOBJ[k].base * Math.pow(PEARLOBJ[k].g, S.sea.pBought[k] || 0));
-  const soundAt = () => 5e4 * Math.pow(4, S.sea.soundings);
-  const fathomGain = () => {
-    const q = S.sea;
-    return q.run < soundAt() ? 0 : Math.floor((1 + 0.5 * q.soundings) * 2 * bend(q.run / soundAt()) * Math.pow(1.25, q.deep.record) * HB.fathoms);
-  };
+  const soundAt = () => seaThreshold(S);
+  const fathomGain = () => fathomReward(S, HB.fathoms);
   const quietEff = () => 0.25 + 0.1 * S.sea.choir.listen;
   const choirK = () => 0.1 * (1 + S.sea.choir.open);
   const choirBonus = () => 1 + choirK() * Math.log10(1 + (S.idleRate || 0));
@@ -350,7 +306,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   const crossAt = l => (3 + l) * HB.interf;
   const pearlsOn = () => S.sea.soundings >= 1;
   // horns
-  const hornSlots = () => 1 + S.hornUp.rack;
+  const hornSlots = () => normalSlots(S);
   const hornInterval = () => 360 * Math.pow(0.85, S.hornUp.ear);
   const hornRollCost = () => Math.ceil(5 * Math.pow(1.6, S.hornBuys));
   const pct = x => (x * 100).toFixed(x > 0.95 ? 1 : 0) + '%';
@@ -1335,6 +1291,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   const buckets = [[], [], [], []];
   const BUCKET_A = [0.2, 0.38, 0.62, 0.92];
   function drawCave() {
+    if (simulation?.fast) return;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     ctx.drawImage(bg, 0, 0, W, H);
@@ -1479,6 +1436,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     ctx.restore();
   }
   function drawSea() {
+    if (simulation?.fast) return;
     const q = S.sea;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
@@ -2198,9 +2156,9 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
         return true;
       },
     });
-    const hu = (k, name, icon, base, g, max, desc) => lvItem({
+    const hu = (k, name, icon, base, g, max, desc, extra = {}) => lvItem({
       parent: 'shopHorns', icon, unit: 'ivory', name, base, g, max, desc,
-      get: () => S.hornUp[k], inc: () => { S.hornUp[k]++; },
+      get: () => S.hornUp[k], inc: () => { S.hornUp[k]++; applyAutoEquip(S); hornsDirty = true; save(); }, ...extra,
     });
     // ------------------------------- the Sunvein (gilt), bought only while standing on one
     const gu = (k, name, icon, base, g, max, desc) => lvItem({
@@ -2213,6 +2171,18 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     hu('ear', 'Keen Ear', ICONS.ear(), 5, 1.7, 12, l => `A horn turns up every ${mmss(360 * Math.pow(0.85, l))} → ${mmss(360 * Math.pow(0.85, l + 1))}`);
     hu('whet', 'Whetstone', ICONS.whet(), 8, 1.8, 15, l => `Horn bonuses +${Math.round(l * 8)}% → +${Math.round((l + 1) * 8)}% stronger, and rarer horns gain up to 3× as much`);
     hu('branch', 'Branching', ICONS.branch(), 10, 2.2, 5, l => `New horns have a ${l * 20}% → ${(l + 1) * 20}% chance of one extra stat`);
+    hu('ivory', 'Ivory Echo', ICONS.horn('#efe6d8'), 25, 2, IVORY_LEVELS,
+      l => l >= IVORY_LEVELS ? `Every new horn brings ${discoveryIvory(S)} ivory, plus its salvage value if you salvage it.`
+        : `Every new horn brings ${5 + 5 * l} → ${10 + 5 * l} ivory, whether kept or salvaged. Applies to every horn source.`);
+    const oddsText = l => rarityOdds(S, l).map((p, i) => `${RARITY[i].name} ${(p * 100).toFixed(1).replace(/\.0$/, '')}%`).join(', ');
+    hu('rarity', 'Rarity Weaving', ICONS.horn(), 25, 1.65, RARITY_LEVELS,
+      l => `Now: ${oddsText(l)}.${l < RARITY_LEVELS ? ` Next: ${oddsText(l + 1)}.` : ' The rarity curve is complete.'}`);
+    hu('firstVoice', 'Awaken the First Voice', ICONS.horn('#83f5dc'), 2500, 1, 1,
+      () => primordialUnlocked(S) ? 'Primordial horns are awakened: 2% of rolls and two dedicated slots.' : 'Awaken Primordial horns: 2% of rolls, Mythic-strength stats, a special trait and two dedicated slots.',
+      { single: true, show: () => rarityRevealed(S), blocked: () => !rarityRevealed(S) });
+    hu('firstRack', 'First Voice Rack', ICONS.rack(), 4000, 1, 1,
+      l => l ? 'Wear three Primordial horns in their own slots.' : 'Add a third dedicated Primordial slot. Requires Awaken the First Voice.',
+      { single: true, show: () => rarityRevealed(S), blocked: () => !primordialUnlocked(S) });
   }
   const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -2220,60 +2190,14 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   // horns
   // =====================================================================
   let hornsDirty = true;
-  function rollLine(stat, R) {
-    const st = HSTATS[stat], u = Math.random();
-    if (st.kind === 'scale') {
-      if (R.mult && Math.random() < R.multP) return { stat, kind: 'mult', v: +(R.mult[0] + (R.mult[1] - R.mult[0]) * u).toFixed(2) };
-      return { stat, kind: 'pct', v: Math.round(R.pct[0] + (R.pct[1] - R.pct[0]) * u) };
-    }
-    return { stat, kind: st.kind, v: Math.max(1, Math.round(st.per * R.flatK * (0.6 + 0.8 * u))) };
-  }
-  // A horn call has two halves: the plan (rarity first, then which stats it has) and the build (the stats scaled by how well you played).
-  // Auto sounding builds the plan at once with an average result, so the order of random draws is the same as it always was.
-  function rollPlan(minR) {
-    let x = Math.random(), ri = 0;
-    for (; ri < RARITY.length - 1; ri++) { if (x < RARITY[ri].p) break; x -= RARITY[ri].p; }
-    if ((S.hornPity || 0) >= PITY_AT) ri = Math.max(ri, 2);
-    ri = Math.max(ri, minR || 0);
-    S.hornPity = ri >= 2 ? 0 : (S.hornPity || 0) + 1;
-    const R = RARITY[ri];
-    let n = R.lines + (Math.random() < S.hornUp.branch * 0.2 ? 1 : 0);
-    n = Math.min(4, n);
-    const keys = Object.keys(HSTATS), used = new Set(), lines = [];
-    while (lines.length < n) {
-      const s = pick(keys); if (used.has(s)) continue;
-      used.add(s); lines.push(rollLine(s, R));
-    }
-    const plan = { ri, lines, perfs: [] };
-    if (onSun() && S.world !== 'sea' && Math.random() < goldHornChance()) plan.gold = true;
-    return plan;
-  }
-  const AUTO_P = 0.5, perfMult = p => 0.5 + p; // an average result is exactly the usual value; the range is half to one and a half times
-  function scaleLine(l, m) {
-    const st = HSTATS[l.stat];
-    if (l.kind === 'mult') return { ...l, v: +(1 + (l.v - 1) * m).toFixed(2) };
-    if (l.kind === 'pct') return { ...l, v: Math.max(1, Math.round(l.v * m)) };
-    return { ...l, v: Math.max(1, Math.round(l.v * m)) };
-  }
-  function buildHorn(plan, perfs) {
-    const ri = plan.ri;
-    const gm = plan.gold ? 1.25 : 1; // a gilded horn is a quarter stronger on top of how well you played
-    const lines = plan.lines.map((l, i) => (perfs || plan.gold) ? scaleLine(l, (perfs ? perfMult(perfs[i] == null ? AUTO_P : perfs[i]) : 1) * gm) : { ...l });
-    const adj = pick(ADJ[ri]), animal = pick(ANIMALS);
-    const h = { id: ++S.hornSeq, r: ri, name: `${plan.gold ? 'Gilded' : adj} ${animal} Horn of ${HSTATS[lines[0].stat].of}`, lines };
-    if (plan.gold) h.gold = true;
-    if (perfs && perfs.length) h.q = +(perfs.reduce((a, b) => a + b, 0) / perfs.length).toFixed(2);
-    h.seed = hash32(h.id * 0x9E3779B1 + ri * 7919 + S.stats.hornsFound * 40503) || 1; // not from Math.random, so the random stream is unchanged
+  const rollPlan = minR => rollHornPlan(S, minR);
+  function buildHorn(plan, perfs, trait) {
+    const h = createHorn(S, plan, perfs, trait), ri = h.r;
+    grantDiscoveryIvory(S, h);
     noteColl(h);
     S.hornsOn = true;
     S.stats.hornsFound++; S.stats.bestHorn = Math.max(S.stats.bestHorn, ri);
-    if (S.horns.length >= HORN_CAP) {
-      S.ivory += RARITY[ri].ivory; S.stats.ivoryLife += RARITY[ri].ivory;
-      h.salvaged = true;
-    } else {
-      S.horns.push(h);
-      if (S.equipped.length < hornSlots()) S.equipped.push(h.id);
-    }
+    acquireHorn(S, h, HORN_CAP);
     delete S.seen.tab_horns;
     hornsDirty = true;
     refreshAll();
@@ -2290,9 +2214,10 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   }
   function hornMsg(h) {
     const rn = RARITY[h.r].name.toLowerCase();
-    const base = `${/^[aeiou]/.test(rn) ? 'An' : 'A'} ${rn} horn: the ${h.name}.`;
-    if (h.salvaged) return `${base} Your rack is full, so it became ${RARITY[h.r].ivory} ivory.`;
-    return S.equipped.includes(h.id) ? `${base} You're wearing it.` : `${base} Equip it in the Horns tab.`;
+    const base = `${/^[aeiou]/.test(rn) ? 'An' : 'A'} ${rn} horn: the ${h.name}. +${h.ivoryFound} discovery ivory.`;
+    if (h.salvaged) return `${base} ${h.salvageReason === 'filter' ? 'Your salvage filter' : 'Your full inventory'} turned it into ${RARITY[h.r].ivory} salvage ivory.`;
+    if (h.replacedHorn) return `${base} You’re wearing it. ${h.replacedHorn.name} was salvaged for ${h.replacedHorn.ivory} ivory to make room.`;
+    return equippedIds(S).includes(h.id) ? `${base} You're wearing it.` : `${base} Equip it in the Horns tab.`;
   }
   function lineText(h, l) {
     const st = HSTATS[l.stat], v = lineVal(h, l);
@@ -2302,28 +2227,23 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     if (st.kind === 'flatpct') return `${st.label} <b>+${Math.round(v)}%</b>`;
     return `${st.label} <b>−${Math.round(v)}%</b>`;
   }
+  function traitMarkup(h) {
+    if (h.r !== PRIMORDIAL || !h.trait) return '';
+    const t = TRAITS.find(t => t.id === h.trait.id);
+    return `<li class="horntrait"><b>${t.name}</b>: ${(traitValue(h) * 100).toFixed(1).replace(/\.0$/, '')}% ${t.effect}. Strongest worn copy applies.</li>`;
+  }
   // ---------------------------------------------------------------------
   // horn art: every horn is drawn from its seed, rarity and stats
   // ---------------------------------------------------------------------
-  const hash32 = n => { n = Math.imul((n | 0) ^ ((n | 0) >>> 16), 0x45d9f3b); n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); return (n ^ (n >>> 16)) >>> 0; };
-  function rng32(seed) {
-    let a = seed >>> 0;
-    return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  }
-  const FAMS = ['curl', 'tines', 'sweep', 'spear', 'twist', 'tusk', 'crescent', 'conch'];
-  const FAM_OF = { Ram: 'curl', Stag: 'tines', Ibex: 'sweep', Oryx: 'spear', Kudu: 'twist', Narwhal: 'tusk', Markhor: 'twist', Auroch: 'crescent', Conch: 'conch', Wyrm: 'sweep' };
   const HMAT = [ // light, mid, dark
     ['#efe8d6', '#c4bba4', '#7d7766'], ['#d4e6ff', '#7fb8ff', '#35588f'], ['#e6d6ff', '#b58cff', '#5a3a96'],
-    ['#fff1c8', '#ffcf86', '#a2702a'], ['#ffd9e0', '#ff8fa3', '#9c3856'],
+    ['#fff1c8', '#ffcf86', '#a2702a'], ['#ffd9e0', '#ff8fa3', '#9c3856'], ['#dcfff4', '#83f5dc', '#247c70'],
   ];
   const STAT_COL = {
     hum: '#ffcf86', lumen: '#7fb8ff', shards: '#d6a8ff', fossils: '#e8d5b0', crystal: '#8ff2e6', wall: '#a79fb8', tide: '#86d8e6', pearls: '#efe6d8',
     fathoms: '#9aa7ff', bell: '#d9a066', interf: '#6fe0c8', lungs: '#a8e6a3', skips: '#8fd0ff', offline: '#b58cff', cost: '#ffb86b',
   };
-  const famOf = h => {
-    const a = ANIMALS.find(x => h.name && h.name.includes(' ' + x + ' '));
-    return FAM_OF[a] || FAMS[hash32(h.seed || h.id || 1) % FAMS.length];
-  };
+
   const bez = (p0, p1, p2, p3) => t => {
     const u = 1 - t;
     return [u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]];
@@ -2404,11 +2324,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     return svg;
   }
   // The collection: one entry for every shape and rarity.
-  function noteColl(h) {
-    if (!h.seed) return;
-    const k = famOf(h) + ':' + (h.gold ? 'g' : h.r), c = S.coll[k];
-    if (c) c.n++; else S.coll[k] = { seed: h.seed, name: h.name, ls: h.lines.map(l => l.stat), n: 1, r: h.r };
-  }
+  const noteColl = h => recordCollection(S, h);
   const collHorn = (fam, r) => {
     const c = S.coll[fam + ':' + r], animal = Object.keys(FAM_OF).find(a => FAM_OF[a] === fam), g = r === 'g';
     return { id: 'c' + fam + r, r: g ? (c ? c.r : 3) : r, gold: g, seed: c ? c.seed : hash32(FAMS.indexOf(fam) * 31 + (g ? 9 : r)), name: c ? c.name : `x ${animal} Horn`, lines: (c ? c.ls : []).map(stat => ({ stat })) };
@@ -2434,7 +2350,15 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     else if (hornSub === 'collection') renderColl();
   }
   function renderInventory() {
-    const eq = new Set(S.equipped), slots = hornSlots();
+    const settings = S.hornInventory;
+    $('hornAutoEquip').checked = settings.autoEquip;
+    $('hornEquipFocus').value = settings.focus;
+    $('hornSalvageGilded').checked = settings.gilded;
+    const rarities = visibleRarities(S), filters = $('hornSalvageRarities');
+    if (filters.children.length !== rarities.length) filters.innerHTML = rarities.map((r, i) =>
+      `<label><input type="checkbox" data-salvage-r="${i}"> ${r.name}</label>`).join('');
+    for (const input of filters.querySelectorAll('input')) input.checked = settings.salvage[+input.dataset.salvageR];
+    const eq = new Set(equippedIds(S)), slots = hornSlots();
     if (!S.horns.some(h => h.id === hornSel)) hornSel = (S.equipped[0] || (S.horns[0] && S.horns[0].id)) || 0;
     let row = '';
     for (let i = 0; i < slots; i++) {
@@ -2443,6 +2367,15 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
         : `<div class="hslot empty"><span>Empty</span></div>`;
     }
     $('hornSlotRow').innerHTML = row;
+    $('primordialRack').hidden = !rarityRevealed(S);
+    setT('primordialSlots', primordialUnlocked(S) ? `${S.primordialEquipped.length} / ${primordialSlots(S)}` : 'Not awakened');
+    let primordialRow = '';
+    for (let i = 0; i < primordialSlots(S); i++) {
+      const h = S.horns.find(x => x.id === S.primordialEquipped[i]);
+      primordialRow += h ? `<button type="button" class="hslot${h.id === hornSel ? ' sel' : ''}" data-id="${h.id}" style="--rc:${rcOf(h)}" title="${h.name}">${hornSVG(h, 58, 'p')}<small>Primordial</small></button>`
+        : '<div class="hslot empty"><span>Empty</span></div>';
+    }
+    $('primordialSlotRow').innerHTML = primordialRow;
     // detail of the selected horn
     const sel = S.horns.find(h => h.id === hornSel), det = $('hornDetail');
     det.hidden = !sel;
@@ -2451,11 +2384,11 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
       det.style.setProperty('--rc', rcOf(sel));
       det.innerHTML = `<div class="art">${hornSVG(sel, 124, 'd')}</div>
         <div><div class="hn">${sel.name}</div><div class="hr">${sel.gold ? 'Gilded · ' : ''}${RARITY[sel.r].name}${on ? ' · worn' : ''}</div></div>
-        <ul>${sel.lines.map(l => `<li style="--gc:${STAT_COL[l.stat] || '#fff'}"><i></i>${lineText(sel, l)}</li>`).join('')}</ul>
-        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}">${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${RARITY[sel.r].ivory} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
+        <ul>${sel.lines.map(l => `<li style="--gc:${STAT_COL[l.stat] || '#fff'}"><i></i>${lineText(sel, l)}</li>`).join('')}${traitMarkup(sel)}</ul>
+        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}" ${settings.autoEquip ? 'disabled title="Turn off auto-equip to change worn horns manually"' : ''}>${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${RARITY[sel.r].ivory} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
     }
     // rarity filter
-    const names = ['All', ...RARITY.map(r => r.name)];
+    const names = ['All', ...visibleRarities(S).map(r => r.name)];
     $('hornFilter').innerHTML = names.map((n, i) => `<button type="button" data-r="${i - 1}" aria-pressed="${hornFilterR === i - 1}"${i ? ` style="--rc:${RARITY[i - 1].col}"` : ''}>${n}</button>`).join('');
     const list = [...S.horns].filter(h => hornFilterR < 0 || h.r === hornFilterR)
       .sort((a, b) => (eq.has(b.id) - eq.has(a.id)) || (b.r - a.r) || (b.id - a.id));
@@ -2471,6 +2404,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     if (HB.skips) parts.push(`<span>Stone skips</span><b>+${HB.skips}</b>`);
     if (HB.offline) parts.push(`<span>Away earnings</span><b>+${Math.round(HB.offline * 100)}%</b>`);
     if (HB.cost) parts.push(`<span>Prices</span><b>−${Math.round(HB.cost * 100)}%</b>`);
+    for (const t of TRAITS) if (HB.traits[t.id]) parts.push(`<span>${t.name}</span><b>${(HB.traits[t.id] * 100).toFixed(1).replace(/\.0$/, '')}%</b>`);
     $('hornSum').innerHTML = parts.length ? parts.map(p => `<div>${p}</div>`).join('') : '<div class="empty">Wear a horn to feel its bonus here.</div>';
   }
   // ---------------------------------------------------------------------
@@ -2478,7 +2412,15 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   // ---------------------------------------------------------------------
   let sndKey = '', sndRaf = 0, sndReel = 0, sndRound = null, sndResult = null;
   const tri = x => 1 - Math.abs(2 * (x - Math.floor(x)) - 1);
-  const sndMode = () => sndResult ? 'result' : sndReel ? 'reel' : S.hornPlan ? 'play' : 'idle';
+  const sndMode = () => {
+    if (sndResult) return 'result';
+    if (sndReel) return 'reel';
+    const pl = S.hornPlan;
+    if (!pl) return 'idle';
+    if (sndRound && sndRound.frozen !== null) return 'play';
+    if (pl.perfs.length < pl.lines.length) return 'play';
+    return pl.ri === PRIMORDIAL && traitQuality(pl.perfs) >= TRAIT_CHOICE_AT ? 'choice' : 'complete';
+  };
   const perfWord = p => p >= 0.9 ? 'Perfect' : p >= 0.6 ? 'Good' : p >= 0.3 ? 'Okay' : 'Off the note';
   const perfCol = p => p >= 0.9 ? 'var(--echo)' : p >= 0.6 ? 'var(--hum)' : p >= 0.3 ? 'var(--muted)' : 'var(--warn)';
   function openSounding() {
@@ -2488,7 +2430,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     if (S.hornPlan || sndReel || sndResult || S.hornQueue < 1) return;
     S.hornQueue--; S.hornPlan = rollPlan(0); save();
     const plan = S.hornPlan; let i = 0;
-    sndKey = ''; sndReel = setInterval(() => { i++; const e = $('sndReelTxt'); if (e) { const r = RARITY[i % RARITY.length]; e.textContent = r.name; e.parentNode.style.setProperty('--rc', r.col); } }, 85);
+    sndKey = ''; sndReel = setInterval(() => { i++; const e = $('sndReelTxt'); if (e) { const shown = visibleRarities(S), r = shown[i % shown.length]; e.textContent = r.name; e.parentNode.style.setProperty('--rc', r.col); } }, 85);
     hornsDirty = true; updateUI();
     setTimeout(() => {
       clearInterval(sndReel);
@@ -2497,28 +2439,35 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     }, 1400);
   }
   function newRound() {
-    const pl = S.hornPlan, k = pl.perfs.length, ear = S.hornUp.ear, hw = Math.min(0.2, 0.1 + 0.008 * ear);
-    sndRound = { k, hw, c: 0.2 + Math.random() * 0.6, speed: 0.5 + 0.09 * k + 0.05 * pl.ri, phase: Math.random(), t0: performance.now(), frozen: null };
+    const pl = S.hornPlan, k = pl.perfs.length;
+    sndRound = { k, ...soundingDifficulty(pl, S.hornUp.ear), c: 0.2 + Math.random() * 0.6,
+      phase: Math.random(), t0: performance.now(), frozen: null };
   }
   function sndHit() {
     if (sndMode() !== 'play' || !sndRound || sndRound.frozen !== null) return;
+    if (performance.now() - sndRound.t0 < sndRound.readyMs) return;
     const r = sndRound, pos = tri(r.phase + (performance.now() - r.t0) / 1000 * r.speed), d = Math.abs(pos - r.c);
     const p = d <= r.hw * 0.25 ? 1 : Math.max(0, 1 - (d - r.hw * 0.25) / (r.hw * 1.8));
     r.frozen = pos;
-    S.hornPlan.perfs.push(+p.toFixed(3)); save();
+    const plan = S.hornPlan;
+    plan.perfs.push(+p.toFixed(3)); save();
     const fb = $('sndFb'); if (fb) { fb.textContent = perfWord(p); fb.style.color = perfCol(p); }
     const dots = $('sndDots'); if (dots) dots.children[r.k].style.background = perfCol(p);
     setTimeout(() => {
-      if (!S.hornPlan) return;
+      if (S.hornPlan !== plan) return;
+      sndRound = null;
       if (S.hornPlan.perfs.length >= S.hornPlan.lines.length) finishSounding();
       else { sndRound = null; sndKey = ''; hornsDirty = true; updateUI(); }
     }, 750);
   }
-  function finishSounding() {
+  function finishSounding(chosenTrait) {
     const pl = S.hornPlan; if (!pl) return;
     while (pl.perfs.length < pl.lines.length) pl.perfs.push(AUTO_P);
-    const avg = pl.perfs.reduce((a, b) => a + b, 0) / pl.perfs.length;
-    const h = buildHorn(pl, pl.perfs);
+    const avg = traitQuality(pl.perfs);
+    if (pl.ri === PRIMORDIAL && avg >= TRAIT_CHOICE_AT && !chosenTrait) {
+      sndRound = null; save(); sndKey = ''; hornsDirty = true; updateUI(); return;
+    }
+    const h = buildHorn(pl, pl.perfs, chosenTrait);
     S.hornPlan = null; sndRound = null;
     let extra = null;
     if (Math.random() < Math.max(0, avg - AUTO_P) * 0.5) extra = gainHorn(0);
@@ -2531,13 +2480,15 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     const needle = $('sndNeedle');
     if (!needle || sndMode() !== 'play' || !sndRound || $('panel-horns').hidden || hornSub !== 'sounding') return;
     const r = sndRound;
+    if (r.readyMs) setT('sndLead', performance.now() - r.t0 < r.readyMs ? `The first voice gathers… ${Math.ceil((r.readyMs - (performance.now() - r.t0)) / 1000)}s` : 'Ready. Hit the glowing zone.');
     if (r.frozen === null) needle.style.left = (tri(r.phase + (performance.now() - r.t0) / 1000 * r.speed) * 100).toFixed(1) + '%';
     else needle.style.left = (r.frozen * 100).toFixed(1) + '%';
     sndRaf = requestAnimationFrame(sndLoop);
   }
   function sndRender() {
     const mode = sndMode(), st = $('sndStage');
-    const key = mode + (mode === 'play' ? ':' + S.hornPlan.perfs.length : mode === 'idle' ? ':' + (S.hornQueue > 0) : mode === 'result' ? ':' + sndResult.h.id : '');
+    if (mode === 'complete') { finishSounding(); return; }
+    const key = mode + (mode === 'play' ? ':' + (sndRound && sndRound.frozen !== null ? sndRound.k : S.hornPlan.perfs.length) : mode === 'idle' ? ':' + (S.hornQueue > 0) : mode === 'result' ? ':' + sndResult.h.id : '');
     if (key !== sndKey) {
       sndKey = key;
       if (mode === 'idle') {
@@ -2547,22 +2498,29 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
           : `<div class="sub">No horn call is waiting.<br>The next one comes in <b id="sndNext"></b>.</div>`;
       } else if (mode === 'reel') {
         st.innerHTML = `<div class="sub">Spinning the horn…</div><div class="reel"><span id="sndReelTxt">…</span></div>`;
+      } else if (mode === 'choice') {
+        const quality = traitQuality(S.hornPlan.perfs);
+        st.style.setProperty('--rc', RARITY[PRIMORDIAL].col);
+        st.innerHTML = `<div class="head"><b>Choose the first voice</b><span>${Math.round(quality * 100)}% played</span></div>
+          <div class="sub">Your performance earned a choice. Each trait has ${Math.round((0.5 + quality) * 100)}% of its base strength.</div>
+          <div class="traitchoices">${TRAITS.map(t => `<button type="button" class="big" data-act="trait" data-trait="${t.id}">${t.name}<small>${(t.base * (0.5 + quality)).toFixed(1).replace(/\.0$/, '')}% ${t.effect}</small></button>`).join('')}</div>
+          <button type="button" class="small" data-act="random-trait">Choose a random trait</button>`;
       } else if (mode === 'play') {
         const pl = S.hornPlan, R = RARITY[pl.ri];
-        if (!sndRound || sndRound.k !== pl.perfs.length) newRound();
+        if (!sndRound || (sndRound.frozen === null && sndRound.k !== pl.perfs.length)) newRound();
         const l = pl.lines[sndRound.k], r = sndRound;
         st.style.setProperty('--rc', pl.gold ? '#ffd54a' : R.col); st.style.setProperty('--gc', STAT_COL[l.stat] || 'var(--echo)');
         st.innerHTML = `<div class="head"><span style="color:${pl.gold ? '#ffd54a' : R.col}">${pl.gold ? 'Gilded ' : ''}${R.name} horn</span><span>Note ${r.k + 1} of ${pl.lines.length}: <b>${HSTATS[l.stat].label}</b></span></div>
           <div class="sbar" id="sndBar" data-act="hit" role="button" tabindex="0" aria-label="Hit the note"><div class="szone" style="left:${((r.c - r.hw) * 100).toFixed(1)}%;width:${(r.hw * 200).toFixed(1)}%"></div><div class="sneedle" id="sndNeedle"></div></div>
-          <div class="sfb" id="sndFb"></div>
+          <div class="sfb" id="sndFb"></div>${pl.ri === PRIMORDIAL ? '<div class="sub" id="sndLead" aria-live="polite"></div>' : ''}
           <div class="sdots" id="sndDots">${pl.lines.map((_, i) => `<i${i === r.k ? ' class="cur"' : ''} style="${i < r.k ? `background:${perfCol(pl.perfs[i])}` : ''}"></i>`).join('')}</div>
-          <div class="sub">Click, tap or press Space when the needle is in the glowing zone.</div>
+          <div class="sub">Click, tap or press Space when the needle is in the glowing zone.${pl.ri === PRIMORDIAL ? ' Each note gathers for 6–8 seconds. Trait strength follows your overall performance; 90% earns trait choice. There is no miss timer.' : ''}</div>
           <button type="button" class="small" data-act="auto">Finish with an average result</button>`;
       } else {
         const { h, extra, avg } = sndResult, hs = [h, extra].filter(Boolean);
         st.style.setProperty('--rc', rcOf(h));
-        st.innerHTML = hs.map(x => `<div class="sndres" style="--rc:${rcOf(x)}"><div>${hornSVG(x, 104, 'r' + x.id)}</div><div><div class="hn">${x.name}</div><div class="hr">${x.gold ? 'Gilded · ' : ''}${RARITY[x.r].name}${x.salvaged ? ' · salvaged for ivory' : ''}${x.q != null ? ` · ${Math.round(x.q * 100)}% played` : ''}</div><ul>${x.lines.map(l => `<li>${lineText(x, l)}</li>`).join('')}</ul></div></div>`).join('')
-          + `<div class="sub">${extra ? 'Good playing brought a second horn. ' : ''}${avg > AUTO_P ? 'Above average.' : avg < AUTO_P ? 'Below average.' : 'Average.'}</div><button type="button" class="big" data-act="done">Continue</button>`;
+        st.innerHTML = hs.map(x => `<div class="sndres" style="--rc:${rcOf(x)}"><div>${hornSVG(x, 104, 'r' + x.id)}</div><div><div class="hn">${x.name}</div><div class="hr">${x.gold ? 'Gilded · ' : ''}${RARITY[x.r].name}${x.salvaged ? ' · salvaged for ivory' : ''}${x.q != null ? ` · ${Math.round(x.q * 100)}% played` : ''}</div><ul>${x.lines.map(l => `<li>${lineText(x, l)}</li>`).join('')}${traitMarkup(x)}</ul></div></div>`).join('')
+          + `<div class="sub">${h.salvaged ? (h.salvageReason === 'filter' ? 'Your filter salvaged this horn for ivory. ' : 'Inventory full: this horn was salvaged for ivory. ') : ''}${extra ? 'Good playing brought a second horn. ' : ''}${avg > AUTO_P ? 'Above average.' : avg < AUTO_P ? 'Below average.' : 'Average.'}</div><button type="button" class="big" data-act="done">Continue</button>`;
       }
     }
     if (mode === 'idle' && S.hornQueue < 1) setT('sndNext', S.hornsOn ? mmss(Math.max(0, S.hornTimer)) : 'a while');
@@ -2573,6 +2531,8 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     const act = b.dataset.act;
     if (act === 'start') startSounding();
     else if (act === 'auto') finishSounding();
+    else if (act === 'trait' && sndMode() === 'choice') finishSounding(b.dataset.trait);
+    else if (act === 'random-trait' && sndMode() === 'choice') finishSounding('random');
     else if (act === 'done') { hornSel = sndResult ? sndResult.h.id : hornSel; sndResult = null; sndKey = ''; hornsDirty = true; updateUI(); }
   });
   $('sndStage').addEventListener('pointerdown', e => { if (e.target.closest('[data-act="hit"]')) { e.preventDefault(); sndHit(); } });
@@ -2591,12 +2551,13 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     $('hornAuto').checked = !!S.hornAuto;
     setT('sndQueue', hornsWaiting() ? `${hornsWaiting()} waiting` : '');
     sndRender();
-    $('hornOdds').innerHTML = RARITY.map(r => `<span style="color:${r.col}">${r.name}</span><div class="bar" style="--rc:${r.col}"><i style="width:${(r.p * 100).toFixed(0)}%"></i></div><b>${Math.round(r.p * 100)}%</b>`).join('');
+    const odds = rarityOdds(S);
+    $('hornOdds').innerHTML = visibleRarities(S).map((r, i) => `<span style="color:${r.col}">${r.name}</span><div class="bar" style="--rc:${r.col}"><i style="width:${((odds[i] || 0) * 100).toFixed(1)}%"></i></div><b>${((odds[i] || 0) * 100).toFixed(1).replace(/\.0$/, '')}%</b>`).join('');
     const left = PITY_AT - (S.hornPity || 0);
     $('hornPity').textContent = left > 0 ? `${left} more horn${left > 1 ? 's' : ''} below Epic and the next one is Epic or better, guaranteed.` : 'The next horn is Epic or better, guaranteed.';
   }
   function renderColl() {
-    const cols = [...RARITY.map((_, i) => i), 'g'], colName = r => r === 'g' ? 'Gold' : RARITY[r].name, colCol = r => r === 'g' ? '#ffd54a' : RARITY[r].col;
+    const cols = [...visibleRarities(S).map((_, i) => i), 'g'], colName = r => r === 'g' ? 'Gold' : RARITY[r].name, colCol = r => r === 'g' ? '#ffd54a' : RARITY[r].col;
     let n = 0, html = '<span></span>' + cols.map(r => `<span class="hd" style="--rc:${colCol(r)}" title="${colName(r)}">${colName(r).slice(0, 4)}</span>`).join('');
     for (const f of FAMS) {
       html += `<span class="fam">${f}</span>`;
@@ -2606,6 +2567,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
         html += `<div class="hcell${c ? '' : ' locked'}" style="--rc:${colCol(r)}" title="${c ? c.name : 'Not found yet'}">${hornSVG(collHorn(f, r), 40, 'c' + f + r)}${c ? `<em>×${c.n}</em>` : ''}</div>`;
       }
     }
+    $('hornColl').style.setProperty('--rarity-columns', cols.length);
     $('hornColl').innerHTML = html;
     setT('collCount', `${n} / ${FAMS.length * cols.length}`);
   }
@@ -2620,17 +2582,29 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     const id = +btn.dataset.id, h = S.horns.find(x => x.id === id);
     if (!h) return;
     if (btn.dataset.act === 'eq') {
-      const i = S.equipped.indexOf(id);
-      if (i >= 0) S.equipped.splice(i, 1);
-      else if (S.equipped.length >= hornSlots()) { whisper(`You can only wear ${hornSlots()} horn${hornSlots() > 1 ? 's' : ''}. Take one off first, or build a bigger rack.`); return; }
-      else S.equipped.push(id);
+      if (S.hornInventory.autoEquip) return;
+      const eq = h.r === PRIMORDIAL ? S.primordialEquipped : S.equipped;
+      const slots = h.r === PRIMORDIAL ? primordialSlots(S) : hornSlots();
+      const i = eq.indexOf(id);
+      if (i >= 0) eq.splice(i, 1);
+      else if (eq.length >= slots) { whisper(`You can only wear ${slots} ${h.r === PRIMORDIAL ? 'Primordial ' : ''}horn${slots === 1 ? '' : 's'} here. Take one off first, or upgrade this rack.`); return; }
+      else eq.push(id);
     } else {
       if (!salvageArmed[id] || Date.now() - salvageArmed[id] > 3000) { salvageArmed[id] = Date.now(); btn.textContent = 'Click again to salvage'; return; }
       S.horns.splice(S.horns.indexOf(h), 1);
-      const i = S.equipped.indexOf(id); if (i >= 0) S.equipped.splice(i, 1);
+      for (const eq of [S.equipped, S.primordialEquipped]) { const i = eq.indexOf(id); if (i >= 0) eq.splice(i, 1); }
       S.ivory += RARITY[h.r].ivory; S.stats.ivoryLife += RARITY[h.r].ivory;
     }
-    refreshAll(); hornsDirty = true; updateUI();
+    applyAutoEquip(S); refreshAll(); save(); hornsDirty = true; updateUI();
+  });
+  $('hornInventoryRules').addEventListener('change', e => {
+    const input = e.target, settings = S.hornInventory;
+    if (input.id === 'hornAutoEquip') settings.autoEquip = input.checked;
+    else if (input.id === 'hornEquipFocus') settings.focus = input.value;
+    else if (input.id === 'hornSalvageGilded') settings.gilded = input.checked;
+    else if (input.dataset.salvageR != null) settings.salvage[+input.dataset.salvageR] = input.checked;
+    else return;
+    applyAutoEquip(S); refreshAll(); save(); updateUI();
   });
 
   // =====================================================================
@@ -2725,17 +2699,15 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
       const r = Math.random();
       if (r < 0.08) fall = 1; else if (r < 0.18) rubble = 1; else if (r < 0.30) vein = Math.max(1, Math.ceil(got * 0.25));
     }
-    const keep = {
-      depth: S.depth + 1 + fall, fossils: S.fossils + got + vein, fossilsTotal: S.fossilsTotal + got + vein, strata: S.strata,
-      lumen: S.lumen, lumenTotal: S.lumenTotal, illum: S.illum, toggles: S.toggles, idleRate: S.idleRate, lumenIdle: S.lumenIdle,
-    };
-    Object.assign(S, freshCave(), keep);
+    resetDescent(S, got, fall, vein);
     S.rubble = rubble;
     // The next floor: from depth 3 it has a character, and now and then it is a Sunvein.
     S.floor = 'still'; S.giltFloor = 0;
     if (S.depth >= 3) {
       if (Math.random() < sunChance(opts && opts.goldBonus || 0)) {
-        S.floor = 'sunvein'; S.gilt += GILT_LUMP; S.giltFloor = GILT_LUMP; S.stats.giltLife += GILT_LUMP; S.stats.sunveins++;
+        S.floor = 'sunvein';
+        const arrival = sunveinArrival(GILT_LUMP, HB.traits.golden || 0);
+        S.gilt += arrival; S.giltFloor = arrival; S.stats.giltLife += arrival; S.stats.sunveins++;
       } else S.floor = rollFloor();
     }
     S.cool = descentLock(); S.stats.descents++;
@@ -2770,12 +2742,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   function sound() {
     const q = S.sea, got = fathomGain();
     if (got <= 0) return;
-    const keep = {
-      unlocked: true, soundings: q.soundings + 1, fathoms: q.fathoms + got, fathomsTotal: q.fathomsTotal + got,
-      deep: q.deep, choir: q.choir, total: q.total, idleRate: q.idleRate, throws: q.throws,
-    };
-    S.stats.bestFathomHaul = Math.max(S.stats.bestFathomHaul, got);
-    S.sea = Object.assign(freshSea(), keep);
+    resetSounding(S, got);
     S.sea.lv.rain = S.sea.soundings + 2 * S.sea.deep.rain;
     S.sea.lv.light = S.sea.deep.light ? 1 : 0;
     for (const k of Object.keys(S.seen)) if (k.startsWith('v_') || k === 'canSound') delete S.seen[k];
@@ -2789,7 +2756,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   // ---------- the Heartstone: press and hold ----------
   let holding = false, holdT = 0;
   const heartBtn = $('heartBtn');
-  const canKindle = () => S.lumen >= heartCost() && S.depth >= heartDepth() && S.sea.soundings >= heartSea();
+  const canKindle = () => kindleReady(S, omen());
   const startHold = () => { if (canKindle() && !cinematic) { initAudio(); holding = true; } };
   const stopHold = () => { holding = false; };
   heartBtn.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
@@ -2808,14 +2775,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     whisper('The Heartstone wakes. Every crystal sings at once, and then the floor gives way.');
     $('veil').classList.add('on');
     setTimeout(() => {
-      const keep = {
-        total: S.total, world: 'sea', hearts: S.hearts + 1,
-        horns: S.horns, coll: S.coll, hornQueue: S.hornQueue, hornPlan: S.hornPlan, hornAuto: S.hornAuto, gilt: S.gilt, goldUp: S.goldUp, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
-        ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, ts: S.ts, numfmt: S.numfmt, finale: S.finale, quests: S.quests, shouts: S.shouts, tab: 'sea',
-        lore: S.lore, feats: S.feats, stats: S.stats,
-      };
-      keep.sea.unlocked = true;
-      S = Object.assign(fresh(), keep);
+      S = resetHeartstone(S, VERSION);
       S.omen = rollOmen();
       for (const k of Object.keys(S.seen)) if (k.startsWith('u_') || k === 'canDescend') delete S.seen[k];
       const h = gainHorn(2);
@@ -3183,7 +3143,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
       html += '</div>';
     });
     $('chronStory').innerHTML = html;
-    const st = S.stats, held = RARITY.map((r, i) => S.horns.filter(h => h.r === i).length);
+    const st = S.stats, held = visibleRarities(S).map((r, i) => S.horns.filter(h => h.r === i).length);
     const rows = [
       ['Time played', fmtDur(st.playSec || 0)],
       ['Shouts', fmt(S.shouts)], ['Stones thrown', fmt(S.sea.throws)],
@@ -3192,7 +3152,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
       ['Crystals fused', fmt(st.fuses)], ['Biggest chord', st.maxChord], ['Gong booms', fmt(st.booms)],
       ['Shards shed', fmt(st.shards)], ['Crossings rung', fmt(st.crossings)], ['Pearls opened', fmt(st.pearls)],
       ['Horns found', fmt(st.hornsFound)], ['Horns held', S.horns.length],
-      ...RARITY.map((r, i) => [`${r.name} horns held`, held[i]]),
+      ...visibleRarities(S).map((r, i) => [`${r.name} horns held`, held[i]]),
       ['The Song', S.finale ? new Date(S.finale).toLocaleDateString() : 'Unsung'],
       ['Feats', `${got} / ${FEATS.length}`], ['Pages', `${pages} / ${LORE.length}`],
     ];
@@ -3441,21 +3401,7 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
   // =====================================================================
   // persistence
   // =====================================================================
-  function serialize() {
-    const q = S.sea;
-    return {
-      ...S,
-      crystals: S.crystals.map(c => ({ t: c.t, x: c.x, y: c.y, strain: c.strain || 0 })),
-      wonders: S.wonders.map(o => ({ k: o.k, x: o.x, y: o.y, charge: o.charge || 0 })),
-      sea: {
-        ...q,
-        bells: q.bells.map(b => ({ bt: b.bt, x: b.x, y: b.y })),
-        oysters: q.oysters.map(o => ({ oy: 1, x: o.x, y: o.y, wash: o.wash || 0 })),
-        objs: q.objs.map(o => ({ pk: o.pk, x: o.x, y: o.y })),
-      },
-      saved: Date.now(),
-    };
-  }
+  const serialize = () => serializeState(S);
   let noSave = false; // set while the page reloads into an imported save, so the old state doesn't overwrite it
   // On phones and tablets, a small dismissible note that the game is made for a computer. Remembered per device, outside the save.
   function initDeviceNote() {
@@ -3523,96 +3469,18 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     location.reload();
     return true;
   }
-  function mergeObj(def, got) { return Object.assign(def, got && typeof got === 'object' ? got : {}); }
-  function fixArr(a) { const r = Array.isArray(a) ? a.slice(0, 4) : []; while (r.length < 4) r.push(0); return r; }
-  // 1.1.0 soft-capped four multipliers and shrank Wide Cavern. Levels past the knee now give about half
-  // the bonus, and each Wide Cavern level gives 3 slots instead of 4, so hand back that share of what was spent.
-  function migrate(d, from) {
-    if (cmpVer(from, '1.1.0') >= 0) return null;
-    const spent = (base, g, from0, to) => { let t = 0; for (let i = from0; i < to; i++) t += Math.ceil(base * Math.pow(g, i)); return t; };
-    const lost = b => 1 - Math.log(1 + (b - 1) / 2) / Math.log(b);
-    const n = v => Math.max(0, Math.floor(+v || 0));
-    const st = d.strata || {}, il = d.illum || {}, sea = d.sea || {}, dp = sea.deep || {};
-    const fossils = Math.round(lost(1.3) * spent(2, 1.9, KNEE, n(st.old)) + 0.25 * spent(5, 2.4, 0, n(st.wide)));
-    const lumen = Math.round(lost(1.3) * spent(8, 2.3, KNEE, n(il.lantern)) + lost(1.35) * spent(12, 2, KNEE, n(il.silk)));
-    const fathoms = Math.round(lost(1.3) * spent(2, 1.9, KNEE, n(dp.current)));
-    if (!(fossils || lumen || fathoms)) return null;
-    d.fossils = n(d.fossils) + fossils;
-    d.lumen = (+d.lumen || 0) + lumen;
-    if (d.sea) d.sea.fathoms = n(d.sea.fathoms) + fathoms;
-    return { fossils, lumen, fathoms };
-  }
   function load(data) {
     let d = data && typeof data.hum === 'number' ? data : null;
-    if (!d) { try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { d = null; } }
+    if (!d) { try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) {} }
     if (!d || typeof d.hum !== 'number') return null;
-    const from = d.ver || '1.0.0';
-    // A save loaded on purpose already made its own backup of what it replaced, so only back up on a real update.
     let imported = false;
     try { imported = sessionStorage.getItem('gc-fresh-import') === '1'; sessionStorage.removeItem('gc-fresh-import'); } catch (_) {}
-    if (!imported && cmpVer(from, VERSION) < 0) { try { backupNow(JSON.stringify(d)); } catch (_) {} }
-    const refund = migrate(d, from);
-    const f = fresh();
-    S = Object.assign(f, d);
-    S.ver = VERSION;
-    S.seenVer = d.seenVer || from;
-    S.refund = refund || d.refund || null;
-    S.hornPity = Math.max(0, +d.hornPity || 0);
-    for (const k of ['lv', 'strata', 'illum', 'toggles', 'wBought', 'hornUp']) S[k] = mergeObj(fresh()[k], d[k]);
-    S.bought = fixArr(d.bought); S.attune = fixArr(d.attune);
-    S.seen = d.seen || {};
-    S.lore = d.lore && typeof d.lore === 'object' ? d.lore : {};
-    S.feats = d.feats && typeof d.feats === 'object' ? d.feats : {};
-    S.stats = mergeObj(freshStats(), d.stats);
-    // Lifetime counters that older saves did not keep: start from what the save still knows.
-    S.stats.fossilsLife = Math.max(+S.stats.fossilsLife || 0, +d.fossilsTotal || 0);
-    S.stats.lumenLife = Math.max(+S.stats.lumenLife || 0, +d.lumenTotal || 0);
-    S.stats.ivoryLife = Math.max(+S.stats.ivoryLife || 0, +d.ivory || 0);
-    // Saves from before the Chronicle: rebuild what the stats can tell us.
-    S.stats.maxDepth = Math.max(S.stats.maxDepth, S.depth || 0);
-    S.stats.descents = Math.max(S.stats.descents || 0, S.stats.maxDepth);
-    if (Array.isArray(d.horns)) {
-      S.stats.hornsFound = Math.max(S.stats.hornsFound, d.horns.length);
-      for (const h of d.horns) if (h && RARITY[h.r]) S.stats.bestHorn = Math.max(S.stats.bestHorn, h.r);
-    }    if (!Array.isArray(S.crystals) || !S.crystals.length) S.crystals = fresh().crystals;
-    S.wonders = Array.isArray(S.wonders) ? S.wonders.filter(o => WONDERS[o.k]) : [];
-    S.horns = Array.isArray(S.horns) ? S.horns.filter(h => h && RARITY[h.r] && Array.isArray(h.lines)) : [];
-    S.coll = S.coll && typeof S.coll === 'object' && !Array.isArray(S.coll) ? S.coll : {};
-    S.hornQueue = Math.max(0, Math.min(9, Math.floor(+S.hornQueue) || 0));
-    S.hornAuto = !!S.hornAuto;
-    if (S.floor !== 'sunvein' && !FLOORS[S.floor]) S.floor = 'still';
-    if (S.depth < 3 && S.floor !== 'still') S.floor = 'still';
-    S.gilt = Math.max(0, +S.gilt || 0); S.giltFloor = Math.max(0, Math.min(GILT_CAP, +S.giltFloor || 0));
-    S.goldUp = { vein: Math.max(0, Math.min(4, Math.floor(+(S.goldUp && S.goldUp.vein)) || 0)), breath: Math.max(0, Math.min(5, Math.floor(+(S.goldUp && S.goldUp.breath)) || 0)) };
-    {
-      const pl = S.hornPlan;
-      const ok = pl && typeof pl === 'object' && RARITY[pl.ri] && Array.isArray(pl.lines) && pl.lines.length >= 1 && pl.lines.length <= 4
-        && pl.lines.every(l => l && HSTATS[l.stat] && typeof l.v === 'number') && Array.isArray(pl.perfs) && pl.perfs.length < pl.lines.length;
-      S.hornPlan = ok ? { ri: pl.ri, lines: pl.lines.map(l => ({ stat: l.stat, kind: l.kind, v: l.v })), perfs: pl.perfs.map(x => Math.max(0, Math.min(1, +x || 0))), ...(pl.gold ? { gold: true } : {}) } : null;
-    }
-    for (const h of S.horns) { if (!h.seed) h.seed = hash32(h.id * 0x9E3779B1 + h.r * 7919) || 1; }
-    for (const h of S.horns) { const k = famOf(h) + ':' + (h.gold ? 'g' : h.r); if (!S.coll[k]) noteColl(h); }
-    S.equipped = Array.isArray(S.equipped) ? S.equipped.filter(id => S.horns.some(h => h.id === id)).slice(0, hornSlots()) : [];
-    const fs = freshSea(), ds = d.sea || {};
-    S.sea = Object.assign(fs, ds);
-    for (const k of ['lv', 'deep', 'choir', 'pBought']) S.sea[k] = mergeObj(freshSea()[k], ds[k]);
-    S.sea.bought = fixArr(ds.bought); S.sea.tune = fixArr(ds.tune);
-    if (!Array.isArray(S.sea.bells) || !S.sea.bells.length) S.sea.bells = freshSea().bells;
-    S.sea.oysters = Array.isArray(S.sea.oysters) ? S.sea.oysters : [];
-    S.sea.objs = Array.isArray(S.sea.objs) ? S.sea.objs.filter(o => PEARLOBJ[o.pk]) : [];
-    if (S.world !== 'sea' || !S.sea.unlocked) S.world = 'cave';
-    if (!TABS.includes(S.tab)) S.tab = S.world;
-    if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
-    if (!['dark', 'light', 'system'].includes(S.theme)) S.theme = 'dark';
-    if (![0.9, 1, 1.15, 1.3].includes(S.ts)) S.ts = 1;
-    if (!['short', 'sci'].includes(S.numfmt)) S.numfmt = 'short';
-    S.finale = Math.max(0, +d.finale || 0);
-    if (!OMENS[S.omen]) S.omen = 'steady';
-    S.rubble = d.rubble ? 1 : 0;
-    S.cool = Math.max(0, +d.cool || 0);
-    S.age = Math.max(0, +d.age || 0); S.wind = d.wind ? 1 : 0;
-    S.quests = d.quests && typeof d.quests === 'object' ? d.quests : {};
-    return Math.min((Date.now() - (d.saved || Date.now())) / 1000, AWAY_CAP);
+    if (!imported && cmpVer(d.ver || '1.0.0', VERSION) < 0) backupNow(JSON.stringify(d));
+    const restored = restoreState(d, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, GILT_CAP, AWAY_CAP });
+    if (!restored) return null;
+    S = restored.state;
+    applyAutoEquip(S);
+    return restored.away;
   }
   function grantAway(seconds) {
     if (seconds < 20) return;
@@ -3781,6 +3649,9 @@ import { freshCave, freshSeaRun, freshSea, freshStats, createState } from './sta
     descend, sound, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
+    serialize, load, updateUI, setTab, rollPlan, buildHorn, startSounding, finishSounding, sndHit, renderSounding, renderInventory, renderColl, setHornSub,
+    primordialSlots: () => primordialSlots(S), rarityOdds: () => rarityOdds(S), traitValue, discoveryIvory: () => discoveryIvory(S), activeTraits: () => activeTraits(S),
+    get HB() { return HB; }, get sndRound() { return sndRound; },
     get sceneOpen() { return sceneOpen; }, get cinematic() { return cinematic; }, get capP() { return capP; },
     get chordNow() { return chordNow; },
   };

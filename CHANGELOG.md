@@ -8,6 +8,38 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.9.4: A Listening Rack (2026-10-08)
+
+### Added
+- Inventory now offers optional **auto-equip** with Balanced, Cave, or Sea priorities. A deterministic loadout scorer compares effective stat bonuses, caps, and Primordial traits across both independent racks. Balanced weights both worlds equally. It fills slots and swaps horns while the full score improves, preserves the existing choice on ties, and re-evaluates on new finds, horn upgrades, manual salvage, setting changes, and loading a save. Manual wear controls are available when auto-equip is off.
+- **Auto-salvage** selects individual rarities for newly acquired spare horns, after auto-equip chooses its loadout. Equipped horns are kept. Gilded horns require an additional permission and a matching rarity. Existing inventory is never swept when a filter is enabled. Primordial controls appear only after Rarity Weaving is maxed.
+- At full capacity, auto-equip keeps a newly equipped upgrade by salvaging the weakest unprotected spare. Worn horns and Gilded spares are protected (unless Gilded salvage is permitted for that rarity). If no spare can make room, the incoming horn is salvaged. With auto-equip disabled, the original full-inventory behavior remains.
+- Settings default to off and persist through saves, descents, sea soundings, and Heartstones. Discovery and salvage ivory remain separate. Rule tests and browser checks cover both racks, priorities, filtering, Gilded permission, capacity, and persistence. Prices and sounding difficulty are unchanged; pacing and feel await the user's manual playtest.
+
+## 1.9.3: Ivory Echoes (2026-10-08)
+
+### Added
+- Every newly found horn grants **5 ivory**, independently of keeping or salvaging it. Manual and auto sounding, extra horns, purchased calls, and progression rewards all use the same grant. Existing saved horns receive no retroactive discovery reward.
+- **Ivory Echo:** five persistent levels in the Horns shop add 5 discovery ivory each, up to 30 per horn. Initial costs: 25, 50, 100, 200, 400 ivory. The upgrade persists through descents and Heartstones.
+
+### Changed
+- Salvage payouts are now **3 / 10 / 35 / 75 / 250 / 500 ivory** for Common / Rare / Epic / Legendary / Mythic / Primordial. All salvage paths, including a full inventory, use these payouts. Gilded horns retain their base rarity's salvage value.
+- Discovery rewards are recorded once when a horn is created and included in lifetime ivory statistics. Reloading, equipping, inspecting, or later salvaging a horn does not pay its discovery reward again. The simulator also tracks salvage in lifetime ivory.
+
+## 1.9.2: The First Voice (2026-10-08)
+
+### Added
+- **Rarity Weaving:** ten ivory levels interpolate horn odds from the original distribution to Common 5%, Rare 25%, Epic 30%, Legendary 25%, Mythic 15%. The shop shows current and next odds; Sounding uses the same base probabilities. Pity still guarantees Epic or better.
+- **Awaken the First Voice:** hidden until Rarity Weaving is maxed, then a one-time 2,500 ivory purchase unlocks Primordial drops at 2% (Epic becomes 28%). Primordials have Mythic-strength stats and one passive trait, and can also be Gilded.
+- **Dedicated Primordial rack:** two slots on unlock; First Voice Rack adds a third for 4,000 ivory. Normal and Primordial slots are independent and persist through descents and Heartstones.
+- **Primordial traits:** Deep Memory (10% slower freshness decay), Resonance (other worn horns' stats +10%), Golden Echo (Sunvein arrival Gilt +25%), and Undertow (tide production +15%). These are the average-performance effects. Duplicate traits use the strongest worn copy; Resonance cannot boost itself or other traits.
+- **Primordial sounding:** 35% narrower timing windows, slightly faster needles, and 6–8 second lead-ins per note, without timeout failures. Overall performance continuously scales trait effects from 50% to 150% of base. At 90% or better, choose the trait; otherwise it is random. Auto uses average strength and a random trait. Pending trait choices survive reload.
+
+### Changed
+- Save handling, horn rules, and progression resets live in independent modules; storage keys, backups, imports, and existing horn stats remain compatible.
+- Fast simulations skip canvas painting and manage both racks, scoring unique traits and protecting all equipped horns from salvage. Rule and desktop/mobile browser checks cover the new progression and saved choices.
+- Initial Rarity Weaving prices are `ceil(25 × 1.65^level)` ivory (5,720 total). These prices and sounding difficulty are first-pass tuning.
+
 ## 1.9.1: Text That Scales (2026-10-09)
 
 ### Fixed
