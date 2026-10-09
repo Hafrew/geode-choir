@@ -15,7 +15,7 @@ const KEY = 'geode-choir-v1';
         await page.addInitScript(key => {
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
-          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.5', seenVer: '1.9.5', hum: 1, hornsOn: true,
+          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.5', seenVer: '1.10.1', hum: 1, hornsOn: true,
             ivory: 50000, lore: { prologue: 1 }, saved: Date.now(), horns: [
               { id: 1, r: 0, name: 'Plain Ram Horn', seed: 1, lines: [{ stat: 'hum', kind: 'pct', v: 20 }] },
               { id: 2, r: 4, name: 'Radiant Kudu Horn', seed: 2, lines: [{ stat: 'hum', kind: 'pct', v: 1 }] },

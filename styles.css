@@ -455,3 +455,22 @@
   #caveAutoReserves label { display: flex; flex-direction: column; gap: 5px; }
   #caveAutoReserves input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; color: var(--text); background: var(--slab); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
   #caveAutoCategories input { accent-color: var(--fathom); }
+
+/* Shell sounding keeps a steady target, including with reduced motion. */
+.shell-call { border: 1px solid var(--line, #d9d5e0); border-radius: 16px; padding: 16px; margin: 14px 0; }
+.shell-call button, .shell-card button { min-height: 44px; margin: 4px; padding: 8px 12px; font: inherit; color: var(--text); background: var(--slab-2); border: 1px solid var(--line-2); border-radius: 8px; cursor: pointer; }
+.shell-call button:focus-visible, .shell-card button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+.shell-call button[aria-disabled="true"], .shell-card button:disabled { opacity: .5; cursor: default; }
+.shell-card b { white-space: normal; }
+.shell-card { display: block; }
+.shell-track { height: 32px; border-radius: 16px; background: #dedbe7; position: relative; margin: 20px 12px; }
+.shell-target { position: absolute; height: 100%; left: 50%; transform: translateX(-50%); background: #88c6ba; border-radius: 12px; }
+.shell-track i { position: absolute; width: 4px; height: 44px; top: -6px; background: #352e48; transform: translateX(-50%); }
+.shell-spin { display: inline-block; animation: shell-reveal .7s ease-out; }
+@keyframes shell-reveal { from { transform: rotate(-360deg); } to { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .shell-spin { animation: none; } }
+
+.shell-art { display: block; width: min(100%, 180px); height: auto; margin: 0 auto 8px; }
+.shell-call-art { float: right; width: 140px; margin: 0 0 8px 16px; }
+.shell-call::after { content: ''; display: block; clear: both; }
+@media (max-width: 520px) { .shell-call-art { float: none; width: 160px; margin: 0 auto; } }
