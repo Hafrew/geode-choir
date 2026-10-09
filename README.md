@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a static browser game with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.9.5**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.9.7**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
@@ -27,6 +27,7 @@ After two Heartstones, **Strata → Patient Choir** unlocks permanently for **10
 - `src/state.js`: independent factories for fresh cave, sea, and lifetime state. `createState(version)` takes the release version explicitly.
 - `src/automation.js`: cave shop category rules, currency reserves, and saved automation defaults.
 - `src/horns.js`: rarity curves, seeded horn rolling, stat/trait effects, dedicated rack rules, inventory automation, save normalization, and sounding difficulty.
+- `src/seashells.js`: shell discovery/scoring, dedicated slots, fixed sounding discounts, pending completion, and normalization. Discovery/UI remain planned.
 - `src/saves.js`: serialization, compatibility migration, and restoration without DOM or storage access.
 - `src/progression.js`: descent/sea rewards and thresholds, Heartstone eligibility and state resets, plus trait-aware decay/Gilt rules.
 - `src/main.js`: initialization, the game loop, gameplay orchestration, rendering, audio, and UI. Canvas, audio, and UI extraction remains a later refactor.
@@ -40,10 +41,11 @@ Browser checks and simulations require Node and Playwright. Install Playwright w
 
 ```bash
 node tools/smoke.js
-node --test tools/horns.test.mjs tools/automation.test.mjs
+node --test tools/horns.test.mjs tools/automation.test.mjs tools/seashells.test.mjs
 node tools/horns-smoke.js
 node tools/horn-inventory-smoke.js
 node tools/qol-smoke.js
+node tools/seashells-smoke.js
 node tools/sim/run.js --hours 0.1 --seed 1 --out /tmp/geode-smoke.json
 ```
 

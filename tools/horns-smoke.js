@@ -15,7 +15,7 @@ const KEY = 'geode-choir-v1';
         await page.addInitScript(key => {
           window.__raf = []; window.requestAnimationFrame = cb => { window.__raf.push(cb); return 0; };
           window.__geodeSimulation = { fast: false, items: [] };
-          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.5', seenVer: '1.9.5', hum: 1, hornsOn: true, ivory: 30000, lore: { prologue: 1 }, saved: Date.now() }));
+          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.5', seenVer: '1.9.7', hum: 1, hornsOn: true, ivory: 30000, lore: { prologue: 1 }, saved: Date.now() }));
         }, KEY);
         await page.goto(server.url);
         await page.waitForFunction(() => !!window.__geodeSimulation?.api);
