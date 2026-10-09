@@ -3,7 +3,7 @@
 // Source of the in-page function is exported as a string so run.js can inject it.
 module.exports = function installBot(cfg) {
   const sim = window.__sim;
-  const CAVE = new Set(['shopCrystals', 'shopVoices', 'shopTuning', 'shopWonders', 'shopAttune', 'shopStrata', 'shopGlow', 'shopHorns']);
+  const CAVE = new Set(['shopCrystals', 'shopVoices', 'shopTuning', 'shopWonders', 'shopAttune', 'shopStrata', 'shopGlow', 'shopHorns', 'shopGold']);
   const SEA = new Set(['shopBells', 'shopSeaVoices', 'shopSeaTuning', 'shopOysters', 'shopPearlObjs', 'shopBellTune', 'shopDeep', 'shopChoir', 'shopHorns']);
   const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, budget: 0 };
   const strip = h => String(h).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
@@ -26,6 +26,7 @@ module.exports = function installBot(cfg) {
     if (/^Glowworm/.test(n)) return 3;
     if (/^(Patient Hands|Crystal Seeker|Sinking Stone|Carry Wonders|Pale Lighthouse)/.test(n)) return 6;
     if (/^(Horn Rack|Keen Ear|Whetstone|Branching|Open the Ceiling|Listening Stones)/.test(n)) return 3;
+    if (/^(Rich Vein|Gilded Breath)/.test(n)) return 3;
     if (/^Oyster/.test(n)) return 2;
     const tier = ['Quartz', 'Amethyst', 'Citrine', 'Moonstone', 'Tin Bell', 'Bronze Bell', 'Silver Bell', 'Abyssal Bell'].findIndex(x => n.startsWith(x));
     if (tier >= 0) return [1, 1.2, 1.5, 2][tier % 4];

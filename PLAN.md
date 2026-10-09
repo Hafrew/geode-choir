@@ -80,11 +80,11 @@ EV neutrality:
 
 Sim impact: the bot uses auto. Add an assertion that horn stat totals match the old averages over many seeded rolls.
 
-## Phase 4: Floor identities, Golden Floor and biomes (1.9.0)
+## Phase 4: Floor identities, Sunvein and biomes (1.9.0, done)
 
 **Floor identities.** Rolled on arrival (from depth ~3), shown in the Descend chip and the cave header, stored as `S.floorId`. Examples: *Echoing* (shards x2, hum x0.85), *Glowworm bloom* (lumen x1.6, shards x0.8), *Cracked* (more fossil veins, slower decay), *Still* (steady, no modifiers). Each table averages 1.0 on income so the finish time doesn't move. They sit alongside the existing descent surprises (rubble, vein, double fall). The Chronicle records the identities you've met.
 
-**Golden Floor** (name is a placeholder; alternatives: *Sunvein*, *Gilded Hollow*, *Aurelian Floor*). A rare floor that can replace the normal roll on arrival.
+**Sunvein** (the Golden Floor; named *Sunvein*). A rare floor that can replace the normal roll on arrival.
 - **Chance:** 5% by default. Each Golden Horn you own (equipped or not) adds +2%, capped at 15% from that source. A successful Risky Descent adds a flat +10% to that one roll on top of the cap (25% at most).
 - **On a Golden Floor, base effects:** decay is 25% slower (decay rate x0.75), fossils from that floor get **+10%**, and **50%** of horn soundings there are Golden Horns.
 - **Golden upgrades** can only be bought while standing on a Golden Floor, and their levels persist:

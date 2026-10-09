@@ -31,6 +31,7 @@
     --fathom: #9aa7ff;
     --ivory: #f6efe2;
     --heart: #ff8fa3;
+    --gilt: #ffd54a;
     --warn: #ff9f8f;
     --stage: #07060b;
     --glass: rgba(10, 8, 16, .72);
@@ -53,7 +54,7 @@
     --ground: #eceef2; --slab: #ffffff; --slab-2: #f4f2f8; --line: #d9d5e2; --line-2: #b8b0cc;
     --text: #1c1726; --muted: #5f586e;
     --hum: #9a5f0c; --echo: #0d7f76; --amethyst: #7447d0; --shard: #8a4fd3; --fossil: #7d5f2c; --lumen: #2463c4;
-    --tide: #11768a; --pearl: #7a6a50; --fathom: #4351c4; --ivory: #7f6f4d; --heart: #c2365a; --warn: #b8402c;
+    --tide: #11768a; --pearl: #7a6a50; --fathom: #4351c4; --ivory: #7f6f4d; --gilt: #a8780a; --heart: #c2365a; --warn: #b8402c;
     --stage: #cfd1d8; --glass: rgba(255, 255, 255, .8); --hint: rgba(28, 23, 38, .55); --shadow: rgba(255, 255, 255, .9);
     --text-2: #3a3448; --panel-a: #ffffff; --panel-b: #f1eef7;
     --heart-a: #fff3f6; --heart-b: #fbe7ed; --heart-line: #e6b3c2; --hold: #fde8ee; --hold-line: #d88aa3;
@@ -160,7 +161,7 @@
   .pill { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--slab); border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
   .pill b { font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; }
   .pill.shard b { color: var(--shard); } .pill.fossil b { color: var(--fossil); } .pill.lumen b { color: var(--lumen); }
-  .pill.pearl b { color: var(--pearl); } .pill.fathom b { color: var(--fathom); } .pill.heart b { color: var(--heart); } .pill.ivory b { color: var(--ivory); }
+  .pill.pearl b { color: var(--pearl); } .pill.fathom b { color: var(--fathom); } .pill.heart b { color: var(--heart); } .pill.gilt b { color: var(--gilt); } .pill.ivory b { color: var(--ivory); }
 
   .tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--line); }
   .tab { position: relative; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 9px 9px; margin-bottom: -1px; cursor: pointer; }
@@ -200,7 +201,7 @@
   .item .cs { font-family: var(--mono); font-size: 13px; color: var(--hum); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .item .cs small { font-family: var(--body); font-size: 11px; opacity: .8; }
   .item .cs.shard { color: var(--shard); } .item .cs.fossil { color: var(--fossil); } .item .cs.lumen { color: var(--lumen); }
-  .item .cs.tide { color: var(--tide); } .item .cs.pearl { color: var(--pearl); } .item .cs.fathom { color: var(--fathom); } .item .cs.ivory { color: var(--ivory); }
+  .item .cs.tide { color: var(--tide); } .item .cs.pearl { color: var(--pearl); } .item .cs.fathom { color: var(--fathom); } .item .cs.ivory { color: var(--ivory); } .item .cs.gilt { color: var(--gilt); }
   .item .cs.state { color: var(--echo); font-family: var(--body); font-weight: 600; font-size: 12px; }
   .item .cs.state.off { color: var(--muted); }
   .item .ds { grid-column: 2 / 4; font-size: 12.5px; color: var(--muted); line-height: 1.35; }
@@ -295,7 +296,9 @@
   .hodds .bar { height: 5px; }
   .hodds .bar i { background: var(--rc); }
   .hodds b { font-family: var(--mono); font-weight: 600; }
-  .hcoll { display: grid; grid-template-columns: 62px repeat(5, minmax(0, 1fr)); gap: 6px; align-items: center; }
+  .ftag { color: var(--hum); font-weight: 600; } .ftag.gold { color: var(--gilt); }
+  .gold { color: var(--gilt); }
+  .hcoll { display: grid; grid-template-columns: 62px repeat(6, minmax(0, 1fr)); gap: 6px; align-items: center; }
   .hcoll .hd { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; text-align: center; color: var(--rc); }
   .hcoll .fam { font-size: 11px; color: var(--muted); text-transform: capitalize; }
   .hcell { --rc: var(--line-2); display: flex; align-items: center; justify-content: center; position: relative; aspect-ratio: 1; border-radius: 10px;
@@ -474,6 +477,7 @@
         <div class="bar"><i id="descBar"></i></div>
         <p id="descText"></p>
         <p id="freshText" class="note"></p>
+      <p id="floorText" class="note"></p>
         <button class="bigbtn" id="windBtn" type="button" hidden>Second Wind</button>
         <button class="bigbtn poor" id="descBtn" type="button">Descend</button>
       </section>
@@ -515,6 +519,7 @@
         <span class="pill pearl" id="pillPearl" data-tip="pearl" tabindex="0" hidden><b id="pearlVal">0</b> pearls</span>
         <span class="pill fathom" id="pillFathom" data-tip="fathom" tabindex="0" hidden><b id="fathomVal">0</b> fathoms</span>
         <span class="pill ivory" id="pillIvory" data-tip="ivory" tabindex="0" hidden><b id="ivoryVal">0</b> ivory</span>
+        <span class="pill gilt" id="pillGilt" data-tip="gilt" tabindex="0" hidden><b id="giltVal">0</b> gilt</span>
         <span class="pill heart" id="pillHeart" data-tip="hearts" tabindex="0" hidden><b id="heartVal">0</b> Heartstones</span>
       </div>
     </header>
@@ -563,6 +568,11 @@
         <h2>Strata</h2>
         <p class="note">Fossils are what you carry down when you descend. Strata never reset until a Heartstone is kindled.</p>
         <div class="list" id="shopStrata"></div>
+      </section>
+      <section id="goldSec" hidden>
+        <h2 style="color:var(--gilt)">The Sunvein</h2>
+        <p class="note" id="goldNote"></p>
+        <div class="list" id="shopGold"></div>
       </section>
     </div>
     <div class="panel" id="panel-glow" role="tabpanel" hidden>
@@ -662,8 +672,8 @@
       </div>
       <div class="hsec" data-sub="collection" hidden>
         <section>
-          <h2>Collection <span id="collCount">0 / 40</span></h2>
-          <p class="note">One design for every shape and rarity. Finding a horn, even one you salvage at once, adds it here.</p>
+          <h2>Collection <span id="collCount">0 / 48</span></h2>
+          <p class="note">One design for every shape and rarity, and a gilded one for each shape. Finding a horn, even one you salvage at once, adds it here.</p>
           <div class="hcoll" id="hornColl"></div>
         </section>
       </div>
@@ -819,9 +829,16 @@
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.8.2';
+  const VERSION = '1.9.0';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.9.0', date: '2026-10-09', head: 'The Sunvein', items: [
+      'Every floor from depth 3 down now has a character. A floor can be Still, Echoing, Hushed, a Glowworm Bloom or Cracked, and each shifts what the floor gives (hum, lumen, shards, fossils) and how fast it fades. They are balanced so that on average a floor is worth what it always was. You see yours beside the depth, and in the Descend panel.',
+      'Sometimes a descent lands on a Sunvein, a floor shot through with gold: 5% of the time, plus 2% for every Golden Horn you own, up to 15%. On a Sunvein the fade is 25% slower, fossils from that floor are +10%, and about half the horns you sound there come out Gilded: a golden look and a further x1.25 on their stats.',
+      'A Sunvein also pays Gilt, a new currency that only comes while you stand on one and is never lost. Spend it on the Sunvein section of Strata, and only while you are on a Sunvein: Rich Vein (fossils +10% up to +30%) and Gilded Breath (Gilded horns 50% up to 100% of the time).',
+      'The caves now have biomes: every 4 depths the stone changes colour and name (Quartz Hollow, Moss Vaults, Ember Galleries, Brine Caverns, Ashen Deeps, Rose Grotto). Kindling a Heartstone starts again from the Quartz Hollow.',
+      'The Collection has a gold column for each shape.',
+    ] },
     { ver: '1.8.2', date: '2026-10-09', head: 'A Note for Phones', items: [
       'On a phone or tablet, a small note at the top now says the game is made to be played on a computer. It plays fine on a touch screen, but a mouse and a wide window suit it best. Tap Got it to hide the note; it stays hidden on that device.',
     ] },
@@ -1011,6 +1028,7 @@
   });
   const fresh = () => ({
     ...freshCave(), total: 0, world: 'cave', hearts: 0,
+    floor: 'still', gilt: 0, giltFloor: 0, goldUp: { vein: 0, breath: 0 },
     horns: [], coll: {}, hornQueue: 0, hornPlan: null, hornAuto: false, equipped: [], hornPity: 0, hornSeq: 0, hornBuys: 0, hornsOn: false, hornTimer: 360, ivory: 0,
     hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
     sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', saved: Date.now(), shouts: 0, tab: 'cave',
@@ -1018,7 +1036,7 @@
     ver: VERSION, seenVer: VERSION, refund: null, numfmt: 'short', finale: 0, omen: 'steady', rubble: 0, cool: 0, quests: {},
   });
   function freshStats() {
-    return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0, shafts: 0, rockfalls: 0, veins: 0, descents: 0,
+    return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0, shafts: 0, rockfalls: 0, veins: 0, descents: 0, sunveins: 0, giltLife: 0,
       fossilsLife: 0, lumenLife: 0, ivoryLife: 0, bestRate: 0, bestTide: 0, bestLumenRate: 0, bestHaul: 0, bestFathomHaul: 0 };
   }
   let S = fresh();
@@ -1078,7 +1096,7 @@
   // Each Heartstone unlocks something that offsets it. Descending or kindling starts a fresh floor.
   const DECAY_TAU = 600;
   const decayFloor = () => 0.15 + (S.hearts >= 1 ? 0.15 : 0) + 0.05 * Math.max(0, S.hearts - 3);
-  const decayTau = () => DECAY_TAU * (S.hearts >= 2 ? 2 : 1) * (1 + 0.25 * Math.max(0, S.hearts - 3));
+  const decayTau = () => DECAY_TAU * (S.hearts >= 2 ? 2 : 1) * (1 + 0.25 * Math.max(0, S.hearts - 3)) * floorTau();
   const freshAt = t => { const f = decayFloor(); return f + (1 - f) * Math.exp(-t / decayTau()); };
   const freshAvg = (t0, t1) => {
     if (t1 - t0 < 1e-6) return freshAt(t0);
@@ -1094,6 +1112,45 @@
   const nextOffset = () => HOFFSETS[Math.min(S.hearts, HOFFSETS.length - 1)];
   const windReady = () => S.hearts >= 3 && !S.wind;
   let decayF = 1;
+
+  // ---------------------------------------------------------------------
+  // floor identities, the Sunvein, and biomes
+  // ---------------------------------------------------------------------
+  // From depth 3 each floor has a character. The multipliers are scaled so that, weighted by how often each turns up,
+  // hum, lumen, shards and fossils average exactly 1.0 over many floors: a floor is worth what it always was, but not every floor is the same.
+  const FLOORS = {
+    still:   { name: 'Still',          p: 0.28, hum: 1,    lumen: 1,   shards: 1,   fossils: 1,    tau: 1,    text: 'Nothing sets this floor apart.' },
+    echoing: { name: 'Echoing',        p: 0.18, hum: 1.25, lumen: 1,   shards: 0.9, fossils: 1,    tau: 0.75, text: 'Every echo carries further, and fades sooner.' },
+    hushed:  { name: 'Hushed',         p: 0.18, hum: 0.85, lumen: 1,   shards: 1,   fossils: 1.1,  tau: 1.4,  text: 'A quiet floor that keeps its voice.' },
+    bloom:   { name: 'Glowworm Bloom', p: 0.18, hum: 0.9,  lumen: 1.6, shards: 0.8, fossils: 1,    tau: 1,    text: 'The ceiling is thick with light.' },
+    cracked: { name: 'Cracked',        p: 0.18, hum: 1,    lumen: 0.9, shards: 1.8, fossils: 0.95, tau: 1,    text: 'The stone sheds more than it should.' },
+  };
+  const FLOOR_N = {};
+  for (const k of ['hum', 'lumen', 'shards', 'fossils']) FLOOR_N[k] = 1 / Object.values(FLOORS).reduce((a, f) => a + f.p * f[k], 0);
+  const onSun = () => S.floor === 'sunvein';
+  const floorMod = k => (onSun() ? 1 : (FLOORS[S.floor] || FLOORS.still)[k] * FLOOR_N[k]);
+  const floorTau = () => (onSun() ? 1 / 0.75 : (FLOORS[S.floor] || FLOORS.still).tau);
+  const rollFloor = () => { let x = Math.random(); for (const k of Object.keys(FLOORS)) { if (x < FLOORS[k].p) return k; x -= FLOORS[k].p; } return 'still'; };
+  // The Sunvein: a rare gold floor. The chance rises with every Golden Horn you own; Risky Descents (later) add a flat bonus on top.
+  const SUN_BASE = 0.05, SUN_PER_HORN = 0.02, SUN_CAP = 0.15, GILT_RATE = 0.08, GILT_CAP = 45, GILT_LUMP = 5;
+  const goldHorns = () => S.horns.reduce((n, h) => n + (h.gold ? 1 : 0), 0);
+  const sunChance = (bonus = 0) => Math.min(SUN_CAP, SUN_BASE + SUN_PER_HORN * goldHorns()) + bonus;
+  const sunFossilBonus = () => 0.10 + 0.05 * S.goldUp.vein;
+  const goldHornChance = () => Math.min(1, 0.5 + 0.1 * S.goldUp.breath);
+  const BIOMES = [
+    { name: 'Quartz Hollow', hue: 268 }, { name: 'Moss Vaults', hue: 140 }, { name: 'Ember Galleries', hue: 18 },
+    { name: 'Brine Caverns', hue: 195 }, { name: 'Ashen Deeps', hue: 232 }, { name: 'Rose Grotto', hue: 330 },
+  ];
+  const biomeIdx = d => Math.floor(Math.max(0, d) / 4) % BIOMES.length;
+  const fmt2 = n => String(+n.toFixed(2));
+  function floorBlurb() {
+    const bi = BIOMES[biomeIdx(S.depth)].name;
+    if (onSun()) return `<b class="gold">Sunvein</b> in the ${bi}: the fade is 25% slower, fossils from this floor are +${Math.round(sunFossilBonus() * 100)}%, and horns you sound here are gilded ${Math.round(goldHornChance() * 100)}% of the time. Gilt this floor: <b class="gold">${Math.floor(S.giltFloor)} / ${GILT_CAP}</b>.`;
+    const f = FLOORS[S.floor] || FLOORS.still;
+    const d = [['hum', 'hum'], ['lumen', 'lumen'], ['shards', 'shards'], ['fossils', 'fossils']].map(([k, l]) => { const m = floorMod(k); return Math.abs(m - 1) > 0.02 ? `${l} ×${fmt2(m)}` : ''; }).filter(Boolean);
+    if (f.tau < 1) d.push('fades sooner'); else if (f.tau > 1) d.push('fades later');
+    return `<b>${f.name}</b> floor in the ${bi}. ${f.text}${d.length ? ' ' + d.join(', ') + '.' : ''}`;
+  }
   const QUESTS = [
     { id: 'settle', name: 'Settling In',          desc: 'Descend 6 times.',            have: () => S.stats.descents,   need: 6 },
     { id: 'horns',  name: 'Horn Collector',       desc: 'Find 8 horns.',               have: () => S.stats.hornsFound, need: 8 },
@@ -1105,7 +1162,7 @@
   // Gains from a long run bend: a bigger run is still worth more, but ever more slowly.
   const bend = r => r <= 1 ? 1 : Math.pow(r, 0.3662);
   const fossilGain = () => S.run < deepenAt() ? 0 :
-    Math.floor((1 + 0.5 * S.depth) * 2 * bend(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils);
+    Math.floor((1 + 0.5 * S.depth) * 2 * bend(S.run / deepenAt()) * Math.pow(1.25, S.strata.record) * HB.fossils * floorMod('fossils') * (onSun() ? 1 + sunFossilBonus() : 1));
   const maxCrystals = () => 8 + S.lv.chisel + 3 * S.strata.wide;
   const crackAt = () => 40 * Math.pow(0.8, S.strata.fault);
   const shardsOn = () => S.depth >= 3;
@@ -1157,8 +1214,8 @@
   function refreshK() {
     K = {
       ret: retainAt(S.lv.resonance), pol: polishAt(S.lv.polish), dm: humMult(), harm: S.lv.harmony,
-      att: S.attune.map(a => Math.pow(1.6, a)), crack: crackAt(), shards: shardsOn(), lm: lumenMult(),
-      crys: HB.crystal, wall: HB.wall, sh: HB.shards,
+      att: S.attune.map(a => Math.pow(1.6, a)), crack: crackAt(), shards: shardsOn(), lm: lumenMult() * floorMod('lumen'), fh: floorMod('hum'),
+      crys: HB.crystal, wall: HB.wall, sh: HB.shards * floorMod('shards'),
     };
   }
   function refreshSK() {
@@ -1251,6 +1308,7 @@
     pearl:  { get: () => S.sea.pearls,   set: v => { S.sea.pearls = v; } },
     fathom: { get: () => S.sea.fathoms,  set: v => { S.sea.fathoms = v; } },
     ivory:  { get: () => S.ivory,        set: v => { S.ivory = v; } },
+    gilt:   { get: () => Math.floor(S.gilt), set: v => { S.gilt = v; } },
   };
   const have = u => UNIT[u].get();
   function spend(u, c) { if (have(u) < c) return false; UNIT[u].set(have(u) - c); return true; }
@@ -1400,7 +1458,7 @@
   let secAcc = 0, idleAcc = 0, lumAcc = 0; let hist = [], ihist = [], lhist = [];
   let lumenRate = 0;
 
-  function caveHue() { return (268 - S.depth * 23 + 360) % 360; }
+  function caveHue() { if (onSun()) return 44; return (BIOMES[biomeIdx(S.depth)].hue + (S.depth % 4) * 7 - 10 + 360) % 360; }
   function echoHue() { return (172 + S.depth * 41) % 360; }
 
   function drawCaveBG() {
@@ -1418,6 +1476,11 @@
     if (LT) { grd.addColorStop(0, `hsl(${h}, 24%, 97%)`); grd.addColorStop(0.65, `hsl(${h}, 18%, 91%)`); grd.addColorStop(1, `hsl(${h}, 14%, 85%)`); }
     else { grd.addColorStop(0, `hsl(${h}, 30%, 13%)`); grd.addColorStop(0.65, `hsl(${h}, 28%, 8%)`); grd.addColorStop(1, `hsl(${h}, 26%, 5.5%)`); }
     b.fillStyle = grd; b.fill(path);
+    if (onSun()) {
+      const g2 = b.createRadialGradient(cx, cy, 10, cx, cy, Math.max(rx, ry));
+      g2.addColorStop(0, LT ? 'rgba(220,160,40,.18)' : 'rgba(255,205,90,.13)'); g2.addColorStop(1, 'rgba(255,205,90,0)');
+      b.fillStyle = g2; b.fill(path);
+    }
     b.save(); b.clip(path);
     for (let i = 0; i < 18; i++) {
       const y0 = cy - ry + (i / 18) * ry * 2 + R() * 10;
@@ -1512,7 +1575,7 @@
     // chordNow is counted once per frame, not once per hit
     const voices = Math.max(1, chordNow);
     const hm = 1 + 0.15 * K.harm * Math.min(voices - 1, 10);
-    const g = TIERS[c.t].value * K.att[c.t] * K.crys * e * w * K.pol * K.dm * decayF * hm;
+    const g = TIERS[c.t].value * K.att[c.t] * K.crys * e * w * K.pol * K.dm * K.fh * decayF * hm;
     gain(g, idle);
     c.pend = (c.pend || 0) + g;
     if (K.shards) {
@@ -1626,7 +1689,7 @@
           }
           const s = (r - 0.004) / d;
           p.x = cx + u * s * rx; p.y = cy + v * s * ry;
-          gain(0.15 * p.e * p.w * K.dm * K.wall * decayF, p.idle);
+          gain(0.15 * p.e * p.w * K.dm * K.fh * K.wall * decayF, p.idle);
           p.e *= ret;
         }
       }
@@ -2701,7 +2764,7 @@
     choir: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><path d="M3 12h24" stroke="#86d8e6" stroke-width="1" opacity=".5"/><polygon points="10,2 13,5 13,9 10,11 7,9 7,5" fill="#b58cff"/><polygon points="20,3 22,5 22,8 20,10 18,8 18,5" fill="#e3edf5"/><path d="M4 22q3-3 6 0t6 0 6 0 6 0" fill="none" stroke="#86d8e6" stroke-width="1.5"/></svg>`,
     stones: () => `<svg class="sw" viewBox="0 0 30 30" aria-hidden="true"><ellipse cx="10" cy="20" rx="6" ry="4" fill="#5b5566"/><ellipse cx="20" cy="19" rx="5" ry="3.5" fill="#6a6577"/><path d="M15 4v8M11 8l4 4 4-4" stroke="#ffcf86" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
   };
-  const UNIT_LABEL = { hum: '', tide: '', shard: ' shards', fossil: ' fossils', lumen: ' lumen', pearl: ' pearls', fathom: ' fathoms', ivory: ' ivory' };
+  const UNIT_LABEL = { hum: '', tide: '', shard: ' shards', fossil: ' fossils', lumen: ' lumen', pearl: ' pearls', fathom: ' fathoms', ivory: ' ivory', gilt: ' gilt' };
 
   const shopEls = [];
   // spec: { parent, icon, unit | unit(), name(), cost() -> number|null, desc(), show(), buy() -> bool, state()?, blocked()? }
@@ -2785,7 +2848,7 @@
     const costOf = () => Math.ceil(o.base * Math.pow(o.g, o.get()));
     const maxOf = () => typeof o.max === 'function' ? o.max() : (o.max ?? 1e9);
     addItem({
-      bulk: !o.single && maxOf() > 1,
+      bulk: !o.single && maxOf() > 1, blocked: o.blocked,
       parent: o.parent, icon: o.icon, unit: o.unit,
       show: () => {
         if (!o.gate) return o.show ? o.show() : true;
@@ -2798,6 +2861,7 @@
       desc: () => o.desc(o.get()),
       buy: () => {
         if (o.get() >= maxOf()) return false;
+        if (o.blocked && o.blocked()) return false;
         if (!spend(o.unit, costOf())) return false;
         o.inc(); if (o.onBuy) o.onBuy();
         return true;
@@ -2814,7 +2878,7 @@
       cost: () => crystalCost(t),
       blocked: () => S.crystals.length >= maxCrystals(),
       desc: () => S.crystals.length >= maxCrystals() ? 'The cave is full. Fuse twins, or chisel out more room.' :
-        `Rings for ${fmt(tier.value * K.att[t] * K.crys * K.pol * K.dm)} hum per echo`,
+        `Rings for ${fmt(tier.value * K.att[t] * K.crys * K.pol * K.dm * K.fh)} hum per echo`,
       buy: () => buyCrystal(t),
     }));
     const cv_ = (parent, k, name, icon, base, g, show, desc, extra = {}) => lvItem({
@@ -2990,6 +3054,13 @@
       parent: 'shopHorns', icon, unit: 'ivory', name, base, g, max, desc,
       get: () => S.hornUp[k], inc: () => { S.hornUp[k]++; },
     });
+    // ------------------------------- the Sunvein (gilt), bought only while standing on one
+    const gu = (k, name, icon, base, g, max, desc) => lvItem({
+      parent: 'shopGold', icon, unit: 'gilt', name, base, g, max, desc: l => desc(l) + (onSun() ? '' : ' Buy only on a Sunvein.'),
+      get: () => S.goldUp[k], inc: () => { S.goldUp[k]++; }, show: () => S.stats.sunveins > 0, blocked: () => !onSun(),
+    });
+    gu('vein', 'Rich Vein', ICONS.gem('#ffd54a'), 6, 1.8, 4, l => `Fossils from a Sunvein +${10 + 5 * l}% → +${10 + 5 * (l + 1)}%.`);
+    gu('breath', 'Gilded Breath', ICONS.horn('#ffd54a'), 8, 1.7, 5, l => `Horns sounded on a Sunvein are gilded ${50 + 10 * l}% → ${50 + 10 * (l + 1)}% of the time.`);
     hu('rack', 'Horn Rack', ICONS.rack(), 15, 6, 2, l => `Wear ${1 + l} → ${2 + l} horns at once`);
     hu('ear', 'Keen Ear', ICONS.ear(), 5, 1.7, 12, l => `A horn turns up every ${mmss(360 * Math.pow(0.85, l))} → ${mmss(360 * Math.pow(0.85, l + 1))}`);
     hu('whet', 'Whetstone', ICONS.whet(), 8, 1.8, 15, l => `Horn bonuses +${Math.round(l * 8)}% → +${Math.round((l + 1) * 8)}% stronger, and rarer horns gain up to 3× as much`);
@@ -3025,7 +3096,9 @@
       const s = pick(keys); if (used.has(s)) continue;
       used.add(s); lines.push(rollLine(s, R));
     }
-    return { ri, lines, perfs: [] };
+    const plan = { ri, lines, perfs: [] };
+    if (onSun() && S.world !== 'sea' && Math.random() < goldHornChance()) plan.gold = true;
+    return plan;
   }
   const AUTO_P = 0.5, perfMult = p => 0.5 + p; // an average result is exactly the usual value; the range is half to one and a half times
   function scaleLine(l, m) {
@@ -3036,8 +3109,11 @@
   }
   function buildHorn(plan, perfs) {
     const ri = plan.ri;
-    const lines = plan.lines.map((l, i) => perfs ? scaleLine(l, perfMult(perfs[i] == null ? AUTO_P : perfs[i])) : { ...l });
-    const h = { id: ++S.hornSeq, r: ri, name: `${pick(ADJ[ri])} ${pick(ANIMALS)} Horn of ${HSTATS[lines[0].stat].of}`, lines };
+    const gm = plan.gold ? 1.25 : 1; // a gilded horn is a quarter stronger on top of how well you played
+    const lines = plan.lines.map((l, i) => (perfs || plan.gold) ? scaleLine(l, (perfs ? perfMult(perfs[i] == null ? AUTO_P : perfs[i]) : 1) * gm) : { ...l });
+    const adj = pick(ADJ[ri]), animal = pick(ANIMALS);
+    const h = { id: ++S.hornSeq, r: ri, name: `${plan.gold ? 'Gilded' : adj} ${animal} Horn of ${HSTATS[lines[0].stat].of}`, lines };
+    if (plan.gold) h.gold = true;
     if (perfs && perfs.length) h.q = +(perfs.reduce((a, b) => a + b, 0) / perfs.length).toFixed(2);
     h.seed = hash32(h.id * 0x9E3779B1 + ri * 7919 + S.stats.hornsFound * 40503) || 1; // not from Math.random, so the random stream is unchanged
     noteColl(h);
@@ -3182,12 +3258,12 @@
   // The collection: one entry for every shape and rarity.
   function noteColl(h) {
     if (!h.seed) return;
-    const k = famOf(h) + ':' + h.r, c = S.coll[k];
-    if (c) c.n++; else S.coll[k] = { seed: h.seed, name: h.name, ls: h.lines.map(l => l.stat), n: 1 };
+    const k = famOf(h) + ':' + (h.gold ? 'g' : h.r), c = S.coll[k];
+    if (c) c.n++; else S.coll[k] = { seed: h.seed, name: h.name, ls: h.lines.map(l => l.stat), n: 1, r: h.r };
   }
   const collHorn = (fam, r) => {
-    const c = S.coll[fam + ':' + r], animal = Object.keys(FAM_OF).find(a => FAM_OF[a] === fam);
-    return { id: 'c' + fam + r, r, seed: c ? c.seed : hash32(FAMS.indexOf(fam) * 31 + r), name: c ? c.name : `x ${animal} Horn`, lines: (c ? c.ls : []).map(stat => ({ stat })) };
+    const c = S.coll[fam + ':' + r], animal = Object.keys(FAM_OF).find(a => FAM_OF[a] === fam), g = r === 'g';
+    return { id: 'c' + fam + r, r: g ? (c ? c.r : 3) : r, gold: g, seed: c ? c.seed : hash32(FAMS.indexOf(fam) * 31 + (g ? 9 : r)), name: c ? c.name : `x ${animal} Horn`, lines: (c ? c.ls : []).map(stat => ({ stat })) };
   };
 
   // ---------------------------------------------------------------------
@@ -3215,7 +3291,7 @@
     let row = '';
     for (let i = 0; i < slots; i++) {
       const h = S.horns.find(x => x.id === S.equipped[i]);
-      row += h ? `<button type="button" class="hslot${h.id === hornSel ? ' sel' : ''}" data-id="${h.id}" style="--rc:${rcOf(h)}" title="${h.name}">${hornSVG(h, 58, 's')}<small>${h.gold ? 'Golden' : RARITY[h.r].name}</small></button>`
+      row += h ? `<button type="button" class="hslot${h.id === hornSel ? ' sel' : ''}" data-id="${h.id}" style="--rc:${rcOf(h)}" title="${h.name}">${hornSVG(h, 58, 's')}<small>${h.gold ? 'Gilded' : RARITY[h.r].name}</small></button>`
         : `<div class="hslot empty"><span>Empty</span></div>`;
     }
     $('hornSlotRow').innerHTML = row;
@@ -3226,16 +3302,16 @@
       const on = eq.has(sel.id);
       det.style.setProperty('--rc', rcOf(sel));
       det.innerHTML = `<div class="art">${hornSVG(sel, 124, 'd')}</div>
-        <div><div class="hn">${sel.name}</div><div class="hr">${sel.gold ? 'Golden · ' : ''}${RARITY[sel.r].name}${on ? ' · worn' : ''}</div></div>
+        <div><div class="hn">${sel.name}</div><div class="hr">${sel.gold ? 'Gilded · ' : ''}${RARITY[sel.r].name}${on ? ' · worn' : ''}</div></div>
         <ul>${sel.lines.map(l => `<li style="--gc:${STAT_COL[l.stat] || '#fff'}"><i></i>${lineText(sel, l)}</li>`).join('')}</ul>
-        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}">${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${RARITY[sel.r].ivory} ivory</button></div>`;
+        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}">${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${RARITY[sel.r].ivory} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
     }
     // rarity filter
     const names = ['All', ...RARITY.map(r => r.name)];
     $('hornFilter').innerHTML = names.map((n, i) => `<button type="button" data-r="${i - 1}" aria-pressed="${hornFilterR === i - 1}"${i ? ` style="--rc:${RARITY[i - 1].col}"` : ''}>${n}</button>`).join('');
     const list = [...S.horns].filter(h => hornFilterR < 0 || h.r === hornFilterR)
       .sort((a, b) => (eq.has(b.id) - eq.has(a.id)) || (b.r - a.r) || (b.id - a.id));
-    $('hornGrid').innerHTML = list.map(h => `<button type="button" class="hcard${eq.has(h.id) ? ' worn' : ''}${h.id === hornSel ? ' sel' : ''}" data-id="${h.id}" style="--rc:${rcOf(h)}" title="${h.name}">${hornSVG(h, 50, 'g')}<small>${RARITY[h.r].name}</small></button>`).join('')
+    $('hornGrid').innerHTML = list.map(h => `<button type="button" class="hcard${eq.has(h.id) ? ' worn' : ''}${h.id === hornSel ? ' sel' : ''}" data-id="${h.id}" style="--rc:${rcOf(h)}" title="${h.name}">${hornSVG(h, 50, 'g')}<small>${h.gold ? 'Gilded' : RARITY[h.r].name}</small></button>`).join('')
       || `<p class="note">${S.horns.length ? 'No horns of that rarity.' : 'No horns yet.'}</p>`;
     // summary of worn bonuses
     const parts = [];
@@ -3268,7 +3344,7 @@
     hornsDirty = true; updateUI();
     setTimeout(() => {
       clearInterval(sndReel);
-      const e = $('sndReelTxt'); if (e) { e.textContent = RARITY[plan.ri].name; e.parentNode.style.setProperty('--rc', RARITY[plan.ri].col); }
+      const e = $('sndReelTxt'); if (e) { e.textContent = (plan.gold ? 'Gilded ' : '') + RARITY[plan.ri].name; e.parentNode.style.setProperty('--rc', plan.gold ? '#ffd54a' : RARITY[plan.ri].col); }
       setTimeout(() => { sndReel = 0; sndKey = ''; hornsDirty = true; updateUI(); }, 900);
     }, 1400);
   }
@@ -3327,8 +3403,8 @@
         const pl = S.hornPlan, R = RARITY[pl.ri];
         if (!sndRound || sndRound.k !== pl.perfs.length) newRound();
         const l = pl.lines[sndRound.k], r = sndRound;
-        st.style.setProperty('--rc', R.col); st.style.setProperty('--gc', STAT_COL[l.stat] || 'var(--echo)');
-        st.innerHTML = `<div class="head"><span style="color:${R.col}">${R.name} horn</span><span>Note ${r.k + 1} of ${pl.lines.length}: <b>${HSTATS[l.stat].label}</b></span></div>
+        st.style.setProperty('--rc', pl.gold ? '#ffd54a' : R.col); st.style.setProperty('--gc', STAT_COL[l.stat] || 'var(--echo)');
+        st.innerHTML = `<div class="head"><span style="color:${pl.gold ? '#ffd54a' : R.col}">${pl.gold ? 'Gilded ' : ''}${R.name} horn</span><span>Note ${r.k + 1} of ${pl.lines.length}: <b>${HSTATS[l.stat].label}</b></span></div>
           <div class="sbar" id="sndBar" data-act="hit" role="button" tabindex="0" aria-label="Hit the note"><div class="szone" style="left:${((r.c - r.hw) * 100).toFixed(1)}%;width:${(r.hw * 200).toFixed(1)}%"></div><div class="sneedle" id="sndNeedle"></div></div>
           <div class="sfb" id="sndFb"></div>
           <div class="sdots" id="sndDots">${pl.lines.map((_, i) => `<i${i === r.k ? ' class="cur"' : ''} style="${i < r.k ? `background:${perfCol(pl.perfs[i])}` : ''}"></i>`).join('')}</div>
@@ -3337,7 +3413,7 @@
       } else {
         const { h, extra, avg } = sndResult, hs = [h, extra].filter(Boolean);
         st.style.setProperty('--rc', rcOf(h));
-        st.innerHTML = hs.map(x => `<div class="sndres" style="--rc:${rcOf(x)}"><div>${hornSVG(x, 104, 'r' + x.id)}</div><div><div class="hn">${x.name}</div><div class="hr">${RARITY[x.r].name}${x.salvaged ? ' · salvaged for ivory' : ''}${x.q != null ? ` · ${Math.round(x.q * 100)}% played` : ''}</div><ul>${x.lines.map(l => `<li>${lineText(x, l)}</li>`).join('')}</ul></div></div>`).join('')
+        st.innerHTML = hs.map(x => `<div class="sndres" style="--rc:${rcOf(x)}"><div>${hornSVG(x, 104, 'r' + x.id)}</div><div><div class="hn">${x.name}</div><div class="hr">${x.gold ? 'Gilded · ' : ''}${RARITY[x.r].name}${x.salvaged ? ' · salvaged for ivory' : ''}${x.q != null ? ` · ${Math.round(x.q * 100)}% played` : ''}</div><ul>${x.lines.map(l => `<li>${lineText(x, l)}</li>`).join('')}</ul></div></div>`).join('')
           + `<div class="sub">${extra ? 'Good playing brought a second horn. ' : ''}${avg > AUTO_P ? 'Above average.' : avg < AUTO_P ? 'Below average.' : 'Average.'}</div><button type="button" class="big" data-act="done">Continue</button>`;
       }
     }
@@ -3372,17 +3448,18 @@
     $('hornPity').textContent = left > 0 ? `${left} more horn${left > 1 ? 's' : ''} below Epic and the next one is Epic or better, guaranteed.` : 'The next horn is Epic or better, guaranteed.';
   }
   function renderColl() {
-    let n = 0, html = '<span></span>' + RARITY.map(r => `<span class="hd" style="--rc:${r.col}" title="${r.name}">${r.name.slice(0, 4)}</span>`).join('');
+    const cols = [...RARITY.map((_, i) => i), 'g'], colName = r => r === 'g' ? 'Gold' : RARITY[r].name, colCol = r => r === 'g' ? '#ffd54a' : RARITY[r].col;
+    let n = 0, html = '<span></span>' + cols.map(r => `<span class="hd" style="--rc:${colCol(r)}" title="${colName(r)}">${colName(r).slice(0, 4)}</span>`).join('');
     for (const f of FAMS) {
       html += `<span class="fam">${f}</span>`;
-      for (let r = 0; r < RARITY.length; r++) {
+      for (const r of cols) {
         const c = S.coll[f + ':' + r];
         if (c) n++;
-        html += `<div class="hcell${c ? '' : ' locked'}" style="--rc:${RARITY[r].col}" title="${c ? c.name : 'Not found yet'}">${hornSVG(collHorn(f, r), 40, 'c' + f + r)}${c ? `<em>×${c.n}</em>` : ''}</div>`;
+        html += `<div class="hcell${c ? '' : ' locked'}" style="--rc:${colCol(r)}" title="${c ? c.name : 'Not found yet'}">${hornSVG(collHorn(f, r), 40, 'c' + f + r)}${c ? `<em>×${c.n}</em>` : ''}</div>`;
       }
     }
     $('hornColl').innerHTML = html;
-    setT('collCount', `${n} / ${FAMS.length * RARITY.length}`);
+    setT('collCount', `${n} / ${FAMS.length * cols.length}`);
   }
   const salvageArmed = {};
   $('panel-horns').addEventListener('click', e => {
@@ -3488,9 +3565,10 @@
     whisper('The cave forgets you. Shout again.');
   });
 
-  function descend() {
+  function descend(opts) {
     const got = fossilGain();
     if (got <= 0 || S.cool > 0) return;
+    const oldBiome = biomeIdx(S.depth);
     const carry = S.illum.carry;
     const oldWonders = S.wonders.map(o => ({ k: o.k, x: o.x, y: o.y, charge: 0 })), oldWB = S.wBought;
     // Below the fifth floor the ground can surprise you.
@@ -3505,6 +3583,13 @@
     };
     Object.assign(S, freshCave(), keep);
     S.rubble = rubble;
+    // The next floor: from depth 3 it has a character, and now and then it is a Sunvein.
+    S.floor = 'still'; S.giltFloor = 0;
+    if (S.depth >= 3) {
+      if (Math.random() < sunChance(opts && opts.goldBonus || 0)) {
+        S.floor = 'sunvein'; S.gilt += GILT_LUMP; S.giltFloor = GILT_LUMP; S.stats.giltLife += GILT_LUMP; S.stats.sunveins++;
+      } else S.floor = rollFloor();
+    }
     S.cool = descentLock(); S.stats.descents++;
     S.stats.fossilsLife += got + vein; S.stats.bestHaul = Math.max(S.stats.bestHaul, got + vein);
     if (fall) S.stats.shafts++; if (rubble) S.stats.rockfalls++; if (vein) S.stats.veins++;
@@ -3525,6 +3610,9 @@
     if (fall) msg += ` The floor gave way twice, and you fell a floor further.`;
     if (rubble) msg += ' You land in rubble: this floor will need half again as much to break through.';
     if (vein) msg += ` You land on a vein: ${vein} extra fossil${vein > 1 ? 's' : ''}.`;
+    if (onSun()) msg += ' A Sunvein: gold runs through the stone.';
+    else if (S.floor !== 'still') msg += ` A ${FLOORS[S.floor].name.toLowerCase()} floor. ${FLOORS[S.floor].text}`;
+    if (biomeIdx(S.depth) !== oldBiome) msg += ` You enter the ${BIOMES[biomeIdx(S.depth)].name}.`;
     if (S.depth >= 5 && (!S.hornsOn || Math.random() < 0.4)) { const h = gainHorn(0); msg += ' ' + hornMsg(h); }
     if (S.stats.descents === 1) msg += ' Drag a crystal to the foot of the cave: Fuse joins it with any twin, Crush breaks it up.';
     whisper(msg);
@@ -3574,7 +3662,7 @@
     setTimeout(() => {
       const keep = {
         total: S.total, world: 'sea', hearts: S.hearts + 1,
-        horns: S.horns, coll: S.coll, hornQueue: S.hornQueue, hornPlan: S.hornPlan, hornAuto: S.hornAuto, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
+        horns: S.horns, coll: S.coll, hornQueue: S.hornQueue, hornPlan: S.hornPlan, hornAuto: S.hornAuto, gilt: S.gilt, goldUp: S.goldUp, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
         ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, numfmt: S.numfmt, finale: S.finale, quests: S.quests, shouts: S.shouts, tab: 'sea',
         lore: S.lore, feats: S.feats, stats: S.stats,
       };
@@ -3641,6 +3729,8 @@
       text: 'A crystal can only hold so much singing before it has to let some go. What falls away is sharp and bright and still humming. The foundry masters called these shards overflow, and built their strangest instruments from them.' },
     { id: 'depth3', ch: 1, title: 'The Choirs Below', when: () => S.stats.maxDepth >= 3,
       text: 'On the third floor down there are rows of stone benches facing nothing, and a conductor’s rail worn smooth by hands. Someone led a choir here while the mountain closed over them. They did not stop.' },
+    { id: 'sunvein', ch: 1, title: 'Seams of Gold', when: () => S.stats.sunveins > 0,
+      text: 'Now and then the floor gives way onto a seam that is not stone at all. The old singers called it a sunvein: a place where a note was held so long and so hard that it set, and went gold. It slows the fade, enriches the bones, and the horns you sound beside it come out gilded. It does not last. Nothing that bright does.' },
     { id: 'horn', ch: 1, title: 'Herders’ Horns', when: () => S.stats.hornsFound > 0,
       text: 'Above the town, herders called their goats off the cliffs with horns carved from the animals themselves. The horns are turning up down here now, one at a time, as if something were handing them back. Each still carries the call it was made for.' },
     { id: 'nest', ch: 2, title: 'The Lamplighters', when: () => S.strata.nest > 0, cards: [
@@ -4039,6 +4129,8 @@
       case 'pearl': return { t: 'Pearls', rows: [['Held now', F(q.pearls)], ['Lifetime', F(st.pearls)]] };
       case 'fathom': return { t: 'Fathoms', rows: [['Held now', F(q.fathoms)], ['Lifetime', F(q.fathomsTotal)], ['Best sounding', F(st.bestFathomHaul)]] };
       case 'ivory': return { t: 'Ivory', rows: [['Held now', F(S.ivory)], ['Lifetime', F(st.ivoryLife)], ['Horns found', F(st.hornsFound)]] };
+      case 'gilt': return { t: 'Gilt', rows: [['Held now', F(Math.floor(S.gilt))], ['Lifetime', F(Math.floor(st.giltLife))], ['This floor', onSun() ? `${Math.floor(S.giltFloor)} / ${GILT_CAP}` : 'not on a Sunvein'],
+        ['Sunvein chance', Math.round(sunChance() * 100) + '% a descent'], ['Gilded horns owned', F(goldHorns())], ['Sunveins found', F(st.sunveins)]] };
       case 'hearts': return { t: 'Heartstones', rows: [['Kindled', F(S.hearts)], ['Deepest cave', F(st.maxDepth)], ['Descents', F(st.descents)]] };
     }
     return null;
@@ -4088,7 +4180,8 @@
     setT('bellCount', `${q.bells.length} / ${bellCap()}`);
     setH('depthChip', sea
       ? `<b>Sounding ${q.soundings}</b><span>${MODES[(q.soundings + 1) % MODES.length].name}</span>${SK.tm > 1.001 ? `<span class="mono">×${fmt(SK.tm)}</span>` : ''}`
-      : `<b>Depth ${S.depth}</b><span>${MODES[S.depth % MODES.length].name}</span>${K.dm > 1.001 ? `<span class="mono">×${fmt(K.dm)}</span>` : ''}`);
+      : `<b>Depth ${S.depth}</b><span>${MODES[S.depth % MODES.length].name}</span>${K.dm > 1.001 ? `<span class="mono">×${fmt(K.dm)}</span>` : ''}${onSun() ? '<span class="ftag gold">Sunvein</span>' : S.floor !== 'still' ? `<span class="ftag">${FLOORS[S.floor].name}</span>` : ''}`);
+    { const ct = sea ? '' : floorBlurb().replace(/<[^>]*>/g, ''); const dc = $('depthChip'); if (dc.title !== ct) dc.title = ct; }
     setT('lifetime', q.unlocked ? `${fmt(S.total)} hum · ${fmt(q.total)} tide, all told` : `${fmt(S.total)} hum sung, all told`);
     setHid('worlds', !q.unlocked);
     $('wCave').setAttribute('aria-pressed', String(!sea));
@@ -4103,6 +4196,7 @@
     setHid('pillPearl', !sea || !pearlsOn()); setT('pearlVal', fmt(q.pearls));
     setHid('pillFathom', !sea || !(q.soundings >= 1 || q.fathomsTotal > 0)); setT('fathomVal', fmt(q.fathoms));
     setHid('pillIvory', !S.hornsOn); setT('ivoryVal', fmt(S.ivory));
+    setHid('pillGilt', !(S.stats.sunveins > 0 || S.gilt > 0)); setT('giltVal', fmt(Math.floor(S.gilt)));
     setHid('pillHeart', !S.hearts); setT('heartVal', S.hearts);
     setHid('chronDot', !!S.seen.chron);
 
@@ -4174,6 +4268,10 @@
     }
     setHid('freshText', sea);
     if (!sea) setH('freshText', `Floor freshness <b>${Math.round(decayF * 100)}%</b>: hum and lumen fade toward ${Math.round(decayFloor() * 100)}% the longer you stay (about ${Math.round(decayTau() / 60)} min per fade). Descending starts a fresh floor.`);
+    setHid('floorText', sea || (S.depth < 3 && !onSun()));
+    if (!sea) setH('floorText', floorBlurb());
+    setHid('goldSec', S.stats.sunveins < 1);
+    setH('goldNote', onSun() ? `You are on a Sunvein. Gilt comes in while you stay (up to ${GILT_CAP} a floor, fading as the floor does), and the upgrades below can be bought now.` : `Gilt only comes while you stand on a Sunvein, and these upgrades can only be bought there. Each descent has a ${Math.round(sunChance() * 100)}% chance of one: 5%, plus 2% for every gilded horn you own, up to 15%.`);
     setHid('windBtn', sea || S.hearts < 3);
     $('windBtn').disabled = !windReady();
     $('windBtn').textContent = S.wind ? 'Second Wind used' : 'Second Wind · refresh the floor';
@@ -4333,14 +4431,18 @@
     S.coll = S.coll && typeof S.coll === 'object' && !Array.isArray(S.coll) ? S.coll : {};
     S.hornQueue = Math.max(0, Math.min(9, Math.floor(+S.hornQueue) || 0));
     S.hornAuto = !!S.hornAuto;
+    if (S.floor !== 'sunvein' && !FLOORS[S.floor]) S.floor = 'still';
+    if (S.depth < 3 && S.floor !== 'still') S.floor = 'still';
+    S.gilt = Math.max(0, +S.gilt || 0); S.giltFloor = Math.max(0, Math.min(GILT_CAP, +S.giltFloor || 0));
+    S.goldUp = { vein: Math.max(0, Math.min(4, Math.floor(+(S.goldUp && S.goldUp.vein)) || 0)), breath: Math.max(0, Math.min(5, Math.floor(+(S.goldUp && S.goldUp.breath)) || 0)) };
     {
       const pl = S.hornPlan;
       const ok = pl && typeof pl === 'object' && RARITY[pl.ri] && Array.isArray(pl.lines) && pl.lines.length >= 1 && pl.lines.length <= 4
         && pl.lines.every(l => l && HSTATS[l.stat] && typeof l.v === 'number') && Array.isArray(pl.perfs) && pl.perfs.length < pl.lines.length;
-      S.hornPlan = ok ? { ri: pl.ri, lines: pl.lines.map(l => ({ stat: l.stat, kind: l.kind, v: l.v })), perfs: pl.perfs.map(x => Math.max(0, Math.min(1, +x || 0))) } : null;
+      S.hornPlan = ok ? { ri: pl.ri, lines: pl.lines.map(l => ({ stat: l.stat, kind: l.kind, v: l.v })), perfs: pl.perfs.map(x => Math.max(0, Math.min(1, +x || 0))), ...(pl.gold ? { gold: true } : {}) } : null;
     }
     for (const h of S.horns) { if (!h.seed) h.seed = hash32(h.id * 0x9E3779B1 + h.r * 7919) || 1; }
-    for (const h of S.horns) { const k = famOf(h) + ':' + h.r; if (!S.coll[k]) noteColl(h); }
+    for (const h of S.horns) { const k = famOf(h) + ':' + (h.gold ? 'g' : h.r); if (!S.coll[k]) noteColl(h); }
     S.equipped = Array.isArray(S.equipped) ? S.equipped.filter(id => S.horns.some(h => h.id === id)).slice(0, hornSlots()) : [];
     const fs = freshSea(), ds = d.sea || {};
     S.sea = Object.assign(fs, ds);
@@ -4451,6 +4553,10 @@
     } else holdT = Math.max(0, holdT - dt * 3);
     const fill = (holdT / 3 * 100).toFixed(1) + '%';
     if (heartFill.style.width !== fill) heartFill.style.width = fill;
+    if (onSun() && S.world === 'cave' && !cinematic && S.giltFloor < GILT_CAP) {
+      const g = Math.min(GILT_CAP - S.giltFloor, GILT_RATE * dt * decayF);
+      S.gilt += g; S.giltFloor += g; S.stats.giltLife += g;
+    }
     if (S.hornsOn && !cinematic) {
       S.hornTimer -= dt;
       if (S.hornTimer <= 0) {

@@ -28,7 +28,7 @@ function build(outFile) {
   window.__sim = {
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
-    descend, sound, kindle, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    descend, sound, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
     get sceneOpen() { return sceneOpen; }, get cinematic() { return cinematic; }, get capP() { return capP; },
