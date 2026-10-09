@@ -1,3 +1,4 @@
+import { createCaveAutomation } from './automation.js';
 const freshCave = () => ({
   hum: 0, run: 0, depth: 0, age: 0, wind: 0,
   crystals: [{ t: 0, x: 0, y: -0.12 }], bought: [0, 0, 0, 0],
@@ -29,6 +30,7 @@ const createState = version => ({
   hornUp: { rack: 0, ear: 0, whet: 0, branch: 0, ivory: 0, rarity: 0, firstVoice: 0, firstRack: 0 },
   primordialEquipped: [],
   hornInventory: { autoEquip: false, focus: 'balanced', salvage: [false, false, false, false, false, false], gilded: false },
+  caveAutomation: createCaveAutomation(),
   sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', ts: 1, saved: Date.now(), shouts: 0, tab: 'cave',
   lore: {}, feats: {}, stats: freshStats(),
   ver: version, seenVer: version, refund: null, numfmt: 'short', finale: 0, omen: 'steady', rubble: 0, cool: 0, quests: {},

@@ -1,3 +1,4 @@
+import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
   depthThreshold, seaThreshold, fossilReward, fathomReward, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
 import { serializeState, restoreState, cmpVer } from './saves.js';
@@ -15,9 +16,14 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.9.4';
+  const VERSION = '1.9.5';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.9.5', date: '2026-10-09', head: 'Patient Choir', items: [
+      'The countdown inside Horns → Sounding now updates while you stay on the page, and the waiting call count follows new calls immediately.',
+      'The Sunless Sea now has Fuse and Crush corner zones while dragging bells. Fuse joins any twin and stops at Abyssal. Crush removes a bell without a refund. Oysters and pearl works are protected.',
+      'After two Heartstones, Patient Choir in Strata costs 100,000 fathoms and permanently unlocks cave upgrade automation. Choose categories and currency reserves; all categories start off. It buys from the ordinary shops while you are in the cave, honoring unlocks, limits and reserves. Owned automation switches keep their on/off setting; horn calls are excluded. Settings survive descents, soundings, Heartstones and reloads.',
+    ] },
     { ver: '1.9.4', date: '2026-10-08', head: 'A Listening Rack', items: [
       'Inventory can now equip horns automatically, with Balanced, Cave or Sea priorities. It compares stat and trait effects across both racks, including caps and duplicate traits. Turn it off to wear horns manually.',
       'Choose rarities to salvage newly found spare horns automatically. Equipped horns are kept, and Gilded horns need a separate permission. Filters leave your existing inventory alone. At full capacity, auto-equip keeps a stronger new horn by salvaging the weakest unprotected spare; if everything is protected, the new horn is salvaged instead.',
@@ -935,9 +941,10 @@ import { createState } from './state.js';
     if (S.illum.autobuy && S.toggles.autobuy && S.crystals.length < maxCrystals()) {
       for (let t = TIERS.length - 1; t >= 0; t--) {
         if (t > 0 && S.run < TIERS[t].base * 0.4) continue;
-        if (S.hum >= crystalCost(t)) { buyCrystal(t); break; }
+        if (S.hum - crystalCost(t) >= (S.caveAutomation.unlocked ? S.caveAutomation.reserves.hum : 0)) { buyCrystal(t); break; }
       }
     }
+    runCaveShopping(S, shopSpecs, have, () => { refreshAll(); syncVoices(); }, category => tabVisible(category.tab));
     if (S.illum.autodescend && S.toggles.autodescend && S.cool <= 0 && S.run >= sinkMult() * deepenAt()) descend();
   }
 
@@ -1511,6 +1518,7 @@ import { createState } from './state.js';
       ctx.fillStyle = '#b54848'; ctx.fillRect(L.x - 4 * SC, L.y - 1 * SC, 8 * SC, 3 * SC);
       ctx.fillStyle = '#ffe6aa'; ctx.beginPath(); ctx.arc(L.x, L.y - 9 * SC, 4 * SC, 0, Math.PI * 2); ctx.fill();
     }
+    drawBins();
     drawFloats();
   }
   // Light mode draws on a pale ground: additive light would vanish, so marks are inked instead.
@@ -1653,7 +1661,7 @@ import { createState } from './state.js';
     if (!drag) return;
     const p = ptr(e);
     if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 5) drag.moved = true;
-    if (drag.moved) { setObjPx(drag.o, p.x, p.y); drag.bin = S.crystals.includes(drag.o) ? binAt(p.x, p.y) : null; }
+    if (drag.moved) { setObjPx(drag.o, p.x, p.y); drag.bin = binObjects().includes(drag.o) ? binAt(p.x, p.y) : null; }
   });
   cv.addEventListener('pointerup', () => {
     if (!drag) return;
@@ -1671,10 +1679,11 @@ import { createState } from './state.js';
     if (drag) { drag.o.x = drag.ox; drag.o.y = drag.oy; placeObj(drag.o); drag = null; }
   });
 
-  // Unlocked by the first descent: two drop zones at the foot of the cave while you hold a crystal.
-  // Fuse joins the crystal with any twin in the cave. Crush breaks it up to make room.
+  // Drop zones accept only the current world's crystals or bells.
+  // Fuse joins any available twin; Crush removes the dragged object without a reward.
   const BIN_W = 120, BIN_H = 46, BIN_LABEL = { fuse: 'Fuse', crush: 'Crush' };
-  const binsOn = () => S.world !== 'sea' && S.stats.maxDepth >= 1;
+  const binsOn = () => S.world === 'sea' ? S.sea.unlocked : S.stats.maxDepth >= 1;
+  const binObjects = () => S.world === 'sea' ? S.sea.bells : S.crystals;
   const binRect = k => ({ x: k === 'fuse' ? 12 : W - 12 - BIN_W, y: H - 12 - BIN_H, w: BIN_W, h: BIN_H });
   function binAt(x, y) {
     if (!binsOn()) return null;
@@ -1685,24 +1694,22 @@ import { createState } from './state.js';
     return null;
   }
   function dropInBin(o, bin) {
+    const list = binObjects(), isBell = S.world === 'sea', key = isBell ? 'bt' : 't';
+    if (!binsOn() || !list.includes(o)) return;
     if (bin === 'fuse') {
-      const tw = o.t >= 3 ? null : S.crystals.find(c => c !== o && c.t === o.t);
-      if (tw) { fuse(o, tw); return; }
-      whisper(o.t >= 3 ? 'This stone is as deep as it goes.' : 'No twin to fuse it with.');
-    } else {
-      const i = S.crystals.indexOf(o);
-      if (i >= 0) {
-        S.crystals.splice(i, 1); o.dead = true;
-        rings.push({ x: o.px, y: o.py, r: o.r, life: 1 });
-        whisper('The stone crumbles. There is room again.');
-        updateUI();
-        return;
-      }
+      const tw = o[key] >= 3 ? null : list.find(c => c !== o && c[key] === o[key]);
+      if (tw) { fuse(o, tw); updateUI(); save(); return; }
+      whisper(o[key] >= 3 ? `This ${isBell ? 'bell' : 'stone'} is as deep as it goes.` : 'No twin to fuse it with.');
+    } else if (bin === 'crush') {
+      list.splice(list.indexOf(o), 1); o.dead = true;
+      rings.push({ x: o.px, y: o.py, r: o.r, life: 1 });
+      whisper(isBell ? 'The bell breaks. There is room again.' : 'The stone crumbles. There is room again.');
+      updateUI(); save(); return;
     }
-    o.x = drag.ox; o.y = drag.oy; placeObj(o);
+    if (drag && drag.o === o) { o.x = drag.ox; o.y = drag.oy; placeObj(o); }
   }
   function drawBins() {
-    if (!drag || !drag.moved || !S.crystals.includes(drag.o) || !binsOn()) return;
+    if (!drag || !drag.moved || !binObjects().includes(drag.o) || !binsOn()) return;
     ctx.save();
     ctx.font = '600 13px ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const k of ['fuse', 'crush']) {
@@ -1720,7 +1727,7 @@ import { createState } from './state.js';
     const isBell = c.bt != null;
     const list = isBell ? S.sea.bells : S.crystals, key = isBell ? 'bt' : 't';
     const i = list.indexOf(c);
-    if (i < 0) return;
+    if (i < 0 || c === into || !list.includes(into) || c[key] !== into[key] || c[key] >= 3) return;
     list.splice(i, 1);
     c.dead = true; S.stats.fuses++;
     into[key] += 1; placeObj(into); into.ring = 1;
@@ -1871,9 +1878,10 @@ import { createState } from './state.js';
   };
   const UNIT_LABEL = { hum: '', tide: '', shard: ' shards', fossil: ' fossils', lumen: ' lumen', pearl: ' pearls', fathom: ' fathoms', ivory: ' ivory', gilt: ' gilt' };
 
-  const shopEls = [];
+  const shopEls = [], shopSpecs = [];
   // spec: { parent, icon, unit | unit(), name(), cost() -> number|null, desc(), show(), buy() -> bool, state()?, blocked()? }
   function addItem(spec) {
+    shopSpecs.push(spec);
     simulation?.items.push(spec);
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'item';
@@ -1976,6 +1984,21 @@ import { createState } from './state.js';
   }
 
   function buildShop() {
+    $('caveAutoCategories').innerHTML = Object.entries(CAVE_CATEGORIES).map(([k, c]) =>
+      `<label><input type="checkbox" data-cave-category="${k}"> ${c.name}</label>`).join('');
+    $('caveAutoReserves').innerHTML = Object.entries(CAVE_RESERVES).map(([k, name]) =>
+      `<label>${name}<input type="number" min="0" step="any" inputmode="decimal" data-cave-reserve="${k}" aria-label="Reserve ${name.toLowerCase()}"></label>`).join('');
+    addItem({ parent: 'shopCaveAutomation', icon: ICONS.gear(), unit: 'fathom',
+      name: () => 'Patient Choir', show: () => S.hearts >= 2 || S.caveAutomation.unlocked,
+      cost: () => S.caveAutomation.unlocked ? null : CAVE_AUTOMATION_COST,
+      blocked: () => S.hearts < 2,
+      desc: () => S.caveAutomation.unlocked ? 'Cave upgrade automation is unlocked forever. Choose categories and reserves below.'
+        : 'Unlock cave upgrade automation forever. Requires two Heartstones. Categories start off; choose which shops can spend and how much to reserve.',
+      buy: () => {
+        if (S.hearts < 2 || S.caveAutomation.unlocked || !spend('fathom', CAVE_AUTOMATION_COST)) return false;
+        S.caveAutomation.unlocked = true; save(); return true;
+      },
+    });
     // ------------------------------- cave: crystals, voices, tuning (hum)
     TIERS.forEach((tier, t) => addItem({
       bulk: true, parent: 'shopCrystals', icon: ICONS.gem(tier.color), unit: 'hum',
@@ -2144,7 +2167,7 @@ import { createState } from './state.js';
 
     // ------------------------------- horns (ivory, fossils/fathoms)
     addItem({
-      parent: 'shopHorns', icon: ICONS.horn('#ffcf86'), unit: () => S.world === 'sea' ? 'fathom' : 'fossil',
+      auto: false, parent: 'shopHorns', icon: ICONS.horn('#ffcf86'), unit: () => S.world === 'sea' ? 'fathom' : 'fossil',
       name: () => 'Sound the Horn Call',
       cost: () => hornRollCost(),
       desc: () => S.hornAuto ? 'Find a new random horn right now.' : 'Adds a horn call to sound right now.',
@@ -2488,7 +2511,7 @@ import { createState } from './state.js';
   function sndRender() {
     const mode = sndMode(), st = $('sndStage');
     if (mode === 'complete') { finishSounding(); return; }
-    const key = mode + (mode === 'play' ? ':' + (sndRound && sndRound.frozen !== null ? sndRound.k : S.hornPlan.perfs.length) : mode === 'idle' ? ':' + (S.hornQueue > 0) : mode === 'result' ? ':' + sndResult.h.id : '');
+    const key = mode + (mode === 'play' ? ':' + (sndRound && sndRound.frozen !== null ? sndRound.k : S.hornPlan.perfs.length) : mode === 'idle' ? ':' + S.hornQueue : mode === 'result' ? ':' + sndResult.h.id : '');
     if (key !== sndKey) {
       sndKey = key;
       if (mode === 'idle') {
@@ -2607,13 +2630,35 @@ import { createState } from './state.js';
     applyAutoEquip(S); refreshAll(); save(); updateUI();
   });
 
+  function renderCaveAutomation() {
+    const settings = S.caveAutomation;
+    $('caveAutomationSec').hidden = S.hearts < 2 && !settings.unlocked;
+    $('caveAutoControls').hidden = !settings.unlocked;
+    if (!settings.unlocked || S.tab !== 'strata') return;
+    for (const input of $('caveAutoCategories').querySelectorAll('input')) input.checked = settings.categories[input.dataset.caveCategory];
+    for (const input of $('caveAutoReserves').querySelectorAll('input')) {
+      if (document.activeElement !== input) input.value = settings.reserves[input.dataset.caveReserve];
+    }
+  }
+  $('caveAutoControls').addEventListener('change', e => {
+    const input = e.target, settings = S.caveAutomation;
+    if (!settings.unlocked) return;
+    if (input.dataset.caveCategory) settings.categories[input.dataset.caveCategory] = input.checked;
+    else if (input.dataset.caveReserve) {
+      const value = Number(input.value);
+      settings.reserves[input.dataset.caveReserve] = Number.isFinite(value) ? Math.max(0, value) : 0;
+      input.value = settings.reserves[input.dataset.caveReserve];
+    } else return;
+    save(); updateUI();
+  });
+
   // =====================================================================
   // tabs
   // =====================================================================
   const TABDEF = {
     cave:    { world: 'cave', open: () => true },
     wonders: { world: 'cave', open: () => shardsOn() },
-    strata:  { world: 'cave', open: () => S.depth >= 1 || S.fossilsTotal > 0 },
+    strata:  { world: 'cave', open: () => S.depth >= 1 || S.fossilsTotal > 0 || S.hearts >= 2 || S.caveAutomation.unlocked },
     glow:    { world: 'cave', open: () => S.strata.nest > 0 },
     sea:     { world: 'sea',  open: () => true },
     pearls:  { world: 'sea',  open: () => pearlsOn() },
@@ -2806,7 +2851,7 @@ import { createState } from './state.js';
     $('hint').textContent = S.world === 'sea' ? 'Click the water to skip a stone.' : 'Click the dark to shout.';
     $('hint').hidden = S.world === 'sea' ? S.sea.throws >= 3 : S.shouts >= 3;
     cv.setAttribute('aria-label', S.world === 'sea'
-      ? 'The sunless sea. Click or tap to skip a stone; drag bells to move or fuse them.'
+      ? 'The sunless sea. Click or tap to skip a stone; drag bells to move, fuse twins, or crush in the corner zones.'
       : 'The cave. Click or tap to shout; drag crystals to move or fuse them.');
     updateUI();
   }
@@ -3348,11 +3393,16 @@ import { createState } from './state.js';
     updateSong(); updateQuests();
     setH('choirInfo', `The cave above sings <b>${fmt(S.idleRate || 0)} hum/s</b> on its own, lifting all tide <b>×${fmtX(choirBonus())}</b>. Whichever world you aren't in keeps earning <b>${pct(quietEff())}</b> of its idle rate. Choir upgrades are never lost.`);
 
+    renderCaveAutomation();
+
     // horns
     setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
     setT('hornCount', `${S.horns.length} / ${HORN_CAP}`);
     setT('hornTimer', S.hornsOn ? `Next horn turns up in ${mmss(Math.max(0, S.hornTimer))}.` : '');
-    if (hornsDirty && S.tab === 'horns') renderHorns();
+    if (S.tab === 'horns') {
+      if (hornsDirty) renderHorns();
+      else if (hornSub === 'sounding') sndRender();
+    }
 
     // prestige panel
     let need, prog, got, locked = false;
@@ -3645,7 +3695,7 @@ import { createState } from './state.js';
   }
   if (simulation) simulation.api = {
     get S() { return S; }, set S(v) { S = v; },
-    frame, tap, randomInside, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
+    frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
     descend, sound, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,

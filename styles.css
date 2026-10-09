@@ -448,3 +448,10 @@
   #hornSalvageRarities { display: flex; flex-wrap: wrap; gap: 10px 14px; }
   #hornSalvageRarities label { display: flex; align-items: center; gap: 5px; }
   #hornInventoryRules input { accent-color: var(--ivory); }
+
+  #caveAutoCategories { display: flex; flex-wrap: wrap; gap: 10px 14px; }
+  #caveAutoCategories label { display: flex; align-items: center; gap: 5px; }
+  #caveAutoReserves { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  #caveAutoReserves label { display: flex; flex-direction: column; gap: 5px; }
+  #caveAutoReserves input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; color: var(--text); background: var(--slab); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+  #caveAutoCategories input { accent-color: var(--fathom); }

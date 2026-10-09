@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a static browser game with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.9.4**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.9.5**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
@@ -16,11 +16,16 @@ python -m http.server 8000
 
 Open the server's address in your browser. Keep `styles.css` and `src/` alongside `index.html` when copying or deploying the game.
 
+## Cave upgrade automation
+
+After two Heartstones, **Strata → Patient Choir** unlocks permanently for **100,000 fathoms**. All categories start off. Select Voices, Tuning, Crystals, Wonders, Attunement, Strata, Illuminations, Horn upgrades, or Sunvein upgrades, and set how much hum/shards/fossils/lumen/ivory/Gilt to reserve. It buys one affordable upgrade per enabled category every half-second, using the normal shops. It runs in the cave while the game is active. Horn calls are excluded. Existing Crystal Seeker also respects the hum reserve after unlock; turn off one crystal purchase option if you prefer to use only the other. Settings survive all resets and reloads.
+
 ## Development layout
 
 - `index.html`: page markup.
 - `styles.css`: page styling.
 - `src/state.js`: independent factories for fresh cave, sea, and lifetime state. `createState(version)` takes the release version explicitly.
+- `src/automation.js`: cave shop category rules, currency reserves, and saved automation defaults.
 - `src/horns.js`: rarity curves, seeded horn rolling, stat/trait effects, dedicated rack rules, inventory automation, save normalization, and sounding difficulty.
 - `src/saves.js`: serialization, compatibility migration, and restoration without DOM or storage access.
 - `src/progression.js`: descent/sea rewards and thresholds, Heartstone eligibility and state resets, plus trait-aware decay/Gilt rules.
@@ -35,9 +40,10 @@ Browser checks and simulations require Node and Playwright. Install Playwright w
 
 ```bash
 node tools/smoke.js
-node --test tools/horns.test.mjs
+node --test tools/horns.test.mjs tools/automation.test.mjs
 node tools/horns-smoke.js
 node tools/horn-inventory-smoke.js
+node tools/qol-smoke.js
 node tools/sim/run.js --hours 0.1 --seed 1 --out /tmp/geode-smoke.json
 ```
 

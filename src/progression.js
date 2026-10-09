@@ -19,6 +19,7 @@ function resetSounding(S, got) {
 function resetHeartstone(S, version) {
   const keep = {
     total: S.total, world: 'sea', hearts: S.hearts + 1,
+    caveAutomation: S.caveAutomation,
     horns: S.horns, coll: S.coll, hornQueue: S.hornQueue, hornPlan: S.hornPlan, hornAuto: S.hornAuto, hornInventory: S.hornInventory, gilt: S.gilt, goldUp: S.goldUp, equipped: S.equipped, primordialEquipped: S.primordialEquipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
     ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, ts: S.ts, numfmt: S.numfmt, finale: S.finale, quests: S.quests, shouts: S.shouts, tab: 'sea',
     lore: S.lore, feats: S.feats, stats: S.stats,
