@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current workspace: **1.9.8**, on `feature/sea-pacing`. Gameplay through **1.9.5** was last verified merged; 1.9.6–1.9.8 are implemented on the stacked branches. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current workspace: **1.10.0**, on `feature/playable-seashells`. Gameplay through **1.9.5** was last verified merged; 1.9.6–1.10.0 are implemented on the stacked branches. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -30,8 +30,8 @@ Current workspace: **1.9.8**, on `feature/sea-pacing`. Gameplay through **1.9.5*
 | 1.9.6 | Faster Tick scales horn timer and displayed countdowns | Implemented on `fix/horn-clock` |
 | 1.9.7 | Seashell rules/save foundations, isolated harsher fathom curve | Implemented on `feature/sea-shell-foundations`; shell drops/UI disabled |
 | 1.9.8 | Sea settling, cumulative Heartstone gates, tide curve, Ceiling cap, 50k finale offering | Implemented on `feature/sea-pacing`; tested |
-| **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | **Next pass**, after integrating 1.9.6–1.9.8 |
-| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After natural shell-economy validation |
+| **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Implemented on `feature/playable-seashells`; review and manual tuning pending |
+| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | **Next pass**, using the natural shell-economy results |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -93,7 +93,9 @@ Five natural no-shell seeds reached finale readiness in **4.609–4.792 hours**,
 
 ### Delivery and open choices
 
-Wire existing `src/seashells.js` rules into the real sounding path, then add spinner/minigame, inventory/equip controls, and chance/slot purchases. Minigame shape/difficulty, purchase prices, inventory management, and Collection presentation need a concrete first-pass design. Do not silently reuse the horn cap, impose duplicate restrictions, or invent a salvage currency.
+Implemented in 1.10.0: discovery/result spinner in The Deep, direct Common claim, three timing notes for Epic/Mythic (one-second lead-in, narrower Mythic target), saved partial notes that pause off-screen, Auto, inventory/equipment, and upgrades. Discovery costs **25/50/100/200/400/800 fathoms**; second slot costs **500**. Inventory is uncapped with no forced salvage or duplicate restrictions; Collection integration is deferred. Manual feel and prices remain tuning targets. Natural simulations use actual drops/purchases with a 100k finale reserve; see [playable shell validation](tools/sim/playable-seashells.md).
+
+Original delivery intent: wire existing `src/seashells.js` rules into the real sounding path, then add spinner/minigame, inventory/equip controls, and chance/slot purchases. Minigame shape/difficulty, purchase prices, inventory management, and Collection presentation need a concrete first-pass design. Do not silently reuse the horn cap, impose duplicate restrictions, or invent a salvage currency.
 
 Validate natural discovery and purchases, first Epic/Mythic timing, both slots, effective Heartstone gates, reload/reset behavior, and desktop/mobile interaction. Run the bot using actual drops, Auto quality, real purchase prices, and a **proposed 100,000-fathom finale reserve**. Include Patient Choir and Deep purchases as competing sinks; shell upgrades must be optional to reaching the finale.
 
@@ -193,7 +195,7 @@ The user suggested offline idle horns capped at **five on return**, regardless o
 | Old scope excluded puzzles/events | Ordinary cave events, choose-three arrival choices, rhythm shouts, resonance puzzles, and settling tasks remain excluded. Approved Last Chorus encounters/pulse alignment are a finale-specific exception |
 | Full module refactor blocks feature delivery | Extract necessary boundaries incrementally; canvas/audio/UI split remains ongoing work |
 
-The dependency order is consistent with these resolutions. **Balance and manual feel remain open**: shell prices/inventory/minigame, final entry price, assistance duration, harmony thresholds, risky rewards/failure placement/Auto, optional Sea layer, and set rewards require concrete tuning. No speculative number is a shipped promise.
+The dependency order is consistent with these resolutions. **Balance and manual feel remain open**: shell price/manual-feel tuning, final entry price, assistance duration, harmony thresholds, risky rewards/failure placement/Auto, optional Sea layer, and set rewards require concrete tuning. No speculative number is a shipped promise.
 
 ## Validation and delivery
 
@@ -201,6 +203,6 @@ For each gameplay slice, run relevant existing rule/browser suites plus targeted
 
 Natural progression comparisons use seeds 1–5 with real currency generation, purchases, discovery, and average Auto; diagnostic best-item fixtures must be labelled separately. Compare several Cave/Sea shares and Patient Choir reserves. Record timer/tide stalls, Heartstone timing, actual sounds, shell outcomes/upgrades, Plumb Line, total/held fathoms, and final entry budgets. Extend horizons only when necessary and distinguish slow completion from an unreachable prerequisite.
 
-Existing reports: [horn first pass](tools/sim/horn-first-pass.md), [ivory income](tools/sim/ivory-income.md), [QOL](tools/sim/qol.md), [Sea foundations](tools/sim/sea-foundations.md), [Sea pacing](tools/sim/sea-pacing.md). Natural shell drops and the expedition are not covered by the current no-shell readiness results.
+Existing reports: [horn first pass](tools/sim/horn-first-pass.md), [ivory income](tools/sim/ivory-income.md), [QOL](tools/sim/qol.md), [Sea foundations](tools/sim/sea-foundations.md), [Sea pacing](tools/sim/sea-pacing.md). Natural shell results are recorded in [playable shell validation](tools/sim/playable-seashells.md); the expedition remains unimplemented. The earlier no-shell readiness results do not validate expedition duration.
 
 Deliver reviewable PRs in release order, keeping the existing stacked branch dependencies until merged. Planning edits do not claim gameplay implementation. Update this roadmap's status as each release actually lands.

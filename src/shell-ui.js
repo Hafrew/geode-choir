@@ -4,19 +4,26 @@ import { SHELL_RARITIES, shellSlots, shellDiscoveryChance, shellDiscounts,
 // Presentation owns no rewards or currency rules. Pending timing state lives in the save.
 export function createShellUI({ state, active, changed }) {
   const $ = id => document.getElementById(id);
-  let key = '';
+  let key = '', resultKey = '';
   const rarity = r => SHELL_RARITIES[r].name;
   $('shellSection').addEventListener('click', e => {
     const button = e.target.closest('button[data-shell-action]');
     if (!button) return;
     const S = state(), id = +button.dataset.id, action = button.dataset.shellAction;
     const plan = S.shells.pending.find(p => p.id === id);
-    if (action === 'auto') finishShell(S, id);
+    if (action === 'auto' || action === 'claim') finishShell(S, id);
     else if (action === 'equip') equipShell(S, id);
-    else if (action === 'start' && plan) { plan.notes = []; plan.elapsed = 0; }
+    else if (action === 'start' && plan && !Array.isArray(plan.notes)) { plan.notes = []; plan.elapsed = 0; }
     else if (action === 'hit') { if (!active()) return; hitShell(S, id); }
     else return;
+    const focused = document.activeElement === button;
     changed();
+    if (focused) {
+      let nextAction = action;
+      if (action === 'start') nextAction = 'hit';
+      else if (action === 'auto' || action === 'claim' || action === 'hit' && !S.shells.pending.some(p => p.id === id)) nextAction = 'equip';
+      $('shellSection').querySelector(`[data-shell-action="${nextAction}"][data-id="${id}"]`)?.focus();
+    }
   });
   function render() {
     if (!active()) return;
@@ -25,19 +32,22 @@ export function createShellUI({ state, active, changed }) {
     const next = JSON.stringify({ ...sh, pending: sh.pending.map(({ elapsed, ...p }) => p) });
     if (next !== key) {
       key = next;
-      $('shellSummary').textContent = `${sh.equipped.length}/${shellSlots(S)} equipped · −${bonus.depth} depth · −${bonus.soundings} Heartstone soundings · ${Math.round(100 * shellDiscoveryChance(S))}% discovery chance`;
-      const result = sh.lastResult;
-      $('shellDiscovery').innerHTML = result
-        ? `<span class="shell-spin" aria-hidden="true">◉</span> Sounding ${result.sounding}: ${result.r === null ? 'no shell answered.' : `${rarity(result.r)} shell discovered.`}`
-        : 'Your next Sea sounding can discover a shell. Common 75% · Epic 20% · Mythic 5%.';
+      $('shellSummary').textContent = `${sh.equipped.length}/${shellSlots(S)} equipped · −${bonus.depth} depth · −${bonus.soundings} Heartstone soundings · ${Math.round(100 * shellDiscoveryChance(S))}% discovery chance · Common 75% / Epic 20% / Mythic 5% of finds`;
+      const result = sh.lastResult, nextResult = JSON.stringify(result);
+      if (nextResult !== resultKey) {
+        resultKey = nextResult;
+        $('shellDiscovery').innerHTML = result
+          ? `<span class="shell-spin" aria-hidden="true">◉</span> Sounding ${result.sounding}: ${result.r === null ? 'no shell answered.' : `${rarity(result.r)} shell discovered.`}`
+          : 'Your next Sea sounding can discover a shell. Common 75% · Epic 20% · Mythic 5%.';
+      }
       $('shellPending').innerHTML = sh.pending.map(p => {
         const r = SHELL_RARITIES[p.r], started = Array.isArray(p.notes);
         return `<article class="shell-call"><h3>${r.name} shell #${p.id}</h3>
           <p>Depth reduction ${r.minDepth === r.maxDepth ? r.minDepth : `${r.minDepth}–${r.maxDepth}`} · sounding reduction ${r.soundings}, fixed.</p>
-          ${started ? `<p>Note ${p.notes.length + 1} of 3. Sound when the needle meets the center. You can wait for another pass.</p>
+          ${p.r === 0 ? '<p>Common shells always reduce depth by one. Claim it directly.</p>' : started ? `<p>Note ${p.notes.length + 1} of 3. Sound when the needle meets the center. You can wait for another pass.</p>
             <div class="shell-track" aria-hidden="true"><span class="shell-target" style="width:${p.r === 2 ? 28 : 40}%"></span><i id="shellNeedle${p.id}"></i></div>
             <p id="shellTiming${p.id}" class="note"></p>` : '<p>Three timing notes set depth strength. Mythic windows are narrower. Leaving pauses your notes.</p>'}
-          <button type="button" data-shell-action="${started ? 'hit' : 'start'}" data-id="${p.id}">${started ? 'Sound note' : 'Begin sounding'}</button>
+          <button type="button" data-shell-action="${p.r === 0 ? 'claim' : started ? 'hit' : 'start'}" data-id="${p.id}">${p.r === 0 ? 'Claim shell' : started ? 'Sound note' : 'Begin sounding'}</button>
           <button type="button" data-shell-action="auto" data-id="${p.id}">Finish with Auto</button>
           <p class="note">Auto gives ${[1,3,8][p.r]} depth reduction, including after a partial performance. Equip the shell to use it.</p></article>`;
       }).join('');
@@ -52,7 +62,7 @@ export function createShellUI({ state, active, changed }) {
       if (!Array.isArray(p.notes)) continue;
       const needle = $(`shellNeedle${p.id}`), button = $('shellPending').querySelector(`[data-shell-action="hit"][data-id="${p.id}"]`);
       if (needle) needle.style.left = `${100 * shellNeedle(p.elapsed)}%`;
-      if (button) button.disabled = p.elapsed < 1;
+      if (button) button.setAttribute('aria-disabled', String(p.elapsed < 1));
       const timing = $(`shellTiming${p.id}`);
       if (timing) timing.textContent = p.elapsed < 1 ? 'Listen…' : 'Ready. Aim for the center.';
     }

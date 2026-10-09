@@ -19,9 +19,15 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.9.8';
+  const VERSION = '1.10.0';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.10.0', date: '2026-10-09', head: 'Shells Answer', items: [
+      'Each successful Sea sounding checks once for a seashell. Discovery starts at 20%; Common, Epic and Mythic are 75%, 20% and 5% of finds. The saved spinner result cannot reroll on reload.',
+      'In The Deep, claim Common shells directly. For Epic/Mythic, sound three notes to set depth reduction, or finish with average-quality Auto. Notes pause when you leave. Sounding reductions are fixed at 0, 1 and 3; horn upgrades cannot strengthen shells.',
+      'Equip one shell in its own rack. A 500-fathom purchase adds a second slot; Shell Listening costs 25/50/100/200/400/800 fathoms and raises discovery to 50%. Items, upgrades and pending notes survive every reset.',
+      'Shell discounts ease Heartstone eligibility only. The Undersong still needs 25 actual soundings and its current 50,000-fathom offering.',
+    ] },
     { ver: '1.9.8', date: '2026-10-09', head: 'The Sea Settles', items: [
       'Sea soundings now have a settling timer. It starts at ten minutes and shortens at 2, 5, 10 and 20 actual soundings, down to two minutes. Faster Tick speeds it in either world and while away.',
       'Later Heartstones need 20, 24, 28 and onward total Sea soundings. The first still opens the Sea. An already-met Sea milestone in an old save stays valid for its current Heartstone.',
@@ -2828,8 +2834,7 @@ import { createState } from './state.js';
     refreshAll();
     afterStateChange();
     const h = gainHorn(0);
-    whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}`);
-    if (shell) whisper('A seashell answers. Sound it in The Deep, or finish with Auto.');
+    whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}${shell ? ' A seashell answers. Sound it in The Deep, or finish with Auto.' : ''}`);
     save();
     return true;
   }
@@ -3741,6 +3746,7 @@ import { createState } from './state.js';
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
     descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    shellTick: dt => shellUI.tick(dt),
     finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,

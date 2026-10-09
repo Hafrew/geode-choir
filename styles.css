@@ -458,7 +458,10 @@
 
 /* Shell sounding keeps a steady target, including with reduced motion. */
 .shell-call { border: 1px solid var(--line, #d9d5e0); border-radius: 16px; padding: 16px; margin: 14px 0; }
-.shell-call button, .shell-card button { min-height: 44px; margin: 4px; }
+.shell-call button, .shell-card button { min-height: 44px; margin: 4px; padding: 8px 12px; font: inherit; color: var(--text); background: var(--slab-2); border: 1px solid var(--line-2); border-radius: 8px; cursor: pointer; }
+.shell-call button:focus-visible, .shell-card button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+.shell-call button[aria-disabled="true"], .shell-card button:disabled { opacity: .5; cursor: default; }
+.shell-card b { white-space: normal; }
 .shell-card { display: block; }
 .shell-track { height: 32px; border-radius: 16px; background: #dedbe7; position: relative; margin: 20px 12px; }
 .shell-target { position: absolute; height: 100%; left: 50%; transform: translateX(-50%); background: #88c6ba; border-radius: 12px; }

@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a static browser game with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.9.8**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.10.0**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
@@ -22,7 +22,13 @@ After two Heartstones, **Strata → Patient Choir** unlocks permanently for **10
 
 ## Sea progression
 
-Soundings need enough tide and an expired settling timer. The timer starts at 10 minutes, shortens at 2/5/10/20 actual soundings to a 2-minute minimum, and follows Faster Tick in either world and at the usual offline efficiency. Tide requirements grow by ×3 per sounding. Later Heartstones require 20/24/28/... cumulative soundings; the first opens the Sea. The Undersong needs 25 actual soundings, three Heartstones, 20 feats, and 50,000 fathoms. Open the Ceiling has 15 purchasable levels; higher legacy levels keep their bonuses. Seashell discovery/UI remain planned.
+Soundings need enough tide and an expired settling timer. The timer starts at 10 minutes, shortens at 2/5/10/20 actual soundings to a 2-minute minimum, and follows Faster Tick in either world and at the usual offline efficiency. Tide requirements grow by ×3 per sounding. Later Heartstones require 20/24/28/... cumulative soundings; the first opens the Sea. The Undersong needs 25 actual soundings, three Heartstones, 20 feats, and 50,000 fathoms. Open the Ceiling has 15 purchasable levels; higher legacy levels keep their bonuses.
+
+## Seashells
+
+After each successful Sea sounding, discovery has a 20% chance to find a shell (75% Common, 20% Epic, 5% Mythic among finds). In **The Deep → Seashells**, claim a Common directly; for Epic/Mythic complete three timing notes or choose **Finish with Auto**. Better timing improves depth reduction: Common 1, Epic 2–4, Mythic 5–10. Auto gives 1/3/8. Sounding reductions stay fixed at 0/1/3. Notes pause off-screen and partial results survive reloads.
+
+Equip one shell, or buy the permanent second slot for **500 fathoms**. Shell Listening costs **25/50/100/200/400/800 fathoms**, raising discovery by five percentage points per level to 50%. Equipped discounts add and apply only to Heartstone eligibility, never actual depth, milestones, rewards, or the finale's 25-sounding requirement. Distinct identical shells can equip together. Inventory has no cap or forced salvage in this pass. Shells, upgrades, and pending soundings survive every reset.
 
 ## Development layout
 
@@ -31,13 +37,14 @@ Soundings need enough tide and an expired settling timer. The timer starts at 10
 - `src/state.js`: independent factories for fresh cave, sea, and lifetime state. `createState(version)` takes the release version explicitly.
 - `src/automation.js`: cave shop category rules, currency reserves, and saved automation defaults.
 - `src/horns.js`: rarity curves, seeded horn rolling, stat/trait effects, dedicated rack rules, inventory automation, save normalization, and sounding difficulty.
-- `src/seashells.js`: shell discovery/scoring, dedicated slots, fixed sounding discounts, pending completion, and normalization. Discovery/UI remain planned.
+- `src/seashells.js`: shell discovery/scoring, dedicated slots, fixed sounding discounts, pending manual/Auto completion, and normalization.
+- `src/shell-ui.js`: shell result spinner, saved three-note timing presentation, inventory, and equipment controls.
 - `src/saves.js`: serialization, compatibility migration, and restoration without DOM or storage access.
 - `src/progression.js`: descent/sea rewards and thresholds, Heartstone eligibility and state resets, plus trait-aware decay/Gilt rules.
 - `src/main.js`: initialization, the game loop, gameplay orchestration, rendering, audio, and UI. Canvas, audio, and UI extraction remains a later refactor.
 - `tools/sim/`: seeded gameplay simulation through an explicit, opt-in interface. It serves the real application over HTTP without rewriting source files.
 
-The next module boundaries and function navigation anchors are in [PLAN.md](PLAN.md).
+The versioned roadmap and remaining decisions are in [PLAN.md](PLAN.md).
 
 ## Validation
 

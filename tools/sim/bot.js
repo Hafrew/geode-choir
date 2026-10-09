@@ -7,10 +7,11 @@ module.exports = function installBot(cfg) {
   if (cfg.hornStart === 'max' || cfg.hornStart === 'primordial') sim.S.hornUp.rarity = 10;
   if (cfg.hornStart === 'primordial') Object.assign(sim.S.hornUp, { firstVoice: 1, firstRack: 1 });
   if (cfg.hornStart === 'max' || cfg.hornStart === 'primordial') sim.refreshAll();
+  const finaleBudget = Math.max(sim.SONG_COST, cfg.finaleReserve || 0);
   const CAVE = new Set(['shopCrystals', 'shopVoices', 'shopTuning', 'shopWonders', 'shopAttune', 'shopStrata', 'shopGlow', 'shopHorns', 'shopGold']);
   if (cfg.patientChoir) CAVE.add('shopCaveAutomation');
-  const SEA = new Set(['shopBells', 'shopSeaVoices', 'shopSeaTuning', 'shopOysters', 'shopPearlObjs', 'shopBellTune', 'shopDeep', 'shopChoir', 'shopHorns']);
-  const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, soundingLog: [], timerWaitSeaSec: 0, tideWaitSeaSec: 0, budget: 0 };
+  const SEA = new Set(['shopBells', 'shopSeaVoices', 'shopSeaTuning', 'shopOysters', 'shopPearlObjs', 'shopBellTune', 'shopDeep', 'shopChoir', 'shopHorns', 'shopShells']);
+  const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, soundingLog: [], shellLog: [], timerWaitSeaSec: 0, tideWaitSeaSec: 0, budget: 0 };
   const strip = h => String(h).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
   // ---- purchase weights: effective price = cost / weight, cheapest wins ----
@@ -40,7 +41,7 @@ module.exports = function installBot(cfg) {
   // Human pacing: with cfg.actionGap > 0 the bot gets one shop/fuse/descend action per gap seconds (small bursts allowed).
   const canAct = () => { if (!cfg.actionGap) return true; if (bot.budget >= 1) { bot.budget -= 1; return true; } return false; };
   const unitOf = it => typeof it.unit === 'function' ? it.unit() : it.unit;
-  const fathomReserve = S => ((S.sea.soundings >= 3 && !S.finale) ? sim.SONG_COST : 0)
+  const fathomReserve = S => ((S.sea.soundings >= 3 && !S.finale) ? finaleBudget : 0)
     + (cfg.extraFathomReserve || 0) + (cfg.patientChoir && !S.caveAutomation.unlocked ? 100000 : 0);
 
   function buyLoop(S) {
@@ -48,7 +49,7 @@ module.exports = function installBot(cfg) {
     for (let n = 0; n < 8; n++) {
       let best = null, bestScore = Infinity;
       for (const it of window.__geodeSimulation.items) {
-        if (!parents.has(it.parent)) continue;
+        if (!parents.has(it.parent) || (it.parent === 'shopShells' && cfg.shells === false)) continue;
         if (it.show && !it.show()) continue;
         if (it.state && it.state()) continue;               // toggles already owned
         const name = strip(it.name());
@@ -136,7 +137,7 @@ module.exports = function installBot(cfg) {
   }
   const soundingTarget = S => cfg.maxSoundings || Math.max(sim.FINALE_SOUNDINGS || 6,
     sim.heartSea && S.hearts < 3 ? sim.heartSea() : 0,
-    (cfg.patientChoir && !S.caveAutomation.unlocked) || (S.hearts >= 3 && S.sea.fathoms < sim.SONG_COST) ? S.sea.soundings + 1 : 0);
+    (cfg.patientChoir && !S.caveAutomation.unlocked) || (S.hearts >= 3 && S.sea.fathoms < finaleBudget) ? S.sea.soundings + 1 : 0);
   function progress(S) {
     const want = pickWorld(S);
     if (want !== S.world && canAct()) sim.setWorld(want);
@@ -158,7 +159,7 @@ module.exports = function installBot(cfg) {
         }
       }
     }
-    if (S.finale === 0 && sim.songReady() && S.sea.fathoms >= sim.SONG_COST) { mark('finaleReady', S); bot.done = !cfg.patientChoir || S.caveAutomation.unlocked; }
+    if (S.finale === 0 && sim.songReady() && S.sea.fathoms >= finaleBudget) { mark('finaleReady', S); bot.done = !cfg.patientChoir || S.caveAutomation.unlocked; }
   }
   function marks(S) {
     if (S.caveAutomation.unlocked) mark('patientChoirBought', S);
@@ -178,12 +179,32 @@ module.exports = function installBot(cfg) {
     if (S.hearts >= 3) mark('reqHearts', S); if (S.sea.soundings >= (sim.FINALE_SOUNDINGS || 6)) mark('reqSoundings', S);
   }
 
+  function manageShells(S) {
+    if (cfg.shells === false) return;
+    for (const plan of [...S.shells.pending]) {
+      const item = sim.finishShell(plan.id);
+      if (item) bot.shellLog.push({ t: Math.round(bot.t), sounding: plan.sounding, ...item });
+    }
+    const slots = 1 + S.shells.extraSlot;
+    const best = [...S.shells.items].sort((a, b) => b.r - a.r || b.depth - a.depth || a.id - b.id).slice(0, slots).map(p => p.id);
+    if (JSON.stringify([...S.shells.equipped].sort()) !== JSON.stringify([...best].sort())) {
+      for (const id of [...S.shells.equipped]) sim.equipShell(id);
+      for (const id of best) sim.equipShell(id);
+    }
+    for (const [r, name] of [[0, 'commonShell'], [1, 'epicShell'], [2, 'mythicShell']]) {
+      if (S.shells.items.some(p => p.r === r)) mark(name, S);
+    }
+    if (S.shells.extraSlot) mark('secondShellSlot', S);
+    if (S.shells.discovery === 6) mark('shellDiscoveryMax', S);
+  }
+
   function decide() {
     const S = sim.S;
     if (sim.sceneOpen) sim.endScene();
     if (sim.cinematic) return;
     if (cfg.actionGap) bot.budget = Math.min(2, bot.budget + 0.5 / cfg.actionGap);
     S.toggles.autodescend = 0; S.toggles.autobuy = cfg.autobuy ? 1 : 0;
+    manageShells(S);
     progress(S);                                  // descend / sound / kindle / switch world come first, or shopping eats every action
     if (!cfg.noFuse) fuseAll(S);
     if (S.hearts >= 2 && S.sea.fathoms >= 100000) mark('patientChoirAffordable', S);
@@ -194,7 +215,7 @@ module.exports = function installBot(cfg) {
       bot.lastLog = bot.t;
       bot.log.push({ t: Math.round(bot.t), world: S.world, depth: S.depth, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length,
         hum: S.total, tide: S.sea.total, rate: S.rate, tideRate: S.sea.rate, crystals: S.crystals.length, bells: S.sea.bells.length, horns: S.horns.length,
-        lumen: S.lumen, fossils: S.fossils, fathoms: S.sea.fathoms, capP: sim.capP, omen: S.omen, rubble: S.rubble, shafts: S.stats.shafts, rockfalls: S.stats.rockfalls, veins: S.stats.veins });
+        lumen: S.lumen, fossils: S.fossils, fathoms: S.sea.fathoms, capP: sim.capP, omen: S.omen, rubble: S.rubble, shellDepthRequired: sim.heartDepth(), shellSoundsRequired: sim.heartSea(), shellCount: S.shells.items.length, shellDiscovery: S.shells.discovery, shellSlots: 1 + S.shells.extraSlot, shafts: S.stats.shafts, rockfalls: S.stats.rockfalls, veins: S.stats.veins });
     }
   }
 
