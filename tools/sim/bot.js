@@ -3,6 +3,10 @@
 // Source of the in-page function is exported as a string so run.js can inject it.
 module.exports = function installBot(cfg) {
   const sim = window.__geodeSimulation.api;
+  // Explicit balance sensitivity scenarios; no horns or currencies are granted.
+  if (cfg.hornStart === 'max' || cfg.hornStart === 'primordial') sim.S.hornUp.rarity = 10;
+  if (cfg.hornStart === 'primordial') Object.assign(sim.S.hornUp, { firstVoice: 1, firstRack: 1 });
+  if (cfg.hornStart === 'max' || cfg.hornStart === 'primordial') sim.refreshAll();
   const CAVE = new Set(['shopCrystals', 'shopVoices', 'shopTuning', 'shopWonders', 'shopAttune', 'shopStrata', 'shopGlow', 'shopHorns', 'shopGold']);
   const SEA = new Set(['shopBells', 'shopSeaVoices', 'shopSeaTuning', 'shopOysters', 'shopPearlObjs', 'shopBellTune', 'shopDeep', 'shopChoir', 'shopHorns']);
   const bot = { now: 0, t: 0, frames: 0, tapAcc: 0, marks: {}, log: [], started: false, done: false, stuckAt: 0, buys: 0, descents: 0, soundings: 0, budget: 0 };
@@ -25,7 +29,7 @@ module.exports = function installBot(cfg) {
     if (/^Glowworm Nest/.test(n)) return 10;
     if (/^Glowworm/.test(n)) return 3;
     if (/^(Patient Hands|Crystal Seeker|Sinking Stone|Carry Wonders|Pale Lighthouse)/.test(n)) return 6;
-    if (/^(Horn Rack|Keen Ear|Whetstone|Branching|Open the Ceiling|Listening Stones)/.test(n)) return 3;
+    if (/^(Horn Rack|Keen Ear|Whetstone|Branching|Ivory Echo|Rarity Weaving|Awaken the First Voice|First Voice Rack|Open the Ceiling|Listening Stones)/.test(n)) return 3;
     if (/^(Rich Vein|Gilded Breath)/.test(n)) return 3;
     if (/^Oyster/.test(n)) return 2;
     const tier = ['Quartz', 'Amethyst', 'Citrine', 'Moonstone', 'Tin Bell', 'Bronze Bell', 'Silver Bell', 'Abyssal Bell'].findIndex(x => n.startsWith(x));
@@ -46,6 +50,7 @@ module.exports = function installBot(cfg) {
         if (it.show && !it.show()) continue;
         if (it.state && it.state()) continue;               // toggles already owned
         const name = strip(it.name());
+        if (cfg.hornUpgrades === false && /^(Rarity Weaving|Awaken the First Voice|First Voice Rack)/.test(name)) continue;
         if (/^Sound the Horn Call/.test(name)) continue;    // never rolled: keeps fossils/fathoms for upgrades
         const c = it.cost(); if (c == null) continue;
         if (it.blocked && it.blocked()) continue;
@@ -88,15 +93,32 @@ module.exports = function installBot(cfg) {
     return s;
   }
   function manageHorns(S) {
-    const scored = S.horns.map(h => [hornScore(h), h]).sort((a, b) => b[0] - a[0]);
+    const scored = S.horns.filter(h => h.r !== 5).map(h => [hornScore(h), h]).sort((a, b) => b[0] - a[0]);
     const slots = sim.hornSlots();
     const want = scored.slice(0, slots).map(x => x[1].id);
     if (want.join() !== S.equipped.join()) { S.equipped = want; sim.refreshAll(); }
+    if (sim.primordialSlots) {
+      const pool = S.horns.filter(h => h.r === 5), cap = sim.primordialSlots();
+      let best = [], bestScore = -Infinity;
+      const evaluate = (chosen, start) => {
+        const traits = {};
+        for (const h of chosen) traits[h.trait.id] = Math.max(traits[h.trait.id] || 0, sim.traitValue(h));
+        const score = chosen.reduce((sum, h) => sum + hornScore(h), 0)
+          + (traits.memory || 0) * 0.6 + (traits.resonance || 0) * (S.equipped.length + chosen.length - 1)
+          + (traits.golden || 0) * 0.3 + (traits.undertow || 0);
+        if (score > bestScore) { bestScore = score; best = chosen.map(h => h.id); }
+        if (chosen.length < cap) for (let i = start; i < pool.length; i++) evaluate([...chosen, pool[i]], i + 1);
+      };
+      evaluate([], 0);
+      if (best.join() !== S.primordialEquipped.join()) { S.primordialEquipped = best; sim.refreshAll(); }
+      for (const h of pool) scored.push([hornScore(h) + sim.traitValue(h), h]);
+      scored.sort((a, b) => b[0] - a[0]);
+    }
     while (S.horns.length > 14) {                            // salvage the weakest spare horn for ivory
-      const spare = scored.filter(x => !S.equipped.includes(x[1].id)).pop();
+      const spare = scored.filter(x => !S.equipped.includes(x[1].id) && !(S.primordialEquipped || []).includes(x[1].id)).pop();
       if (!spare) break;
       const h = spare[1];
-      S.horns.splice(S.horns.indexOf(h), 1); S.ivory += sim.RARITY[h.r].ivory;
+      S.horns.splice(S.horns.indexOf(h), 1); S.ivory += sim.RARITY[h.r].ivory; S.stats.ivoryLife += sim.RARITY[h.r].ivory;
       scored.splice(scored.indexOf(spare), 1);
     }
   }
@@ -121,6 +143,10 @@ module.exports = function installBot(cfg) {
     if (S.finale === 0 && sim.songReady() && S.sea.fathoms >= sim.SONG_COST) { mark('finaleReady', S); bot.done = true; }
   }
   function marks(S) {
+    if (S.hornUp.rarity >= 10) mark('rarityMax', S);
+    if (S.hornUp.firstVoice) mark('primordialUnlock', S);
+    if ((S.primordialEquipped || []).length) mark('primordialEquipped', S);
+    if (S.hornUp.firstRack) mark('primordialThirdSlot', S);
     if (S.depth >= 1) mark('depth1', S); if (S.depth >= 5) mark('depth5', S); if (S.depth >= 10) mark('depth10', S); if (S.depth >= 12) mark('depth12', S);
     for (const d of [20, 30, 40, 50]) if (S.depth >= d) mark('depth' + d, S);
     for (let h = 1; h <= 3; h++) if (S.hearts >= h) mark('heart' + h, S);

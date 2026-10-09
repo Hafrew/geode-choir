@@ -204,7 +204,7 @@
       <div class="hsec" data-sub="upgrades" hidden>
         <section>
           <h2>The horn rack</h2>
-          <p class="note">Ivory comes from salvaging horns you don't want. Spend it, and fossils or fathoms, on the rack, the ear, the whetstone and branching.</p>
+          <p class="note">Every horn found brings ivory; Ivory Echo increases that reward. Salvage spare horns for more. Spend ivory on horn upgrades. Rarity Weaving shifts new horns toward higher rarities; fossils or fathoms can call more horns.</p>
           <div class="list" id="shopHorns"></div>
         </section>
       </div>
@@ -213,7 +213,21 @@
           <h2>Worn horns <span id="hornSlots">0 / 1</span></h2>
           <p class="note">Only the horns you <b>wear</b> count, in both worlds. Click a horn to look at it.</p>
           <div class="hslots" id="hornSlotRow"></div>
+          <div id="primordialRack" hidden>
+            <h2>First voices <span id="primordialSlots"></span></h2>
+            <p class="note">Primordial horns have their own slots. Duplicate traits use the strongest worn copy.</p>
+            <div class="hslots" id="primordialSlotRow"></div>
+          </div>
           <div class="hornsum" id="hornSum"></div>
+        </section>
+        <section id="hornInventoryRules">
+          <h2>A listening rack</h2>
+          <label class="hornrule"><input type="checkbox" id="hornAutoEquip"> Equip stronger horns automatically</label>
+          <label class="hornrule">Priority <select id="hornEquipFocus"><option value="balanced">Balanced</option><option value="cave">Cave</option><option value="sea">Sea</option></select></label>
+          <p class="note">Compares stats and traits across both racks. Balanced values both worlds equally. Turn off auto-equip to change worn horns manually.</p>
+          <fieldset class="hornsalvage"><legend>Auto-salvage new spare horns</legend><div id="hornSalvageRarities"></div></fieldset>
+          <label class="hornrule"><input type="checkbox" id="hornSalvageGilded"> Include Gilded horns in selected rarities</label>
+          <p class="note">Equipped horns are kept. Filters affect new finds only. At 30 horns, auto-equip makes room for an upgrade by salvaging the weakest spare; Gilded spares stay protected unless included above. If there is no room, the new horn becomes ivory.</p>
         </section>
         <section>
           <h2>Your horns <span id="hornCount">0 / 30</span></h2>

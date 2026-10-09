@@ -214,6 +214,7 @@
   .holdbtn:focus-visible { outline: 2px solid var(--heart); outline-offset: 2px; }
 
   .hornsum { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px 12px; padding: 10px 12px; border-radius: 10px; background: var(--slab); border: 1px solid var(--line); font-size: 0.7812rem; }
+  .hornsum > div { display: flex; gap: 6px; flex-wrap: wrap; }
   .hornsum span { color: var(--muted); }
   .hornsum b { font-family: var(--mono); font-weight: 600; color: var(--text); }
   .hornsum .empty { grid-column: 1 / -1; color: var(--muted); }
@@ -288,7 +289,7 @@
   .hodds b { font-family: var(--mono); font-weight: 600; }
   .ftag { color: var(--hum); font-weight: 600; } .ftag.gold { color: var(--gilt); }
   .gold { color: var(--gilt); }
-  .hcoll { display: grid; grid-template-columns: 62px repeat(6, minmax(0, 1fr)); gap: 6px; align-items: center; }
+  .hcoll { display: grid; grid-template-columns: 62px repeat(var(--rarity-columns, 6), minmax(0, 1fr)); gap: 6px; align-items: center; }
   .hcoll .hd { font-size: 0.625rem; letter-spacing: .08em; text-transform: uppercase; text-align: center; color: var(--rc); }
   .hcoll .fam { font-size: 0.6875rem; color: var(--muted); text-transform: capitalize; }
   .hcell { --rc: var(--line-2); display: flex; align-items: center; justify-content: center; position: relative; aspect-ratio: 1; border-radius: 10px;
@@ -433,3 +434,17 @@
     .item.pulse { animation: none; }
     .veil { transition-duration: .4s; }
   }
+
+  .horntrait { color: #83f5dc; line-height: 1.5; }
+  :root[data-gc-theme="light"] .horntrait { color: #247c70; }
+  #primordialRack { margin-top: 16px; }
+  .traitchoices { display: grid; gap: 8px; }
+  .traitchoices button { text-align: left; font-size: 0.875rem; }
+  .traitchoices small { display: block; font-family: var(--body); font-size: 0.75rem; line-height: 1.5; margin-top: 4px; }
+
+  .hornrule { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 9px 0; font-size: .8125rem; }
+  .hornrule select { font: inherit; color: var(--text); background: var(--slab); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+  .hornsalvage { border: 1px solid var(--line); border-radius: 8px; margin: 12px 0; padding: 10px; font-size: .8125rem; }
+  #hornSalvageRarities { display: flex; flex-wrap: wrap; gap: 10px 14px; }
+  #hornSalvageRarities label { display: flex; align-items: center; gap: 5px; }
+  #hornInventoryRules input { accent-color: var(--ivory); }
