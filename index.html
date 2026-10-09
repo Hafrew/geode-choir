@@ -254,6 +254,34 @@
   .hdetail .hb button.sal { color: var(--muted); }
   .hdetail .hb button.sal:hover { color: var(--warn); border-color: var(--warn); }
   .hdetail .hb button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+  .snd { --gc: var(--echo); --rc: var(--line-2); display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 14px; min-height: 150px; justify-content: center;
+    background: linear-gradient(160deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); }
+  .snd .sub { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5; }
+  .snd .sub b { color: var(--text); }
+  .snd .big { font: inherit; font-family: var(--display); font-size: 18px; letter-spacing: .05em; padding: 12px 14px; border-radius: 10px; cursor: pointer; color: var(--text);
+    background: var(--slab-2); border: 1px solid var(--line-2); }
+  .snd .big:hover { border-color: var(--heart); box-shadow: 0 0 18px color-mix(in srgb, var(--heart) 25%, transparent); }
+  .snd .big:focus-visible, .snd .small:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
+  .snd .small { font: inherit; font-size: 12px; align-self: center; color: var(--muted); cursor: pointer; background: none; border: 0; padding: 4px 8px; text-decoration: underline; text-underline-offset: 3px; }
+  .snd .small:hover { color: var(--text); }
+  .snd .reel { font-family: var(--display); font-size: 28px; text-align: center; letter-spacing: .06em; color: var(--rc); text-shadow: 0 0 18px color-mix(in srgb, var(--rc) 55%, transparent); }
+  .snd .head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--muted); }
+  .snd .head b { color: var(--gc); font-weight: 600; font-size: 14px; }
+  .sbar { position: relative; height: 38px; border-radius: 19px; background: var(--bar); border: 1px solid var(--line-2); overflow: hidden; cursor: pointer; touch-action: manipulation; user-select: none; }
+  .szone { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--gc) 26%, transparent); border-left: 2px solid var(--gc); border-right: 2px solid var(--gc); box-shadow: 0 0 16px color-mix(in srgb, var(--gc) 45%, transparent) inset; }
+  .szone::after { content: ''; position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px; margin-left: -1px; background: var(--gc); opacity: .7; }
+  .sneedle { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--text); box-shadow: 0 0 10px var(--text); }
+  .sfb { min-height: 20px; text-align: center; font-family: var(--display); font-size: 17px; letter-spacing: .05em; }
+  .sdots { display: flex; justify-content: center; gap: 6px; }
+  .sdots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); }
+  .sdots i.cur { outline: 2px solid var(--text); outline-offset: 1px; }
+  .sndres { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+  .sndres .hn { color: var(--rc); font-family: var(--display); font-size: 16px; line-height: 1.25; }
+  .sndres .hr { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .sndres ul { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12.5px; }
+  .sndres ul b { font-family: var(--mono); font-weight: 600; }
+  .sndauto { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  .sndauto input { accent-color: var(--heart); }
   .hodds { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 12px; align-items: center; font-size: 12.5px; }
   .hodds .bar { height: 5px; }
   .hodds .bar i { background: var(--rc); }
@@ -608,12 +636,14 @@
       </div>
       <div class="hsec" data-sub="sounding" hidden>
         <section>
-          <h2>The next horn call</h2>
-          <p class="note">Horns turn up on their own over time, and when you descend, sound the depths or kindle a Heartstone. Each is random. Rarer horns have bigger, and sometimes multiplying, bonuses.</p>
+          <h2>The horn call <span id="sndQueue"></span></h2>
+          <div class="snd" id="sndStage"></div>
+          <label class="sndauto"><input type="checkbox" id="hornAuto"><span>Sound horns automatically, with an average result each time</span></label>
           <p class="note" id="hornTimer"></p>
         </section>
         <section>
           <h2>The odds</h2>
+          <p class="note">The rarity is spun first. Then you play one note for each stat on the horn: how well you hit it sets that stat, from half to one and a half times its usual value.</p>
           <div class="hodds" id="hornOdds"></div>
           <p class="note" id="hornPity"></p>
         </section>
@@ -777,9 +807,14 @@
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.7.0';
+  const VERSION = '1.8.0';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.8.0', date: '2026-10-09', head: 'The Sounding', items: [
+      'Horn calls are now sounded by you. When the horn timer runs out, a call waits for you (up to 3). Open it from the Horn chip or the Sounding page: the rarity is spun first, then you play one note for each stat the horn has. Hit the glowing zone with the needle (click, tap, or Space) to set how strong that stat rolls, from half to one and a half times its usual value. Good play also gives a chance at an extra horn.',
+      'Prefer not to play? Turn on Sound horns automatically on the Sounding page and every call gives an average result, the same as before. You can also finish a horn with Auto at any point. Keen Ear widens the glowing zone.',
+      'Horns that come from descending, sounding the depths and kindling a Heartstone still arrive at once.',
+    ] },
     { ver: '1.7.0', date: '2026-10-09', head: 'The Horn Rack', items: [
       'The Horns tab is now four pages: Upgrades, Inventory, Sounding and Collection.',
       'Every horn has its own look, drawn from its shape family, rarity and stats: the body and curl follow the animal, the material follows the rarity, and a gem for each stat sits along it. Your worn horns sit in slots at the top of Inventory; click any horn to inspect, wear or salvage it. Filter by rarity.',
@@ -958,7 +993,7 @@
   });
   const fresh = () => ({
     ...freshCave(), total: 0, world: 'cave', hearts: 0,
-    horns: [], coll: {}, equipped: [], hornPity: 0, hornSeq: 0, hornBuys: 0, hornsOn: false, hornTimer: 360, ivory: 0,
+    horns: [], coll: {}, hornQueue: 0, hornPlan: null, hornAuto: false, equipped: [], hornPity: 0, hornSeq: 0, hornBuys: 0, hornsOn: false, hornTimer: 360, ivory: 0,
     hornUp: { rack: 0, ear: 0, whet: 0, branch: 0 },
     sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', saved: Date.now(), shouts: 0, tab: 'cave',
     lore: {}, feats: {}, stats: freshStats(),
@@ -2924,13 +2959,12 @@
       parent: 'shopHorns', icon: ICONS.horn('#ffcf86'), unit: () => S.world === 'sea' ? 'fathom' : 'fossil',
       name: () => 'Sound the Horn Call',
       cost: () => hornRollCost(),
-      desc: () => 'Find a new random horn right now.',
+      desc: () => S.hornAuto ? 'Find a new random horn right now.' : 'Adds a horn call to sound right now.',
       buy: () => {
         const u = S.world === 'sea' ? 'fathom' : 'fossil';
         if (!spend(u, hornRollCost())) return false;
         S.hornBuys++;
-        const h = gainHorn(0);
-        whisper(hornMsg(h));
+        if (S.hornAuto) { const h = gainHorn(0); whisper(hornMsg(h)); } else addHornCall();
         return true;
       },
     });
@@ -2957,7 +2991,9 @@
     }
     return { stat, kind: st.kind, v: Math.max(1, Math.round(st.per * R.flatK * (0.6 + 0.8 * u))) };
   }
-  function gainHorn(minR) {
+  // A horn call has two halves: the plan (rarity first, then which stats it has) and the build (the stats scaled by how well you played).
+  // Auto sounding builds the plan at once with an average result, so the order of random draws is the same as it always was.
+  function rollPlan(minR) {
     let x = Math.random(), ri = 0;
     for (; ri < RARITY.length - 1; ri++) { if (x < RARITY[ri].p) break; x -= RARITY[ri].p; }
     if ((S.hornPity || 0) >= PITY_AT) ri = Math.max(ri, 2);
@@ -2971,7 +3007,20 @@
       const s = pick(keys); if (used.has(s)) continue;
       used.add(s); lines.push(rollLine(s, R));
     }
+    return { ri, lines, perfs: [] };
+  }
+  const AUTO_P = 0.5, perfMult = p => 0.5 + p; // an average result is exactly the usual value; the range is half to one and a half times
+  function scaleLine(l, m) {
+    const st = HSTATS[l.stat];
+    if (l.kind === 'mult') return { ...l, v: +(1 + (l.v - 1) * m).toFixed(2) };
+    if (l.kind === 'pct') return { ...l, v: Math.max(1, Math.round(l.v * m)) };
+    return { ...l, v: Math.max(1, Math.round(l.v * m)) };
+  }
+  function buildHorn(plan, perfs) {
+    const ri = plan.ri;
+    const lines = plan.lines.map((l, i) => perfs ? scaleLine(l, perfMult(perfs[i] == null ? AUTO_P : perfs[i])) : { ...l });
     const h = { id: ++S.hornSeq, r: ri, name: `${pick(ADJ[ri])} ${pick(ANIMALS)} Horn of ${HSTATS[lines[0].stat].of}`, lines };
+    if (perfs && perfs.length) h.q = +(perfs.reduce((a, b) => a + b, 0) / perfs.length).toFixed(2);
     h.seed = hash32(h.id * 0x9E3779B1 + ri * 7919 + S.stats.hornsFound * 40503) || 1; // not from Math.random, so the random stream is unchanged
     noteColl(h);
     S.hornsOn = true;
@@ -2987,6 +3036,15 @@
     hornsDirty = true;
     refreshAll();
     return h;
+  }
+  function gainHorn(minR) { return buildHorn(rollPlan(minR), null); }
+  // A call that waits for you to sound it (or sounds itself, when Sound horns automatically is on).
+  const HORN_QUEUE_CAP = 3;
+  const hornsWaiting = () => S.hornQueue + (S.hornPlan ? 1 : 0);
+  function addHornCall() {
+    if (S.hornAuto) { const h = gainHorn(0); whisper('A horn turns up. ' + hornMsg(h)); return; }
+    S.hornQueue++; delete S.seen.tab_horns; hornsDirty = true;
+    whisper('A horn call is ready. Sound it from the Horn chip or the Sounding page.');
   }
   function hornMsg(h) {
     const rn = RARITY[h.r].name.toLowerCase();
@@ -3173,7 +3231,124 @@
     if (HB.cost) parts.push(`<span>Prices</span><b>−${Math.round(HB.cost * 100)}%</b>`);
     $('hornSum').innerHTML = parts.length ? parts.map(p => `<div>${p}</div>`).join('') : '<div class="empty">Wear a horn to feel its bonus here.</div>';
   }
+  // ---------------------------------------------------------------------
+  // the Sounding page: spin the rarity, then play a note for each stat
+  // ---------------------------------------------------------------------
+  let sndKey = '', sndRaf = 0, sndReel = 0, sndRound = null, sndResult = null;
+  const tri = x => 1 - Math.abs(2 * (x - Math.floor(x)) - 1);
+  const sndMode = () => sndResult ? 'result' : sndReel ? 'reel' : S.hornPlan ? 'play' : 'idle';
+  const perfWord = p => p >= 0.9 ? 'Perfect' : p >= 0.6 ? 'Good' : p >= 0.3 ? 'Okay' : 'Off the note';
+  const perfCol = p => p >= 0.9 ? 'var(--echo)' : p >= 0.6 ? 'var(--hum)' : p >= 0.3 ? 'var(--muted)' : 'var(--warn)';
+  function openSounding() {
+    closePops(); hornSub = 'sounding'; setTab('horns'); hornsDirty = true; updateUI();
+  }
+  function startSounding() {
+    if (S.hornPlan || sndReel || sndResult || S.hornQueue < 1) return;
+    S.hornQueue--; S.hornPlan = rollPlan(0); save();
+    const plan = S.hornPlan; let i = 0;
+    sndKey = ''; sndReel = setInterval(() => { i++; const e = $('sndReelTxt'); if (e) { const r = RARITY[i % RARITY.length]; e.textContent = r.name; e.parentNode.style.setProperty('--rc', r.col); } }, 85);
+    hornsDirty = true; updateUI();
+    setTimeout(() => {
+      clearInterval(sndReel);
+      const e = $('sndReelTxt'); if (e) { e.textContent = RARITY[plan.ri].name; e.parentNode.style.setProperty('--rc', RARITY[plan.ri].col); }
+      setTimeout(() => { sndReel = 0; sndKey = ''; hornsDirty = true; updateUI(); }, 900);
+    }, 1400);
+  }
+  function newRound() {
+    const pl = S.hornPlan, k = pl.perfs.length, ear = S.hornUp.ear, hw = Math.min(0.2, 0.1 + 0.008 * ear);
+    sndRound = { k, hw, c: 0.2 + Math.random() * 0.6, speed: 0.5 + 0.09 * k + 0.05 * pl.ri, phase: Math.random(), t0: performance.now(), frozen: null };
+  }
+  function sndHit() {
+    if (sndMode() !== 'play' || !sndRound || sndRound.frozen !== null) return;
+    const r = sndRound, pos = tri(r.phase + (performance.now() - r.t0) / 1000 * r.speed), d = Math.abs(pos - r.c);
+    const p = d <= r.hw * 0.25 ? 1 : Math.max(0, 1 - (d - r.hw * 0.25) / (r.hw * 1.8));
+    r.frozen = pos;
+    S.hornPlan.perfs.push(+p.toFixed(3)); save();
+    const fb = $('sndFb'); if (fb) { fb.textContent = perfWord(p); fb.style.color = perfCol(p); }
+    const dots = $('sndDots'); if (dots) dots.children[r.k].style.background = perfCol(p);
+    setTimeout(() => {
+      if (!S.hornPlan) return;
+      if (S.hornPlan.perfs.length >= S.hornPlan.lines.length) finishSounding();
+      else { sndRound = null; sndKey = ''; hornsDirty = true; updateUI(); }
+    }, 750);
+  }
+  function finishSounding() {
+    const pl = S.hornPlan; if (!pl) return;
+    while (pl.perfs.length < pl.lines.length) pl.perfs.push(AUTO_P);
+    const avg = pl.perfs.reduce((a, b) => a + b, 0) / pl.perfs.length;
+    const h = buildHorn(pl, pl.perfs);
+    S.hornPlan = null; sndRound = null;
+    let extra = null;
+    if (Math.random() < Math.max(0, avg - AUTO_P) * 0.5) extra = gainHorn(0);
+    sndResult = { h, extra, avg };
+    whisper(hornMsg(h) + (extra ? ' And a second horn came with it.' : ''));
+    save(); sndKey = ''; hornsDirty = true; updateUI();
+  }
+  function sndLoop() {
+    sndRaf = 0;
+    const needle = $('sndNeedle');
+    if (!needle || sndMode() !== 'play' || !sndRound || $('panel-horns').hidden || hornSub !== 'sounding') return;
+    const r = sndRound;
+    if (r.frozen === null) needle.style.left = (tri(r.phase + (performance.now() - r.t0) / 1000 * r.speed) * 100).toFixed(1) + '%';
+    else needle.style.left = (r.frozen * 100).toFixed(1) + '%';
+    sndRaf = requestAnimationFrame(sndLoop);
+  }
+  function sndRender() {
+    const mode = sndMode(), st = $('sndStage');
+    const key = mode + (mode === 'play' ? ':' + S.hornPlan.perfs.length : mode === 'idle' ? ':' + (S.hornQueue > 0) : mode === 'result' ? ':' + sndResult.h.id : '');
+    if (key !== sndKey) {
+      sndKey = key;
+      if (mode === 'idle') {
+        st.style.setProperty('--rc', 'var(--line-2)');
+        st.innerHTML = S.hornQueue > 0
+          ? `<button type="button" class="big" data-act="start">Sound the horn</button><div class="sub"><b>${S.hornQueue}</b> call${S.hornQueue > 1 ? 's' : ''} waiting. The rarity is spun first, then you play a note for each stat.</div>`
+          : `<div class="sub">No horn call is waiting.<br>The next one comes in <b id="sndNext"></b>.</div>`;
+      } else if (mode === 'reel') {
+        st.innerHTML = `<div class="sub">Spinning the horn…</div><div class="reel"><span id="sndReelTxt">…</span></div>`;
+      } else if (mode === 'play') {
+        const pl = S.hornPlan, R = RARITY[pl.ri];
+        if (!sndRound || sndRound.k !== pl.perfs.length) newRound();
+        const l = pl.lines[sndRound.k], r = sndRound;
+        st.style.setProperty('--rc', R.col); st.style.setProperty('--gc', STAT_COL[l.stat] || 'var(--echo)');
+        st.innerHTML = `<div class="head"><span style="color:${R.col}">${R.name} horn</span><span>Note ${r.k + 1} of ${pl.lines.length}: <b>${HSTATS[l.stat].label}</b></span></div>
+          <div class="sbar" id="sndBar" data-act="hit" role="button" tabindex="0" aria-label="Hit the note"><div class="szone" style="left:${((r.c - r.hw) * 100).toFixed(1)}%;width:${(r.hw * 200).toFixed(1)}%"></div><div class="sneedle" id="sndNeedle"></div></div>
+          <div class="sfb" id="sndFb"></div>
+          <div class="sdots" id="sndDots">${pl.lines.map((_, i) => `<i${i === r.k ? ' class="cur"' : ''} style="${i < r.k ? `background:${perfCol(pl.perfs[i])}` : ''}"></i>`).join('')}</div>
+          <div class="sub">Click, tap or press Space when the needle is in the glowing zone.</div>
+          <button type="button" class="small" data-act="auto">Finish with an average result</button>`;
+      } else {
+        const { h, extra, avg } = sndResult, hs = [h, extra].filter(Boolean);
+        st.style.setProperty('--rc', rcOf(h));
+        st.innerHTML = hs.map(x => `<div class="sndres" style="--rc:${rcOf(x)}"><div>${hornSVG(x, 104, 'r' + x.id)}</div><div><div class="hn">${x.name}</div><div class="hr">${RARITY[x.r].name}${x.salvaged ? ' · salvaged for ivory' : ''}${x.q != null ? ` · ${Math.round(x.q * 100)}% played` : ''}</div><ul>${x.lines.map(l => `<li>${lineText(x, l)}</li>`).join('')}</ul></div></div>`).join('')
+          + `<div class="sub">${extra ? 'Good playing brought a second horn. ' : ''}${avg > AUTO_P ? 'Above average.' : avg < AUTO_P ? 'Below average.' : 'Average.'}</div><button type="button" class="big" data-act="done">Continue</button>`;
+      }
+    }
+    if (mode === 'idle' && S.hornQueue < 1) setT('sndNext', S.hornsOn ? mmss(Math.max(0, S.hornTimer)) : 'a while');
+    if (mode === 'play' && !sndRaf) sndRaf = requestAnimationFrame(sndLoop);
+  }
+  $('sndStage').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const act = b.dataset.act;
+    if (act === 'start') startSounding();
+    else if (act === 'auto') finishSounding();
+    else if (act === 'done') { hornSel = sndResult ? sndResult.h.id : hornSel; sndResult = null; sndKey = ''; hornsDirty = true; updateUI(); }
+  });
+  $('sndStage').addEventListener('pointerdown', e => { if (e.target.closest('[data-act="hit"]')) { e.preventDefault(); sndHit(); } });
+  document.addEventListener('keydown', e => {
+    if ((e.key !== ' ' && e.key !== 'Enter') || e.repeat || sndMode() !== 'play' || $('panel-horns').hidden || hornSub !== 'sounding') return;
+    if (setOpen || newsOpen || chronOpen || awayOpen || creditsOpen || cinematic) return;
+    const t = e.target; if (t && t !== document.body && t.id !== 'sndBar') return;
+    e.preventDefault(); sndHit();
+  });
+  $('hornAuto').addEventListener('change', e => {
+    S.hornAuto = e.target.checked;
+    if (S.hornAuto) while (S.hornQueue > 0) { S.hornQueue--; const h = gainHorn(0); whisper('A horn turns up. ' + hornMsg(h)); }
+    save(); hornsDirty = true; updateUI();
+  });
   function renderSounding() {
+    $('hornAuto').checked = !!S.hornAuto;
+    setT('sndQueue', hornsWaiting() ? `${hornsWaiting()} waiting` : '');
+    sndRender();
     $('hornOdds').innerHTML = RARITY.map(r => `<span style="color:${r.col}">${r.name}</span><div class="bar" style="--rc:${r.col}"><i style="width:${(r.p * 100).toFixed(0)}%"></i></div><b>${Math.round(r.p * 100)}%</b>`).join('');
     const left = PITY_AT - (S.hornPity || 0);
     $('hornPity').textContent = left > 0 ? `${left} more horn${left > 1 ? 's' : ''} below Epic and the next one is Epic or better, guaranteed.` : 'The next horn is Epic or better, guaranteed.';
@@ -3381,7 +3556,7 @@
     setTimeout(() => {
       const keep = {
         total: S.total, world: 'sea', hearts: S.hearts + 1,
-        horns: S.horns, coll: S.coll, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
+        horns: S.horns, coll: S.coll, hornQueue: S.hornQueue, hornPlan: S.hornPlan, hornAuto: S.hornAuto, equipped: S.equipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
         ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, numfmt: S.numfmt, finale: S.finale, quests: S.quests, shouts: S.shouts, tab: 'sea',
         lore: S.lore, feats: S.feats, stats: S.stats,
       };
@@ -3807,7 +3982,7 @@
     $(p).hidden = !open; $(c).setAttribute('aria-expanded', String(open));
     updateUI();
   });
-  $('chipHorn').addEventListener('click', () => { closePops(); setTab('horns'); });
+  $('chipHorn').addEventListener('click', () => openSounding());
   document.addEventListener('pointerdown', e => { if (!e.target.closest('.pop, .schip')) closePops(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePops(); });
   function chip(id, label, val, frac, ready) {
@@ -3827,8 +4002,10 @@
       const cost = heartCost(), can = canKindle(), f = Math.min(1, S.lumen / cost);
       chip('chipHeart', 'Heartstone', can ? 'Ready' : Math.floor(f * 100) + '%', f, can);
     } else if (!$('popHeart').hidden) closePops();
-    setHid('chipHorn', !S.hornsOn);
-    if (S.hornsOn) { const t = Math.max(0, S.hornTimer); chip('chipHorn', 'Horn', mmss(t), 1 - t / hornInterval(), false); }
+    const waiting = hornsWaiting();
+    setHid('chipHorn', !S.hornsOn && !waiting);
+    if (waiting) chip('chipHorn', 'Sound horn', '×' + waiting, 1, true);
+    else if (S.hornsOn) { const t = Math.max(0, S.hornTimer); chip('chipHorn', 'Horn', mmss(t), 1 - t / hornInterval(), false); }
   }
 
   // Hover (or focus, or tap) a currency for its lifetime total and best.
@@ -4099,6 +4276,14 @@
     S.wonders = Array.isArray(S.wonders) ? S.wonders.filter(o => WONDERS[o.k]) : [];
     S.horns = Array.isArray(S.horns) ? S.horns.filter(h => h && RARITY[h.r] && Array.isArray(h.lines)) : [];
     S.coll = S.coll && typeof S.coll === 'object' && !Array.isArray(S.coll) ? S.coll : {};
+    S.hornQueue = Math.max(0, Math.min(9, Math.floor(+S.hornQueue) || 0));
+    S.hornAuto = !!S.hornAuto;
+    {
+      const pl = S.hornPlan;
+      const ok = pl && typeof pl === 'object' && RARITY[pl.ri] && Array.isArray(pl.lines) && pl.lines.length >= 1 && pl.lines.length <= 4
+        && pl.lines.every(l => l && HSTATS[l.stat] && typeof l.v === 'number') && Array.isArray(pl.perfs) && pl.perfs.length < pl.lines.length;
+      S.hornPlan = ok ? { ri: pl.ri, lines: pl.lines.map(l => ({ stat: l.stat, kind: l.kind, v: l.v })), perfs: pl.perfs.map(x => Math.max(0, Math.min(1, +x || 0))) } : null;
+    }
     for (const h of S.horns) { if (!h.seed) h.seed = hash32(h.id * 0x9E3779B1 + h.r * 7919) || 1; }
     for (const h of S.horns) { const k = famOf(h) + ':' + h.r; if (!S.coll[k]) noteColl(h); }
     S.equipped = Array.isArray(S.equipped) ? S.equipped.filter(id => S.horns.some(h => h.id === id)).slice(0, hornSlots()) : [];
@@ -4213,7 +4398,10 @@
     if (heartFill.style.width !== fill) heartFill.style.width = fill;
     if (S.hornsOn && !cinematic) {
       S.hornTimer -= dt;
-      if (S.hornTimer <= 0) { S.hornTimer = hornInterval(); const h = gainHorn(0); whisper('A horn turns up. ' + hornMsg(h)); }
+      if (S.hornTimer <= 0) {
+        if (S.hornAuto || hornsWaiting() < HORN_QUEUE_CAP) { S.hornTimer = hornInterval(); addHornCall(); }
+        else S.hornTimer = 0; // the calls are waiting for you; the clock holds
+      }
     }
     if (!cinematic) S.age += dt;
     decayF = freshAt(S.age);

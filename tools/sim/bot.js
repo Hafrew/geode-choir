@@ -150,6 +150,7 @@ module.exports = function installBot(cfg) {
 
   bot.run = function (seconds) {
     if (!bot.started) { const first = window.__raf.shift(); first(0); sim.S.lore.prologue = 1; bot.started = true; }
+    sim.S.hornAuto = true; // horn calls are sounded by hand in the game; the bot takes an average result, as horns always did before 1.8.0
     const step = cfg.stepMs || 50, frames = Math.round(seconds * 1000 / step), decideEvery = Math.round(500 / step);
     for (let i = 0; i < frames && !bot.done; i++) {
       bot.now += step; bot.t += step / 1000; bot.frames++;

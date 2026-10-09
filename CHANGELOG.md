@@ -2,6 +2,22 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.8.0: The Sounding (2026-10-09)
+
+### Added
+- **Horn calls are sounded by you.** When the horn timer runs out a call waits (up to 3; the clock holds while they wait). The Horn chip turns into "Sound horn" and opens the Sounding page. The rarity is spun first, then you play one note for each stat on the horn: a needle sweeps a bar, and you click, tap or press Space when it is in the glowing zone. How close you get sets that stat, from 0.5x to 1.5x its usual value. A mid result is exactly the usual value.
+- **Extra horns.** Playing above average gives up to a 25% chance of a second horn with the call.
+- **Sound horns automatically** (Sounding page): every call gives an average result straight away, as horns always did before. "Finish with an average result" does the same mid-sounding.
+- **Keen Ear** widens the glowing zone as well as shortening the timer.
+- Half-played horns are saved: reloading the page keeps your place and the rarity already spun, so a reload can't reroll it.
+
+### Unchanged
+- Horns from descending, sounding the depths, kindling a Heartstone and the Horn Call in the rack still arrive at once (or, for the rack, as a waiting call unless auto is on).
+- Odds, pity and the horn cap.
+
+### Sim
+- `tools/sim` turns on automatic sounding so a bot run behaves as before. With it on, horn rolls use the same random draws in the same order as 1.7.0.
+
 ## 1.7.0: The Horn Rack (2026-10-09)
 
 ### Added

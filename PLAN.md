@@ -12,7 +12,7 @@ Goal: make the gaps between descents more engaging **without changing how long t
 
 ## Scope
 
-Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x) **1.6.0 Phase 1** (status strip and hover stats) and **1.7.0 Phase 2** (Horns tab rebuild, procedural SVG horns, Collection), on this branch.
+Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x) **1.6.0 Phase 1** (status strip and hover stats) and **1.7.0 Phase 2** (Horns tab rebuild, procedural SVG horns, Collection) and **1.8.0 Phase 3** (horn minigame), on this branch.
 
 In: top status strip, hover lifetime/max stats, Horns tab rebuild, procedural then 3D horns, horn minigame, descent minigame with Risky Descent, floor identities, biomes, Chronicle drip, offline return report, horn sets, session goals, horn/bell music.
 
@@ -65,7 +65,7 @@ Sim impact: none.
 
 Sim impact: none (visual and UI only).
 
-## Phase 3: Horn minigame (1.8.0)
+## Phase 3: Horn minigame (1.8.0, done)
 
 Flow:
 1. When the horn timer expires, the chip pulses. Opening the **Sounding** screen **spins rarity first** (existing odds and pity unchanged).
@@ -74,7 +74,7 @@ Flow:
 4. Horn upgrades scale it: Keen Ear shortens the wait and widens timing windows, Whetstone raises the ceiling, Branching adds a stat (and so a minigame), Rack adds a pick slot.
 
 EV neutrality:
-- Performance maps to a stat multiplier in **0.6 to 1.5**, with the mean set to 1.0 for a typical player.
+- Performance maps to a stat multiplier in **0.5 to 1.5** (`0.5 + performance`), and an average performance of 0.5 is exactly 1.0. The extra-horn chance is `(avg - 0.5) * 0.5`, up to 25%.
 - **Auto-resolve** (a setting, and automatic after N minutes away) takes performance = the mean for every line. A "finish with auto" button skips the remaining lines mid-sounding. This is the sim bot's path.
 - A sounding that expires while you're away waits in the Sounding screen with no loss. Several can queue, up to a cap.
 
