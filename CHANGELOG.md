@@ -2,6 +2,11 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.8.1: A Wider Ledger (2026-10-09)
+
+### Added
+- **Resizable side panel.** Drag the edge between the cave and the side panel to make the panel wider (up to 760px, leaving the cave at least 360px) or narrower (down to 300px). Double-click the edge or press Home on it to reset to 368px, and use the left and right arrow keys to nudge it. The width is remembered on this device (outside the save, so importing a save doesn't change it). On narrow screens (820px and under) the panel stays full width and the edge is hidden.
+
 ## 1.8.0: The Sounding (2026-10-09)
 
 ### Added
