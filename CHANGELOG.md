@@ -4,6 +4,9 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ## Unreleased
 
+### Added
+- Developer toolbar for testing, unlocked by an access code entered under Settings → Access code. The toolbar module is only downloaded after a valid code, and it can add or set resources, set hearts, depth, soundings, floor and omen, clear cooldowns, force the next descent to be a Sunvein, form a pearl, warp time away, grant horns, shells and pearls of a chosen rarity, and copy the save. Any use marks the save (`stats.devUsed`). `tools/make-dev-code.js` makes a new random code and writes only its salted hash to `src/dev-config.js`; this is a convenience lock for a static game, not security.
+
 ### Fixed
 - Fossil and fathom gains on the Descend and Sound buttons, the top strip chip, the panel text, and the descent and sounding messages now use the number format setting (for example 384M) instead of the raw number.
 

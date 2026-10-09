@@ -3756,6 +3756,44 @@ import { createState } from './state.js';
   $('wCave').addEventListener('click', world_reset_hist);
   $('wSea').addEventListener('click', world_reset_hist);
 
+  // Developer toolbar: a separate module that is only fetched after an access code is accepted (a convenience lock, not security).
+  const DEV_KEY = KEY + '-dev';
+  let devTools = null;
+  const devContext = () => ({
+    state: () => S, save, updateUI, refreshAll, fmt, grantAway, rollPlan, buildHorn, encodeSave,
+    floors: Object.keys(FLOORS), omens: Object.keys(OMENS), lock: lockDev,
+  });
+  async function enableDev() {
+    if (devTools) return;
+    const m = await import('./dev.js');
+    devTools = m.initDevTools(devContext());
+    $('codeBox').value = ''; $('codeMsg').textContent = 'Developer tools are on. Use the Dev button at the bottom of the screen.';
+    $('codeBox').disabled = true; $('codeBtn').disabled = true;
+  }
+  function lockDev() {
+    devTools?.destroy(); devTools = null;
+    try { localStorage.removeItem(DEV_KEY); } catch (_) {}
+    $('codeBox').disabled = false; $('codeBtn').disabled = false; $('codeMsg').textContent = 'Locked.';
+  }
+  async function submitCode() {
+    const code = $('codeBox').value;
+    if (!code.trim()) { $('codeMsg').textContent = 'Enter a code.'; return; }
+    try {
+      const [{ verifyCode }, { DEV_CONFIG }] = await Promise.all([import('./dev-lock.js'), import('./dev-config.js')]);
+      if (!(await verifyCode(code, DEV_CONFIG))) { $('codeMsg').textContent = 'That code was not recognised.'; return; }
+      try { localStorage.setItem(DEV_KEY, DEV_CONFIG.hash); } catch (_) {}
+      await enableDev();
+    } catch (_) { $('codeMsg').textContent = 'Could not check the code here.'; }
+  }
+  $('codeBtn').addEventListener('click', submitCode);
+  $('codeBox').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitCode(); } });
+  async function restoreDev() {
+    let stored = null;
+    try { stored = localStorage.getItem(DEV_KEY); } catch (_) {}
+    if (!stored) return;
+    try { const { DEV_CONFIG } = await import('./dev-config.js'); if (stored === DEV_CONFIG.hash) await enableDev(); else localStorage.removeItem(DEV_KEY); } catch (_) {}
+  }
+
   function start(data) {
     const away = load(data);
     const returning = away != null;
@@ -3775,6 +3813,7 @@ import { createState } from './state.js';
     updateUI();
     window.claude?.hot?.snapshot?.(() => serialize());
     requestAnimationFrame(t => { last = t; frame(t); });
+    if (!simulation?.fast) restoreDev();
     if (returning && !needPrologue) maybeShowNews();
     if (needPrologue) {
       S.seen.chron = 0;
