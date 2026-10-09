@@ -2,6 +2,11 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.9.1: Text That Scales (2026-10-09)
+
+### Fixed
+- **Text size setting.** The setting changed the root font size, but nearly every font size in the stylesheet was in fixed pixels, so almost nothing followed it. All of them (83 `font-size` and `font` declarations and one inline style) are now in `rem`, converted from the same pixel values, so Normal looks exactly as before and Small (0.9), Large (1.15) and Huge (1.3) scale the side panel, the status strip and its panels, tooltips, buttons, the Horns pages and dialogs. The cave canvas text stays in pixels on purpose.
+
 ## 1.9.0: The Sunvein (2026-10-09)
 
 ### Added
