@@ -11,6 +11,15 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.10.3: Luck Evens Out (2026-10-09)
+
+### Added
+- Sunvein bad-luck protection: each eligible descent (depth 3 or deeper) without a Sunvein adds one percentage point to the arrival chance, up to five extra points, and the 30th consecutive dry descent is always a Sunvein. The base chance (5% plus 2 points per Gilded horn, capped at 15%) is unchanged; pity is added on top.
+- The Gilt chip shows the current chance (including pity) and the dry-descent count.
+
+### Saves
+- The dry-descent counter is saved with the stats, starts at zero for older saves, and is clamped to 0–29 on load.
+
 ## 1.10.2: The Longer Road (2026-10-09)
 
 ### Changed
