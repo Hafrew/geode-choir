@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current release: **1.10.1 beta** on `main`. All gameplay through 1.10.1 is merged (the stacked 1.9.6–1.10.1 branches landed through PR #25). The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening below is done; the label is presentation only, and saves and version checks use the plain version number. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current release: **1.10.2 beta** on `main` (plus an unreleased number-format fix). Everything through 1.10.2 is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations now finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -12,7 +12,9 @@ Current release: **1.10.1 beta** on `main`. All gameplay through 1.10.1 is merge
 - Preserve earned balances, items, paid levels, actual counters, and completed finales. Back up before migration. Outcomes and payments are once-only and cannot reroll on reload.
 - UI, automation, and simulations use the same rules and purchase functions. No duplicate eligibility or reward formulas.
 - Keep static hosting build-free. Extract rules and state boundaries as features need them; do not make a full canvas/audio/UI rewrite a prerequisite.
-- Each gameplay release updates the runtime version, CHANGELOG, and What's new, with relevant rule/browser checks. Costs and difficulty marked proposed remain tunable.
+- Each gameplay release updates the runtime version, CHANGELOG, and What's new, with relevant rule/browser checks. A version bump also bumps `seenVer` in the browser-test save fixtures, or the What's-new dialog opens and blocks clicks. Costs and difficulty marked proposed remain tunable.
+- Pacing is judged against both the simulator (seeds 1–5) and real player saves. The bot is a baseline, not a person: real saves have reached Heartstones faster than the bot, so measure and calibrate before locking numbers.
+- Do not use a currency that grows exponentially with depth (lumen) as the main pacing gate: any lumen price converts to only a few depth levels. Pace with depth, time-gated Sea requirements, or timers.
 
 ## Release map
 
@@ -32,10 +34,12 @@ Current release: **1.10.1 beta** on `main`. All gameplay through 1.10.1 is merge
 | 1.9.8 | Sea settling, cumulative Heartstone gates, tide curve, Ceiling cap, 50k finale offering | Delivered |
 | **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Delivered; manual tuning pending |
 | **1.10.1** | Stable 2D shell art in inventory and sounding | Delivered; released as **beta** |
-| **1.10.2** | The Longer Road: five-Heartstone finale (36 soundings), lumen cost ×25 per Heartstone, Plumb Line ×1.2 | Delivered; finish-time effect still being measured |
-| **1.10.3** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI | **Next pass**; no balance changes |
-| **1.10.4** | Auto-buy horns, staged Patient Choir unlocks, longer Heartstone run (finale already at 5 Heartstones in 1.10.2) | Proposed; needs simulator rerun before numbers are final |
-| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.4, using the natural shell-economy results |
+| **1.10.2** | The Longer Road: five-Heartstone finale (36 soundings), lumen cost ×25 per Heartstone, Plumb Line ×1.2 | Delivered; measured mean 6.56 h to finale readiness |
+| Unreleased | Fossil and fathom gains follow the number format setting | Delivered (#31); audit for other raw numbers is in 1.10.3 |
+| **1.10.3** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | **Next pass**; no balance changes |
+| **1.10.4** | Pacing pass II: time-gated Sea requirements, depth and omen tuning, Sunvein pity | Proposed; decision pending, numbers need sim and real-save checks |
+| **1.10.5** | Auto-buy horns and staged Patient Choir unlocks | Proposed; prices depend on the 1.10.4 pacing |
+| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.5, using the measured economy |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -75,7 +79,7 @@ Sunvein arrival chance is 5% plus two percentage points per owned Gilded horn, c
 - Heartstone depth: `max(1, 12 + 22*h + omenDepth - equippedShellDepth)`.
 - Heartstone sounding baseline: **0 for the first Heartstone**, then **20/24/28/...** cumulative actual soundings. Subtract equipped fixed shell reductions; clamp later requirements to at least one. Discounts affect eligibility only.
 - Open the Ceiling: new purchases cap at **15**, cost `ceil(1,500 * 3.5^level)`. Legacy higher levels retain their full bonuses and cannot purchase further.
-- Current finale: **25 actual soundings, three Heartstones, 20 feats, 50,000 fathoms**. Shells never discount its actual-sounding requirement.
+- Finale as of 1.9.8: **25 actual soundings, three Heartstones, 20 feats, 50,000 fathoms** (1.10.2 raised it to 36 soundings and five Heartstones). Shells never discount its actual-sounding requirement.
 - Legacy saves start with no new cooldown or retrospective shells. If the old Sea requirement for their pending Heartstone was met, persist that one-use old requirement until kindling, then adopt the new gate. Never fabricate actual soundings.
 
 Five natural no-shell seeds reached finale readiness in **4.609–4.792 hours**, averaging **4.667 hours**, an intentional **31.68%** increase over the comparison baseline. Fathom balances at readiness ranged from **52,183 to 4,147,683**. This is reachable, but not evidence of a uniform economy or balanced shell prices. See [Sea pacing results](tools/sim/sea-pacing.md) and [foundation results](tools/sim/sea-foundations.md).
@@ -104,6 +108,25 @@ Original delivery intent: wire existing `src/seashells.js` rules into the real s
 
 Validate natural discovery and purchases, first Epic/Mythic timing, both slots, effective Heartstone gates, reload/reset behavior, and desktop/mobile interaction. Run the bot using actual drops, Auto quality, real purchase prices, and a **proposed 100,000-fathom finale reserve**. Include Patient Choir and Deep purchases as competing sinks; shell upgrades must be optional to reaching the finale.
 
+## 1.10.2 results and findings
+
+Measured on seeds 1–3 (details in [tools/sim/longer-road.md](tools/sim/longer-road.md)):
+
+| Seed | Heartstone 1 | 2 | 3 | 4 | 5 (finale ready) |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1.37h | 3.50h | 4.28h | 5.21h | 6.26h |
+| 2 | 1.39h | 3.67h | 4.74h | 5.76h | 6.87h |
+| 3 | 1.36h | 3.50h | 4.46h | 5.43h | 6.54h |
+
+Mean **6.56h**, up from **4.25h**. Findings that shape the next passes:
+
+- **Depth is the gate.** After Heartstone 1, each Heartstone takes about 0.8–1.1h. Depth needed is `12 + 22h + omen - shell`; the omen swings it from -6 (Generous) to +8 (Stubborn).
+- **Lumen is not a gate and cannot be made one.** Lumen income grows with depth, so costs in the trillions only add minutes; see the principle above. The ×25 growth stays as a mild check.
+- **The 36 soundings are done 1.6–2.2h early**, so the Sea side does not pace the run. The Sea settling timer cost about 0.77h per run.
+- **Real saves are faster than the bot early.** One save had two Heartstones at 2.6h played, against 3.5–3.7h for the bot. Expect real finishes below 6.5h; calibrate with player saves.
+- **Fathoms have little to spend on.** Typical income is about 150,000 per sounding; a large held balance in one save was a single old windfall, not income. Staged Patient Choir prices (1.10.5) are the planned sink.
+- **Sunveins work as designed.** Forced-descent testing gave 7.4% with one Gilded horn (expected 7%); a 0-in-65 dry spell is about a 4% event. The system has no bad-luck protection and no way to raise the 5% base other than Gilded horns, which only Sunveins produce.
+
 ## 1.10.3 — Beta hardening
 
 From the post-merge code review of 1.10.1. No balance or progression changes; the seeded parity rule applies.
@@ -112,24 +135,30 @@ From the post-merge code review of 1.10.1. No balance or progression changes; th
 - **Save-failure warning.** `save()` swallows storage errors, so a full or blocked localStorage silently loses progress. Show one toast per session when a save or backup write fails.
 - **Inventory render cost.** The UI refreshes every 0.12 s; rebuild horn/shell grids only when their contents change (an inventory revision counter), so large inventories stay smooth on phones. Verify with a several-hundred-horn fixture at 390px.
 - **One test command and CI.** Add a `package.json` `test` script that runs the unit tests and every browser smoke suite, and a GitHub Action that runs the unit tests on each PR to `main`. Stacked PRs that merge only into their parent branch (#20–#24) should be caught by a check that their changes reached `main`.
+- **Number-format audit.** Fossil and fathom gains were printed as raw integers (for example 384738384) and are fixed (#31). Search the UI for any other interpolated numbers that bypass `fmt()` (shop prices, popovers, toasts, the Chronicle, Deep/Choir upgrade text) and fix them, with one browser check at large values.
+- **Check the Sunvein arrival lump.** In one sim run the arrival lump was 9.05 gilt while the balance read 3.01 right after arrival. Probably gilt draining over the first chunk, but unconfirmed; verify against `sunveinArrival` and the gilt cap before treating it as correct.
 - Optional: one formatting pass (about 150 lines in `main.js` exceed 200 characters), in its own PR so review diffs stay readable.
 
 The beta label is removed when 1.11.0 lands and this hardening is complete.
 
-## Ongoing — `main.js` module split
+## 1.10.4 — Pacing pass II (proposed, decision pending)
 
-`src/main.js` holds about 3,800 lines in one closure. Continue the incremental extraction already used for shells, automation, progression, and saves, one reviewable PR each, with the smoke suites as the guard:
+Goal: a mean natural finish of about **6–8 hours** with a spread across seeds, while a human who plays well can land a little earlier. 1.10.2 landed at 6.56h on the bot, so this pass may be small or skipped. Candidate levers; none are built, and every number is **proposed**:
 
-1. Changelog data (`CHANGES`) to `src/changes.js`.
-2. Horn Sounding minigame and inventory UI (around lines 2280–2640) to a `horn-ui.js`, matching `shell-ui.js`.
-3. Save/load, backup, and import/export codes into `saves.js`.
-4. Reward and cost formulas (`fossilGain`, `fathomGain`, `heartCost`, and related) into `progression.js`, so tests and the simulator import them directly instead of through `simulation.api`.
+| Lever | Change | Intended effect | Notes and risks |
+|---|---|---|---|
+| Time-gated Sea requirements | Cumulative sounding gates 20/28/36/44 (instead of 20/24/28/32) and a finale of about 52 soundings | Makes the Sea a real gate: soundings are limited by the 2-minute settling timer, which power cannot shorten | Today the 36 soundings finish 1.6–2.2h early. Measure first; the bot's Sea share affects the result. Recommended first lever |
+| Depth step | `22h` to about `26–28h` | Lengthens each cave leg by roughly a quarter | Most grind; use only if the Sea lever is not enough |
+| Omen swing | Cap Stubborn +8 / Generous -6 at about ±4 | Removes a 14-level luck swing per Heartstone | Reduces randomness; small effect on the mean |
+| Sunvein pity | +1 percentage point per descent since the last Sunvein, reset on arrival, capped | Removes long dry spells (the base 5% is the only source until a Gilded horn exists) | A feel fix more than a pacing lever (Sunveins give +10% fossils); decide whether pity counts toward the 15% cap |
+| Descent value | More fossils per descent or a shorter descent lock | Eases the depth grind | Only if the run is judged too long |
+| Lumen cost | Keep ×25; no further increase | None | Do not make lumen the main gate (see principle) |
 
-Extraction never blocks a feature release, and the canvas/audio rewrite stays out of scope.
+Process: pick levers, rerun seeds 1–5 with `tools/sim/run.js`, compare finish times and per-Heartstone gaps, and check the Heartstone saves in `tools/saves` still load. Gather finish and Heartstone times from real players to calibrate the bot's early pace. Changes preserve earned balances, items, and paid levels; existing saves keep their Heartstones.
 
-## 1.10.4 — Auto-buy horns, staged automation
+## 1.10.5 — Auto-buy horns, staged automation
 
-Natural runs finish in about **4.25 hours** (3.96–4.85 h, seeds 1–5, see [playable shell validation](tools/sim/playable-seashells.md)). The goal here is a longer game, and automation that has to be earned instead of arriving as one flat unlock.
+The goal is automation that has to be earned instead of arriving as one flat unlock. Staged prices depend on the pacing chosen in 1.10.4 and should be set from measured income at the time each Heartstone gate opens.
 
 ### Auto-buy horns
 - A dedicated rack of up to **3 slots** for **Epic, Legendary, and Mythic** horns, used only to speed up Patient Choir shopping. Slotted horns give **no stat effect** anywhere; their only effect is a shorter shopping interval.
@@ -150,19 +179,12 @@ Replace the single 100,000-fathom switch that opens all nine categories with a l
 
 Existing saves that already own Patient Choir keep what they have paid for: their categories open, no refund, no double charge, and the new stages are bought normally.
 
-### Longer run: more Heartstones
-- Raise the Heartstone requirement for the finale from **3 to 5** (decided). Rationale: with slots arriving at Heartstones 3 and 4, a target of 4 would hand over the last slot one step before the end; 5 gives the new slots time to matter.
-- The finale's actual-sounding requirement (currently 25) is already below the cumulative gate for later Heartstones (20/24/28/32…), so it must be raised with the Heartstone count (about 36 for five Heartstones), or the sounding requirement stops mattering.
-- Heartstone cost (`1e7 × 10^h` lumen) and depth (`12 + 22h`) keep growing, so Heartstone 4 and 5 are large steps. The sim decides whether they need easing.
-- Goal to measure: a mean natural finish of about **6–8 hours** (proposed), with no seed far outside that range. The 20-feat requirement and the 100,000-fathom entry price are re-checked. At that mid-run balance the entry price is trivial, so the 1.11.0 offering needs to be rescaled with the rest.
-- Existing saves with three or four Heartstones keep them; a completed finale stays completed.
-
 ### Validation
 Unit tests for the shopping interval and for loading bad ids. Browser smoke checks for slotting, unlocking at Heartstones 3 and 4, staged purchases, old-save migration, and reload. Seeds 1–5 rerun for finish time, with an automation-on and automation-off comparison. The unlock prices and the interval multipliers stay marked proposed until then.
 
 ## 1.11.0 — The Last Chorus
 
-Replace immediate first-time finale completion with a **roughly 30-minute interactive expedition** after paying the entry offering. Proposed cost **100,000 fathoms**, subject to 1.10.0 natural-economy checks; current cost remains 50,000 until a gameplay release changes it. No further mandatory payments. Entry retains 25 actual soundings, three Heartstones, and 20 feats.
+Replace immediate first-time finale completion with a **roughly 30-minute interactive expedition** after paying the entry offering. Proposed cost **100,000 fathoms**, subject to 1.10.0 natural-economy checks; current cost remains 50,000 until a gameplay release changes it. No further mandatory payments. Entry requires **36 actual soundings, five Heartstones** (set in 1.10.2; 1.10.4 may raise the soundings), and 20 feats. The 100,000-fathom entry price is trivial at measured mid-run balances and is rescaled with the staged automation prices.
 
 | Chapter, about six minutes each | Interaction |
 |---|---|
@@ -228,6 +250,17 @@ Derive tube/lathe geometry from existing seeds, rarity, and stats. Lazy-load a p
 
 The user suggested offline idle horns capped at **five on return**, regardless of absence length. Exact manual pending-call versus Auto item handling and interaction with an existing queue remain unconfirmed. Keep this separate from the offline report and horn timer fix. If adopted, define timestamp consumption, one-return cap, queue preservation, and once-only processing before assigning a release; no retroactive inventory sweep or lost pending horn.
 
+## Ongoing — `main.js` module split
+
+`src/main.js` holds about 3,800 lines in one closure. Continue the incremental extraction already used for shells, automation, progression, and saves, one reviewable PR each, with the smoke suites as the guard:
+
+1. Changelog data (`CHANGES`) to `src/changes.js`.
+2. Horn Sounding minigame and inventory UI (around lines 2280–2640) to a `horn-ui.js`, matching `shell-ui.js`.
+3. Save/load, backup, and import/export codes into `saves.js`.
+4. Reward and cost formulas (`fossilGain`, `fathomGain`, `heartCost`, and related) into `progression.js`, so tests and the simulator import them directly instead of through `simulation.api`.
+
+Extraction never blocks a feature release, and the canvas/audio rewrite stays out of scope.
+
 ## Conflict review
 
 | Conflict / ambiguity | Resolution or remaining decision |
@@ -238,7 +271,7 @@ The user suggested offline idle horns capped at **five on return**, regardless o
 | Newly approved finale order versus original descent-first order | Seashells → Last Chorus → descent; neither finale nor descent depends on the other |
 | 100k offering discussed as though already implemented | Proposed, pending natural shell-budget checks; runtime remains 50k |
 | First Heartstone required Sea before unlocking it | First Sea gate stays zero |
-| Shell discounts could fake milestones/finale soundings | Eligibility only; finale still needs 25 actual sounds |
+| Shell discounts could fake milestones/finale soundings | Eligibility only; finale still needs its full count of actual sounds (36 since 1.10.2) |
 | Shell quality previously changed sounding discounts | Only depth varies; sound reductions stay 0/1/3 |
 | Two identical Mythics might be blocked by deduplication | Distinct IDs can equip together; no rarity/value deduplication |
 | Sea timer and Faster Tick might double-scale work | Apply speed once; HUD derives remaining real time from shared rules |
@@ -254,6 +287,11 @@ The user suggested offline idle horns capped at **five on return**, regardless o
 | Freshness reward starts from an already fresh floor | Bounded extension/offset, no negative age or over-cap freshness |
 | Risky failure could replay arrival/depth rewards | Explicit failed-landing rules and consumed reward accounting required |
 | Old scope excluded puzzles/events | Ordinary cave events, choose-three arrival choices, rhythm shouts, resonance puzzles, and settling tasks remain excluded. Approved Last Chorus encounters/pulse alignment are a finale-specific exception |
+| Raising the lumen cost to trillions looked like an easy way to lengthen the run | Lumen grows exponentially with depth; the cost converts to a few depth levels, so pacing uses depth and Sea gates instead |
+| A real save and the bot disagree on early pace | Measure against both; calibrate with player saves before locking numbers |
+| The 36-sounding finale requirement stopped mattering | 1.10.4 candidate: time-gated Sea requirements so soundings pace the run |
+| Sunveins have no bad-luck protection and Gilded horns only come from Sunveins | 1.10.4 candidate: pity counter; verified the 5%/7% rates by forced-descent testing |
+| A version bump opens the What's-new dialog in browser tests | Bump `seenVer` in smoke fixtures with each release |
 | Full module refactor blocks feature delivery | Extract necessary boundaries incrementally; canvas/audio/UI split remains ongoing work |
 
 The dependency order is consistent with these resolutions. **Balance and manual feel remain open**: shell price/manual-feel tuning, final entry price, assistance duration, harmony thresholds, risky rewards/failure placement/Auto, optional Sea layer, and set rewards require concrete tuning. No speculative number is a shipped promise.
@@ -264,6 +302,8 @@ For each gameplay slice, run relevant existing rule/browser suites plus targeted
 
 Natural progression comparisons use seeds 1–5 with real currency generation, purchases, discovery, and average Auto; diagnostic best-item fixtures must be labelled separately. Compare several Cave/Sea shares and Patient Choir reserves. Record timer/tide stalls, Heartstone timing, actual sounds, shell outcomes/upgrades, Plumb Line, total/held fathoms, and final entry budgets. Extend horizons only when necessary and distinguish slow completion from an unreachable prerequisite.
 
-Existing reports: [horn first pass](tools/sim/horn-first-pass.md), [ivory income](tools/sim/ivory-income.md), [QOL](tools/sim/qol.md), [Sea foundations](tools/sim/sea-foundations.md), [Sea pacing](tools/sim/sea-pacing.md). Natural shell results are recorded in [playable shell validation](tools/sim/playable-seashells.md); the expedition remains unimplemented. The earlier no-shell readiness results do not validate expedition duration.
+Simulator tools: `tools/sim/run.js` (finale runs; `--stopAtSunvein 1` for a Sunvein sanity check; the final output includes Sunvein and gilt counts) and `tools/sim/make-saves.js` (writes importable Heartstone 1–4 saves to `tools/saves/` for manual testing). Run long sims on an otherwise idle machine; browser suites time out when CPU is shared.
+
+Existing reports: [The Longer Road](tools/sim/longer-road.md), [horn first pass](tools/sim/horn-first-pass.md), [ivory income](tools/sim/ivory-income.md), [QOL](tools/sim/qol.md), [Sea foundations](tools/sim/sea-foundations.md), [Sea pacing](tools/sim/sea-pacing.md). Natural shell results are recorded in [playable shell validation](tools/sim/playable-seashells.md); the expedition remains unimplemented. The earlier no-shell readiness results do not validate expedition duration.
 
 Deliver reviewable PRs in release order, keeping the existing stacked branch dependencies until merged. Planning edits do not claim gameplay implementation. Update this roadmap's status as each release actually lands.
