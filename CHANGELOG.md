@@ -8,6 +8,23 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.10.1: Pearl and Pattern (2026-10-09)
+
+### Added
+- Deterministic 2D SVG art in shell inventory and sounding cards: ridged Common scallops, patterned Epic spirals, and ornate pearlescent Mythic conches with gold details.
+- Stable variations derive from each shell's existing ID and rarity, preserving the appearance through completion, equipment changes, and reloads. No save migration, random gameplay draws, or balance changes.
+
+## 1.10.0: Shells Answer (2026-10-09)
+
+### Added
+- Successful actual Sea soundings check once for a shell: 20% discovery, with conditional 75% Common / 20% Epic / 5% Mythic odds. The Deep presents the saved discovery result; reload cannot reroll it.
+- Common shells can be claimed directly. Epic/Mythic use three-note shell sounding with narrower Mythic windows, saved partial performance, a clock that pauses off-screen, and average-quality Auto. Quality sets depth reduction only: Common 1, Epic 2–4, Mythic 5–10. Auto gives 1/3/8; sounding reductions remain fixed at 0/1/3.
+- Separate shell inventory/equipment: one slot, a permanent second for 500 fathoms, and six discovery purchases at 25/50/100/200/400/800 fathoms, reaching 50%. Distinct identical shells can occupy both slots; spare ownership grants nothing. No inventory cap or forced salvage.
+
+### Saves and validation
+- Shells, discovery outcomes, upgrades, equipment, and pending notes survive reloads and all progression resets. Pending shell completion never repeats ordinary sounding rewards or blocks production. Shell discounts affect Heartstone eligibility only.
+- The simulator completes real discovered shells with Auto, equips strongest rarity/depth choices, buys actual upgrades, and records shell outcomes and effective requirements. A separate finale-reserve option tests the proposed 100,000-fathom price; the runtime offering remains 50,000.
+
 ## 1.9.8: The Sea Settles (2026-10-09)
 
 ### Changed

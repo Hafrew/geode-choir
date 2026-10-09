@@ -1,3 +1,5 @@
+import { createShellUI } from './shell-ui.js';
+import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscoveryCost, shellDiscoveryChance } from './seashells.js';
 import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
   soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
@@ -17,9 +19,19 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.9.8';
+  const VERSION = '1.10.1';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
+    { ver: '1.10.1', date: '2026-10-09', head: 'Pearl and Pattern', items: [
+      'Seashell inventory and sounding cards now show stable 2D art: ridged Common scallops, patterned Epic spirals, and pearlescent Mythic conches with gold details.',
+      'Every shell keeps its appearance through sounding, equipment changes and reloads. Artwork is cosmetic; shell effects, discovery odds and costs are unchanged.',
+    ] },
+    { ver: '1.10.0', date: '2026-10-09', head: 'Shells Answer', items: [
+      'Each successful Sea sounding checks once for a seashell. Discovery starts at 20%; Common, Epic and Mythic are 75%, 20% and 5% of finds. The saved spinner result cannot reroll on reload.',
+      'In The Deep, claim Common shells directly. For Epic/Mythic, sound three notes to set depth reduction, or finish with average-quality Auto. Notes pause when you leave. Sounding reductions are fixed at 0, 1 and 3; horn upgrades cannot strengthen shells.',
+      'Equip one shell in its own rack. A 500-fathom purchase adds a second slot; Shell Listening costs 25/50/100/200/400/800 fathoms and raises discovery to 50%. Items, upgrades and pending notes survive every reset.',
+      'Shell discounts ease Heartstone eligibility only. The Undersong still needs 25 actual soundings and its current 50,000-fathom offering.',
+    ] },
     { ver: '1.9.8', date: '2026-10-09', head: 'The Sea Settles', items: [
       'Sea soundings now have a settling timer. It starts at ten minutes and shortens at 2, 5, 10 and 20 actual soundings, down to two minutes. Faster Tick speeds it in either world and while away.',
       'Later Heartstones need 20, 24, 28 and onward total Sea soundings. The first still opens the Sea. An already-met Sea milestone in an old save stays valid for its current Heartstone.',
@@ -1998,6 +2010,11 @@ import { createState } from './state.js';
     });
   }
 
+  const shellUI = createShellUI({ state: () => S,
+    active: () => S.tab === 'deep' && !document.hidden && !cinematic && !sceneOpen && !awayOpen && !newsOpen,
+    changed: () => { save(); updateUI(); },
+  });
+
   function buildShop() {
     $('caveAutoCategories').innerHTML = Object.entries(CAVE_CATEGORIES).map(([k, c]) =>
       `<label><input type="checkbox" data-cave-category="${k}"> ${c.name}</label>`).join('');
@@ -2167,6 +2184,17 @@ import { createState } from './state.js';
     dp('beds', 'Pearl Beds', ICONS.oyster(), 4, 2, 12, l => `Oysters open after ${fmt(30 * Math.pow(0.8, l))} → ${fmt(30 * Math.pow(0.8, l + 1))} washing`);
     dp('record', 'Plumb Line', ICONS.down('#9aa7ff'), 6, 2.3, 1e9, l => `Fathoms from each sounding ×${fmt(Math.pow(1.25, l))} → ×${fmt(Math.pow(1.25, l + 1))}`);
     dp('light', 'Pale Lighthouse', ICONS.lighthouse(), 8, 1, 1, l => l ? 'Every sounding starts with a lighthouse already lit.' : 'Every sounding starts with a lighthouse already lit.', { single: true });
+
+    addItem({ parent: 'shopShells', icon: ICONS.oyster(), unit: 'fathom',
+      name: () => lvl('Shell Listening', S.shells.discovery), cost: () => shellDiscoveryCost(S),
+      desc: () => S.shells.discovery >= 6 ? 'Discovery is at its 50% maximum.' : `Shell discovery ${pct(shellDiscoveryChance(S))} → ${pct(shellDiscoveryChance(S) + .05)}. Rarity odds and item strength stay fixed.`,
+      buy: () => { const cost = shellDiscoveryCost(S); if (cost === null || !spend('fathom', cost)) return false; S.shells.discovery++; save(); return true; },
+    });
+    addItem({ parent: 'shopShells', icon: ICONS.oyster(), unit: 'fathom', name: () => 'Second Shell Slot',
+      cost: () => S.shells.extraSlot ? null : SHELL_SLOT_COST,
+      desc: () => S.shells.extraSlot ? 'Two permanent dedicated shell slots.' : 'Equip two shells at once. Their Heartstone discounts add; item strength stays fixed.',
+      buy: () => { if (S.shells.extraSlot || !spend('fathom', SHELL_SLOT_COST)) return false; S.shells.extraSlot = 1; save(); return true; },
+    });
 
     // ------------------------------- sea: the choir above (tide, never resets)
     lvItem({
@@ -2803,13 +2831,14 @@ import { createState } from './state.js';
     const q = S.sea, got = fathomGain();
     if (!canSound() || got <= 0) return false;
     resetSounding(S, got);
+    const shell = discoverShell(S);
     S.sea.lv.rain = S.sea.soundings + 2 * S.sea.deep.rain;
     S.sea.lv.light = S.sea.deep.light ? 1 : 0;
     for (const k of Object.keys(S.seen)) if (k.startsWith('v_') || k === 'canSound') delete S.seen[k];
     refreshAll();
     afterStateChange();
     const h = gainHorn(0);
-    whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}`);
+    whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}${shell ? ' A seashell answers. Sound it in The Deep, or finish with Auto.' : ''}`);
     save();
     return true;
   }
@@ -3410,6 +3439,7 @@ import { createState } from './state.js';
     setH('choirInfo', `The cave above sings <b>${fmt(S.idleRate || 0)} hum/s</b> on its own, lifting all tide <b>×${fmtX(choirBonus())}</b>. Whichever world you aren't in keeps earning <b>${pct(quietEff())}</b> of its idle rate. Choir upgrades are never lost.`);
 
     renderCaveAutomation();
+    shellUI.render();
 
     // horns
     setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
@@ -3636,6 +3666,7 @@ import { createState } from './state.js';
     autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(); }
     if (S.cool > 0) S.cool = Math.max(0, S.cool - dt * tickRate());
     advanceSeaTimer(S, dt, tickRate());
+    shellUI.tick(dt);
     storyT += dt; if (storyT >= 0.5) { storyT = 0; checkStory(false); checkQuests(false); }
     if (holding) {
       holdT += dt;
@@ -3719,6 +3750,8 @@ import { createState } from './state.js';
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
     descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    shellTick: dt => shellUI.tick(dt),
+    finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
     serialize, load, updateUI, setTab, rollPlan, buildHorn, startSounding, finishSounding, sndHit, renderSounding, renderInventory, renderColl, setHornSub,
