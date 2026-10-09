@@ -2,6 +2,16 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.8.2: A Note for Phones (2026-10-09)
+
+### Added
+- **Device note.** On a small screen (820px wide or less) or a touch device, a small note at the top says the game is made to be played on a computer, with a Got it button. Dismissing it is remembered on that device, outside the save. It never shows on a desktop window.
+
+## 1.8.1: A Wider Ledger (2026-10-09)
+
+### Added
+- **Resizable side panel.** Drag the edge between the cave and the side panel to make the panel wider (up to 760px, leaving the cave at least 360px) or narrower (down to 300px). Double-click the edge or press Home on it to reset to 368px, and use the left and right arrow keys to nudge it. The width is remembered on this device (outside the save, so importing a save doesn't change it). On narrow screens (820px and under) the panel stays full width and the edge is hidden.
+
 ## 1.8.0: The Sounding (2026-10-09)
 
 ### Added
