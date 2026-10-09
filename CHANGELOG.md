@@ -2,6 +2,27 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.9.0: The Sunvein (2026-10-09)
+
+### Added
+- **Floor identities.** From depth 3 each floor you descend to has a character: Still (28%), Echoing, Hushed, Glowworm Bloom or Cracked (18% each). Each changes hum, lumen, shards or fossils and how fast the floor fades (Echoing: hum x1.25 but fades sooner; Hushed: hum x0.85, fossils x1.1, fades later; Bloom: lumen x1.6, shards x0.8, hum x0.9; Cracked: shards x1.8, fossils x0.95, lumen x0.9). The multipliers are normalised so that, weighted by how often each turns up, hum, lumen, shards and fossils average exactly 1.0. The floor's name shows beside the depth, and the Descend panel describes it.
+- **The Sunvein**, a rare gold floor that can replace the normal roll on a descent (from depth 3). The chance is 5%, plus 2% for every gilded horn you own (counting unequipped), capped at 15% from that source. On a Sunvein: the fade is 25% slower, fossils from that floor are +10%, and horn calls sounded there (and the horn from a descent) are gilded 50% of the time.
+- **Gilded horns.** A gold look and glow, +25% on every stat on top of how well you played, "Gilded" in the name, and their own gold column in the Collection (48 designs now). Each one you own raises the Sunvein chance. Salvaging one warns you.
+- **Gilt**, a new currency. It comes only while you stand on a Sunvein: 5 on arrival, then 0.08 a second (scaled by the floor's freshness) up to 45 a floor. It is never reset by a descent or a Heartstone. It pays for two upgrades in a new Sunvein section under Strata, which can only be bought while you are on a Sunvein: **Rich Vein** (fossils from a Sunvein +10%, up to +30% over 4 levels) and **Gilded Breath** (gilded horn chance 50%, up to 100% over 5 levels). The whole tree costs about 230 gilt: 5 or 6 full Sunveins.
+- **Biomes.** Every 4 depths the cave changes colour and name: Quartz Hollow, Moss Vaults, Ember Galleries, Brine Caverns, Ashen Deeps, Rose Grotto, and round again. Purely visual. A Sunvein is tinted gold. Kindling a Heartstone starts again from the Quartz Hollow.
+- A Chronicle page, "Seams of Gold".
+- Hover the Gilt pill for held, lifetime, this floor, the current Sunvein chance, and gilded horns owned.
+
+### Changed
+- `descend()` takes an optional `{ goldBonus }` (a flat addition to the Sunvein chance), ready for Risky Descent.
+- The sim bot buys the Sunvein upgrades (cost-weighted) and `tools/sim/build.js` exposes `floorMod`, `sunChance`, `onSun` and `goldHorns`.
+
+### Pacing note
+- Floor identities average out to 1.0 by design. The Sunvein is a real bonus (slower fade, more fossils, stronger horns). Expect a small speed-up, a little more when you own gilded horns. This is the part to check in the sim.
+
+### Existing saves
+- Everything starts on a Still floor with no gilt; nothing is removed. Existing horns are not gilded.
+
 ## 1.8.2: A Note for Phones (2026-10-09)
 
 ### Added
