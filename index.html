@@ -135,6 +135,16 @@
         <p class="note">Fossils are what you carry down when you descend. Strata never reset until a Heartstone is kindled.</p>
         <div class="list" id="shopStrata"></div>
       </section>
+      <section id="caveAutomationSec" hidden>
+        <h2>Patient Choir</h2>
+        <div class="list" id="shopCaveAutomation"></div>
+        <div id="caveAutoControls" hidden>
+          <p class="note">Buys one affordable upgrade per enabled category every half-second while you are in the cave. Uses normal shop unlocks and limits. Categories and reserves are kept through every reset.</p>
+          <fieldset class="hornsalvage"><legend>Automatic cave purchases</legend><div id="caveAutoCategories"></div></fieldset>
+          <fieldset class="hornsalvage"><legend>Keep at least this much currency</legend><div id="caveAutoReserves"></div></fieldset>
+          <p class="note">Horn calls are manual; Horn upgrades spends ivory only. Sunvein upgrades buy only on a Sunvein. Buying Patient Hands, Crystal Seeker or Sinking Stone enables it as usual; an owned switch keeps its setting. Disable Crystals here if you prefer Crystal Seeker’s highest-tier purchases. These purchases pause in the sea and while you are away.</p>
+        </div>
+      </section>
       <section id="goldSec" hidden>
         <h2 style="color:var(--gilt)">The Sunvein</h2>
         <p class="note" id="goldNote"></p>
@@ -153,7 +163,7 @@
     <div class="panel" id="panel-sea" role="tabpanel" hidden>
       <section>
         <h2>Bells <span id="bellCount">1 / 8</span></h2>
-        <p class="note">A bell rings when a ripple reaches it. When two ripples reach the same bell at almost the same moment, they <b>cross</b> and it rings far harder. Drag bells to move them; drop one on a twin to fuse.</p>
+        <p class="note">A bell rings when a ripple reaches it. When two ripples reach the same bell at almost the same moment, they <b>cross</b> and it rings far harder. Drag bells to move them; drop one on a twin to fuse, or into the corner Fuse/Crush zones. Fuse needs a twin and stops at Abyssal; Crush removes the bell without a refund.</p>
         <div class="list" id="shopBells"></div>
       </section>
       <section><h2>Voices</h2><div class="list" id="shopSeaVoices"></div></section>

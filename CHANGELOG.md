@@ -8,6 +8,16 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.9.5: Patient Choir (2026-10-09)
+
+### Fixed
+- The countdown inside Horns → Sounding updates on the normal UI cadence, without leaving the screen. Waiting call counts also refresh as the queue grows; stable minigame markup is preserved.
+
+### Added
+- Sunless Sea Fuse/Crush canvas drop zones appear while dragging bells. Fuse finds any same-tier twin, stops at Abyssal, and restores the bell if no eligible twin exists. Crush removes only the dragged bell, without a refund. Oysters and pearl works cannot enter the zones. Cave zones retain their first-descent gate.
+- **Patient Choir**, in Strata after two Heartstones, is a permanent **100,000-fathom** cave shop automation unlock. All nine categories start off: Voices, Tuning, Crystals, Wonders, Attunement, Strata, Illuminations, Horn upgrades, and Sunvein upgrades. Set currency reserves for hum, shards, fossils, lumen, ivory, and Gilt. Settings persist through descents, soundings, Heartstones, and reloads.
+- Automation buys one affordable upgrade per enabled category every half-second in the active cave, using existing shop unlocks, limits, prices, and placement checks. Horn calls are excluded; Sunvein purchases keep their floor gate. Owned automation switches keep their setting. Crystal Seeker honors the hum reserve after unlock. Automatic purchases pause in the sea and while away.
+
 ## 1.9.4: A Listening Rack (2026-10-08)
 
 ### Added

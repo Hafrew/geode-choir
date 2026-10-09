@@ -1,4 +1,5 @@
 import { createState, freshStats, freshSea } from './state.js';
+import { normalizeCaveAutomation } from './automation.js';
 import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState } from './horns.js';
 import { KNEE } from './progression.js';
 const cmpVer = (a, b) => {
@@ -48,6 +49,7 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   const f = fresh();
   const S = Object.assign(f, d);
   S.ver = VERSION;
+  normalizeCaveAutomation(S);
   S.seenVer = d.seenVer || from;
   S.refund = refund || d.refund || null;
   S.hornPity = Math.max(0, +d.hornPity || 0);
