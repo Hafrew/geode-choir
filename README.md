@@ -59,6 +59,8 @@ node tools/horn-inventory-smoke.js
 node tools/qol-smoke.js
 node tools/seashells-smoke.js
 node tools/sea-pacing-smoke.js
+node tools/pearls-smoke.js
+node tools/dev-smoke.js
 node tools/sim/run.js --hours 0.1 --seed 1 --out /tmp/geode-smoke.json
 ```
 
@@ -67,6 +69,10 @@ Both commands start and stop their own temporary local server. The smoke test co
 Use `--hornStart primordial` for a diagnostic run with the rarity upgrade and Primordial rack already unlocked (no free horns or currency). This measures the maximum-upgrade effect, not natural unlock timing. Use `--hornUpgrades 0` to disable Rarity Weaving and Primordial purchases while retaining the current ivory economy. Fast simulations skip canvas painting while retaining the physics and seeded gameplay draws.
 
 The short simulation checks setup and early progression. For balance work, run the longer, multi-seed comparisons described in `PLAN.md`. `finished: false` is expected when a short run stops before the finale; JavaScript errors cause a failing exit status.
+
+## Developer toolbar
+
+A testing toolbar (resources, progress, items, time) unlocks from Settings → Access code. Its module is only fetched after a valid code, and any use marks the save. The repository holds only a salted hash of the code in `src/dev-config.js`; run `node tools/make-dev-code.js` to rotate it (the new code is printed once). Because the game is static and single-player this is a convenience lock, not security. To test unlocking: `GEODE_DEV_CODE=<code> node tools/dev-smoke.js`.
 
 ## Deploy
 

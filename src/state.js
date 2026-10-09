@@ -43,7 +43,7 @@ const createState = version => ({
 });
 function freshStats() {
   return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0, shafts: 0, rockfalls: 0, veins: 0, descents: 0, sunveins: 0, giltLife: 0,
-    sunDry: 0, fossilsLife: 0, lumenLife: 0, ivoryLife: 0, bestRate: 0, bestTide: 0, bestLumenRate: 0, bestHaul: 0, bestFathomHaul: 0 };
+    sunDry: 0, devUsed: 0, fossilsLife: 0, lumenLife: 0, ivoryLife: 0, bestRate: 0, bestTide: 0, bestLumenRate: 0, bestHaul: 0, bestFathomHaul: 0 };
 }
 
 export { freshCave, freshSeaRun, freshSea, freshStats, createState };
