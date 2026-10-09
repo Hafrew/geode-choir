@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current workspace: **1.10.1**, on `feature/seashell-art`. Gameplay through **1.9.5** was last verified merged; 1.9.6–1.10.1 are implemented on the stacked branches. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current release: **1.10.1 beta** on `main`. All gameplay through 1.10.1 is merged (the stacked 1.9.6–1.10.1 branches landed through PR #25). The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening below is done; the label is presentation only, and saves and version checks use the plain version number. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -27,12 +27,13 @@ Current workspace: **1.10.1**, on `feature/seashell-art`. Gameplay through **1.9
 | 1.9.3 | Ivory income and Ivory Echo | Delivered |
 | 1.9.4 | Horn auto-equip and automatic spare salvage | Delivered |
 | 1.9.5 | Live horn screen, Sea Fuse/Crush, Patient Choir | Delivered |
-| 1.9.6 | Faster Tick scales horn timer and displayed countdowns | Implemented on `fix/horn-clock` |
-| 1.9.7 | Seashell rules/save foundations, isolated harsher fathom curve | Implemented on `feature/sea-shell-foundations`; shell drops/UI disabled |
-| 1.9.8 | Sea settling, cumulative Heartstone gates, tide curve, Ceiling cap, 50k finale offering | Implemented on `feature/sea-pacing`; tested |
-| **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Implemented on `feature/playable-seashells`; review and manual tuning pending |
-| **1.10.1** | Stable 2D shell art in inventory and sounding | Implemented on `feature/seashell-art`; cosmetic follow-up |
-| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | **Next pass**, using the natural shell-economy results |
+| 1.9.6 | Faster Tick scales horn timer and displayed countdowns | Delivered |
+| 1.9.7 | Seashell rules/save foundations, isolated harsher fathom curve | Delivered |
+| 1.9.8 | Sea settling, cumulative Heartstone gates, tide curve, Ceiling cap, 50k finale offering | Delivered |
+| **1.10.0** | Playable seashell discovery, minigame, equipment, purchases | Delivered; manual tuning pending |
+| **1.10.1** | Stable 2D shell art in inventory and sounding | Delivered; released as **beta** |
+| **1.10.2** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI | **Next pass**; no balance changes |
+| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.2, using the natural shell-economy results |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -40,6 +41,7 @@ Current workspace: **1.10.1**, on `feature/seashell-art`. Gameplay through **1.9
 | **1.16.0** · original Phase 6, part 3 | Broader horn/bell procedural music | Reuses finale audio work; respects sound/accessibility settings |
 | **1.17.0** · original Phase 7 | Optional 3D horn presentation | SVG fallback, lazy loading, no progression changes |
 | Unassigned | Offline horn arrivals capped at five | Discussed proposal; behavior not confirmed, not a prerequisite |
+| Ongoing | Split `src/main.js` into modules | Refactor track; no version bump, ±2% parity rule applies |
 
 Versions formerly suggested for original Phases 5–7 are superseded by this table. Optional reserved releases do not block later work and may be omitted without renumbering the other reservations.
 
@@ -99,6 +101,29 @@ Implemented in 1.10.0: discovery/result spinner in The Deep, direct Common claim
 Original delivery intent: wire existing `src/seashells.js` rules into the real sounding path, then add spinner/minigame, inventory/equip controls, and chance/slot purchases. Minigame shape/difficulty, purchase prices, inventory management, and Collection presentation need a concrete first-pass design. Do not silently reuse the horn cap, impose duplicate restrictions, or invent a salvage currency.
 
 Validate natural discovery and purchases, first Epic/Mythic timing, both slots, effective Heartstone gates, reload/reset behavior, and desktop/mobile interaction. Run the bot using actual drops, Auto quality, real purchase prices, and a **proposed 100,000-fathom finale reserve**. Include Patient Choir and Deep purchases as competing sinks; shell upgrades must be optional to reaching the finale.
+
+## 1.10.2 — Beta hardening
+
+From the post-merge code review of 1.10.1. No balance or progression changes; the seeded parity rule applies.
+
+- **Safe save import (security).** Shared `GC1:` save codes are only checked for a numeric `hum`, and horn/collection names from a save reach `innerHTML` (`title` attributes, Sounding results, Collection cells). A crafted code could inject markup or script into the importing player's page. In `restoreState`, regenerate horn names from their seeds (or accept only a strict name pattern) and coerce `id`/`seed` to integers; add one `esc()` helper for interpolated template HTML. Add a test that imports a hostile name and asserts that it renders as text.
+- **Save-failure warning.** `save()` swallows storage errors, so a full or blocked localStorage silently loses progress. Show one toast per session when a save or backup write fails.
+- **Inventory render cost.** The UI refreshes every 0.12 s; rebuild horn/shell grids only when their contents change (an inventory revision counter), so large inventories stay smooth on phones. Verify with a several-hundred-horn fixture at 390px.
+- **One test command and CI.** Add a `package.json` `test` script that runs the unit tests and every browser smoke suite, and a GitHub Action that runs the unit tests on each PR to `main`. Stacked PRs that merge only into their parent branch (#20–#24) should be caught by a check that their changes reached `main`.
+- Optional: one formatting pass (about 150 lines in `main.js` exceed 200 characters), in its own PR so review diffs stay readable.
+
+The beta label is removed when 1.11.0 lands and this hardening is complete.
+
+## Ongoing — `main.js` module split
+
+`src/main.js` holds about 3,800 lines in one closure. Continue the incremental extraction already used for shells, automation, progression, and saves, one reviewable PR each, with the smoke suites as the guard:
+
+1. Changelog data (`CHANGES`) to `src/changes.js`.
+2. Horn Sounding minigame and inventory UI (around lines 2280–2640) to a `horn-ui.js`, matching `shell-ui.js`.
+3. Save/load, backup, and import/export codes into `saves.js`.
+4. Reward and cost formulas (`fossilGain`, `fathomGain`, `heartCost`, and related) into `progression.js`, so tests and the simulator import them directly instead of through `simulation.api`.
+
+Extraction never blocks a feature release, and the canvas/audio rewrite stays out of scope.
 
 ## 1.11.0 — The Last Chorus
 
