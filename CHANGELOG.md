@@ -8,6 +8,19 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.9.8: The Sea Settles (2026-10-09)
+
+### Changed
+- Successful Sea soundings start a saved settling lock: 10 minutes initially, shortened at 2/5/10/20 actual soundings to a 2-minute minimum. Faster Tick advances it in both worlds and through existing offline efficiency; first Sea entry is unlocked and Heartstones preserve remaining work. Live countdowns and action guards use the same timer/tide requirements.
+- Tide requirements grow by ×3 instead of ×4. Later Heartstones use cumulative 20/24/28/... sounding milestones, with shell discounts applied only to eligibility. The first Heartstone still opens the Sea.
+- Fathom overruns retain the 0.25 curve and use a lower logarithmic tail for long waits, preventing timer-driven windfalls while preserving threshold payouts and cave fossil rewards.
+- Open the Ceiling costs `ceil(1500 × 3.5^level)` and stops new purchases at level 15. Previously purchased higher levels retain their full bonuses and are labelled legacy.
+- The Undersong requires 25 actual soundings and a 50,000-fathom offering, alongside the existing three Heartstones and 20 feats. Completed finales remain completed.
+
+### Saves and validation
+- Legacy saves start with no new Sea lock. An already-met Sea prerequisite is preserved for the current Heartstone only, then the new curve applies. Counters and balances are preserved, and reloads retain the exception until kindling.
+- The simulator uses dynamic sounding targets, real eligibility, and earned/spent fathom diagnostics, with optional reserved-currency and Patient Choir purchase scenarios. Seashell discovery and UI are the next slice.
+
 ## 1.9.7: A Measured Haul (2026-10-09)
 
 ### Changed

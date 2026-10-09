@@ -7,7 +7,7 @@ import { resetDescent, resetSounding, resetHeartstone, heartDepthRequired, heart
   kindleReady, seaThreshold, depthThreshold, fathomReward, fossilReward } from '../src/progression.js';
 import { serializeState, restoreState } from '../src/saves.js';
 import { rng32 } from '../src/horns.js';
-const fresh = () => createState('1.9.7');
+const fresh = () => createState('1.9.8');
 const omen = { depth: 0, lumen: 1 };
 const catalog = { WONDERS: {}, PEARLOBJ: {}, FLOORS: { still: {} }, OMENS: { steady: {} },
   TABS: ['cave', 'sea', 'horns'], GILT_CAP: 45, AWAY_CAP: 21600 };
@@ -49,13 +49,13 @@ test('one slot upgrades to two; distinct duplicate-rarity shells stack, spares d
 
 test('shells discount Heartstone eligibility without adding depth, soundings, or rewards', () => {
   const S = fresh();
-  S.hearts = 1; S.depth = 26; S.lumen = 1e8; S.sea.soundings = 1;
+  S.hearts = 1; S.depth = 26; S.lumen = 1e8; S.sea.soundings = 17;
   S.shells.items = [{ id: 1, r: 2, depth: 8 }];
   const before = { depth: S.depth, soundings: S.sea.soundings, fossils: S.fossils, fathoms: S.sea.fathoms };
   assert.equal(kindleReady(S, omen), false);
   equipShell(S, 1);
   assert.equal(heartDepthRequired(S, omen), 26);
-  assert.equal(heartSeaRequired(S), 1);
+  assert.equal(heartSeaRequired(S), 17);
   assert.equal(kindleReady(S, omen), true);
   assert.deepEqual({ depth: S.depth, soundings: S.sea.soundings, fossils: S.fossils, fathoms: S.sea.fathoms }, before);
   S.hearts = 0;
@@ -89,7 +89,7 @@ test('pending discoveries and finished potency survive saves and every progressi
   let S = fresh(); S.sea.soundings = 1; S.shells.discovery = 6; S.shells.extraSlot = 1;
   const rolls = [0, .99], plan = discoverShell(S, () => rolls.shift());
   assert.equal(plan.r, 2);
-  S = restoreState(serializeState(S), '1.9.7', catalog).state;
+  S = restoreState(serializeState(S), '1.9.8', catalog).state;
   assert.deepEqual(S.shells.pending, [plan]);
   assert.equal(discoverShell(S, () => { throw Error('reload reroll'); }), null);
   const item = finishShell(S, plan.id, .75);
@@ -100,15 +100,15 @@ test('pending discoveries and finished potency survive saves and every progressi
   const saved = structuredClone(S.shells), horns = structuredClone(S.horns);
   resetDescent(S, 4); assert.deepEqual(S.shells, saved);
   resetSounding(S, 5); assert.deepEqual(S.shells, saved);
-  S = resetHeartstone(S, '1.9.7'); assert.deepEqual(S.shells, saved);
-  S = restoreState(serializeState(S), '1.9.7', catalog).state;
+  S = resetHeartstone(S, '1.9.8'); assert.deepEqual(S.shells, saved);
+  S = restoreState(serializeState(S), '1.9.8', catalog).state;
   assert.deepEqual(S.shells.items, [item]); assert.deepEqual(S.shells.pending, [second]);
   assert.deepEqual(S.shells.equipped, [item.id]); assert.equal(S.shells.discovery, 6);
   assert.equal(S.shells.extraSlot, 1); assert.deepEqual(S.horns, horns);
 });
 
 test('migration grants no shells; normalization rejects malformed IDs, potency, and plans', () => {
-  const S = restoreState({ ver: '1.9.5', hum: 1, sea: { soundings: 12, fathoms: 777 } }, '1.9.7', catalog).state;
+  const S = restoreState({ ver: '1.9.5', hum: 1, sea: { soundings: 12, fathoms: 777 } }, '1.9.8', catalog).state;
   assert.equal(S.sea.fathoms, 777); assert.equal(S.sea.soundings, 12);
   assert.deepEqual(S.shells.items, []); assert.equal(S.shells.lastSounding, 12);
   assert.equal(discoverShell(S, () => { throw Error('retroactive discovery'); }), null);
@@ -126,11 +126,12 @@ test('harsher fathoms preserve the threshold payout and fossil curve, and increa
   const seaNeed = seaThreshold(S), caveNeed = depthThreshold(S), bonus = 1.35;
   S.sea.run = seaNeed - 1; assert.equal(fathomReward(S, bonus), 0);
   let previous = 0;
-  for (const ratio of [1, 2, 10, 100, 10000, 1e8]) {
+  for (const [ratio, factor] of [[1, 1], [2, 2 ** .25], [10, 10 ** .25], [100, 100 ** .25], [10000, 10], [100000, 100000 ** .25], [1e8, 50]]) {
     S.sea.run = seaNeed * ratio; S.run = caveNeed * ratio;
     const reward = fathomReward(S, bonus);
     assert(reward >= previous); previous = reward;
-    assert.equal(reward, Math.floor(6 * ratio ** .25 * 1.25 ** 3 * bonus));
+    assert.equal(reward, Math.floor(6 * factor * 1.25 ** 3 * bonus));
+    assert(reward <= Math.floor(6 * ratio ** .25 * 1.25 ** 3 * bonus));
     assert(reward <= Math.floor(6 * ratio ** .3662 * 1.25 ** 3 * bonus));
     assert.equal(fossilReward(S, bonus, 1, 1), Math.floor(10 * ratio ** .3662 * 1.25 ** 2 * bonus));
   }

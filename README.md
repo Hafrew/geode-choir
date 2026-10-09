@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a static browser game with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.9.7**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.9.8**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
@@ -19,6 +19,10 @@ Open the server's address in your browser. Keep `styles.css` and `src/` alongsid
 ## Cave upgrade automation
 
 After two Heartstones, **Strata → Patient Choir** unlocks permanently for **100,000 fathoms**. All categories start off. Select Voices, Tuning, Crystals, Wonders, Attunement, Strata, Illuminations, Horn upgrades, or Sunvein upgrades, and set how much hum/shards/fossils/lumen/ivory/Gilt to reserve. It buys one affordable upgrade per enabled category every half-second, using the normal shops. It runs in the cave while the game is active. Horn calls are excluded. Existing Crystal Seeker also respects the hum reserve after unlock; turn off one crystal purchase option if you prefer to use only the other. Settings survive all resets and reloads.
+
+## Sea progression
+
+Soundings need enough tide and an expired settling timer. The timer starts at 10 minutes, shortens at 2/5/10/20 actual soundings to a 2-minute minimum, and follows Faster Tick in either world and at the usual offline efficiency. Tide requirements grow by ×3 per sounding. Later Heartstones require 20/24/28/... cumulative soundings; the first opens the Sea. The Undersong needs 25 actual soundings, three Heartstones, 20 feats, and 50,000 fathoms. Open the Ceiling has 15 purchasable levels; higher legacy levels keep their bonuses. Seashell discovery/UI remain planned.
 
 ## Development layout
 
@@ -41,11 +45,12 @@ Browser checks and simulations require Node and Playwright. Install Playwright w
 
 ```bash
 node tools/smoke.js
-node --test tools/horns.test.mjs tools/automation.test.mjs tools/seashells.test.mjs
+node --test tools/horns.test.mjs tools/automation.test.mjs tools/seashells.test.mjs tools/sea-pacing.test.mjs
 node tools/horns-smoke.js
 node tools/horn-inventory-smoke.js
 node tools/qol-smoke.js
 node tools/seashells-smoke.js
+node tools/sea-pacing-smoke.js
 node tools/sim/run.js --hours 0.1 --seed 1 --out /tmp/geode-smoke.json
 ```
 

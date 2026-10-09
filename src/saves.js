@@ -1,6 +1,6 @@
 import { createState, freshStats, freshSea } from './state.js';
 import { normalizeCaveAutomation } from './automation.js';
-import { normalizeShells } from './seashells.js';
+import { normalizeShells, shellDiscounts } from './seashells.js';
 import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState } from './horns.js';
 import { KNEE } from './progression.js';
 const cmpVer = (a, b) => {
@@ -98,6 +98,18 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   S.sea.oysters = Array.isArray(S.sea.oysters) ? S.sea.oysters : [];
   S.sea.objs = Array.isArray(S.sea.objs) ? S.sea.objs.filter(o => PEARLOBJ[o.pk]) : [];
   normalizeShells(S);
+  const finite = (value, max) => Number.isFinite(+value) ? Math.min(max, Math.max(0, +value)) : 0;
+  const legacySea = cmpVer(from, '1.9.8') < 0;
+  S.sea.cool = legacySea ? 0 : finite(ds.cool, 600);
+  S.sea.coolTotal = legacySea ? 0 : Math.max(S.sea.cool, finite(ds.coolTotal, 600));
+  // Honor an already-met Sea milestone once; never invent actual soundings.
+  S.heartSeaLegacy = null;
+  if (legacySea && S.hearts > 0 && S.sea.soundings >= Math.max(1, 2 * S.hearts - shellDiscounts(S).soundings)) {
+    S.heartSeaLegacy = { hearts: S.hearts, required: 2 * S.hearts };
+  } else if (!legacySea && d.heartSeaLegacy?.hearts === S.hearts && S.hearts > 0
+    && d.heartSeaLegacy.required === 2 * S.hearts) {
+    S.heartSeaLegacy = { hearts: S.hearts, required: 2 * S.hearts };
+  }
   if (S.world !== 'sea' || !S.sea.unlocked) S.world = 'cave';
   if (!TABS.includes(S.tab)) S.tab = S.world;
   if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
