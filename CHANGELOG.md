@@ -2,6 +2,18 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.6.0: The Status Strip (2026-10-09)
+
+### Added
+- **Status strip** at the top of the stage: Descend (or Sound, in the sea), Heartstone and Horn chips, visible on every tab. Each has a ring that fills, a countdown or percentage, and a glow when ready. Descend and Heartstone open their full panel over the cave; Horn jumps to the Horns tab. Esc or a click elsewhere closes the panel, and descending closes it too. The chips drop to a second row on narrower screens.
+- **Hover stats.** Hover (or focus, or tap) the hum count and rate, or any currency pill, to see held now, this floor or Heartstone, lifetime, and best. Fossils, lumen and ivory now keep lifetime counts that Heartstones don't reset.
+
+### Changed
+- The Descend and Heartstone panels moved out of the side column into the strip's panels. Nothing about how they work changed.
+
+### Existing saves
+- Lifetime fossils, lumen and ivory start from what your save still knows (this Heartstone's totals and held ivory), so they may start low. Bests start at 0 and fill in as you play.
+
 ## 1.5.1: Sinking Deeper (2026-10-09)
 
 ### Added

@@ -12,7 +12,7 @@ Goal: make the gaps between descents more engaging **without changing how long t
 
 ## Scope
 
-Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x), shipped on this branch.
+Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x) and **1.6.0 Phase 1** (status strip and hover stats), on this branch.
 
 In: top status strip, hover lifetime/max stats, Horns tab rebuild, procedural then 3D horns, horn minigame, descent minigame with Risky Descent, floor identities, biomes, Chronicle drip, offline return report, horn sets, session goals, horn/bell music.
 
@@ -34,7 +34,7 @@ The Descend and Heartstone panels currently live in the Glow tab column under th
 
 ---
 
-## Phase 1: Chrome and visibility (1.6.0)
+## Phase 1: Chrome and visibility (1.6.0, done)
 
 **Status strip (top center).** A compact bar visible on every tab and both worlds.
 - *Descend chip:* ring showing settling progress, countdown, a glow when ready. Click opens a popover with the current Descend panel content.
@@ -85,13 +85,24 @@ Sim impact: the bot uses auto. Add an assertion that horn stat totals match the 
 **Floor identities.** Rolled on arrival (from depth ~3), shown in the Descend chip and the cave header, stored as `S.floorId`. Examples: *Echoing* (shards x2, hum x0.85), *Glowworm bloom* (lumen x1.6, shards x0.8), *Cracked* (more fossil veins, slower decay), *Still* (steady, no modifiers). Each table averages 1.0 on income so the finish time doesn't move. They sit alongside the existing descent surprises (rubble, vein, double fall). The Chronicle records the identities you've met.
 
 **Golden Floor** (name is a placeholder; alternatives: *Sunvein*, *Gilded Hollow*, *Aurelian Floor*). A rare floor that can replace the normal roll on arrival.
-- **Chance:** 5% by default. Each Golden Horn you own adds +2%, capped at 15% from that source. A successful Risky Descent adds a flat +10% to that one roll (so up to 25% at most).
-- **On a Golden Floor:** decay is 25% slower (decay rate x0.75), fossil gain from that floor is +25%, and horn soundings produce **Golden Horns**.
-- **Golden-only upgrades.** A small set of upgrades that can only be bought while you are standing on a Golden Floor. Levels persist afterwards. (My reading of "can only be upgraded once you get there"; see open questions.)
+- **Chance:** 5% by default. Each Golden Horn you own (equipped or not) adds +2%, capped at 15% from that source. A successful Risky Descent adds a flat +10% to that one roll on top of the cap (25% at most).
+- **On a Golden Floor, base effects:** decay is 25% slower (decay rate x0.75), fossils from that floor get **+10%**, and **50%** of horn soundings there are Golden Horns.
+- **Golden upgrades** can only be bought while standing on a Golden Floor, and their levels persist:
+  - *Rich Vein:* the fossil bonus rises from +10% to +30%.
+  - *Gilded Breath:* the Golden Horn chance rises from 50% to 100%.
+  - *Slow Gold:* optional, a further slowdown of decay on Golden Floors.
 - **Golden Horns:** the minigame result gets a further x1.25 on top, plus a distinct look (gold material, glow, particles) and their own Collection entries. Each one you own adds +2% to the Golden Floor chance, so a collection of 5 reaches the 15% cap.
-- Heartstone: the Golden Floor chance and the owned Golden Horns carry over, since horns are kept.
+- Heartstone: the Golden Floor chance, Golden upgrades and owned Golden Horns carry over, since horns are kept.
 
-Pacing: this is a real bonus, so the sim must model it. At 5% chance with +25% fossils and 25% slower decay the average gain is small, but it grows with the cap and with Risky Descents. I'll measure it and report before shipping. Offsets, if wanted, are a lower base chance or a smaller fossil bonus.
+**Golden currency (proposal): Gilt.**
+- A new currency that **only accrues while you are on a Golden Floor**, as time-based income: a steady trickle that fades with the floor's freshness, plus a small lump when you arrive. It's never earned on normal floors.
+- It is **never reset** by descents or Heartstones, so the Golden upgrades keep their levels and any unspent Gilt keeps too.
+- Golden upgrades cost Gilt only. Costs rise with each level, and the whole tree is sized to take about 4 to 6 Golden Floor visits to max. That keeps it a long-tail goal that doesn't need camping on the floor.
+- Why time-based and capped per floor: you pick when to leave, so a cap per floor stops "stay forever" from beating "descend and re-roll", which would stretch the game out.
+- Shown as a new pill (visible once you've seen a Golden Floor) with the same hover stats (held, lifetime, best per floor).
+- Alternative: pay in fossils (no new currency). Simpler, but then Golden upgrades compete with Strata, and it doesn't make the floor feel special.
+
+Pacing: this is a real bonus. The sim will model it and I'll report the speedup before shipping; you've said you're fine with a modest one.
 
 **Biomes.** Every 4 depths, a new look: palette tint, crystal geometry, ambient layer. Purely visual, no effect on the numbers. Heartstone resets the biome to the first. The Golden Floor overrides the biome with a gold tint.
 
@@ -150,15 +161,13 @@ The last gate is the previous depth (depth - 1). Confirmed.
 
 ## Decisions so far
 
-- Last gate on a failed Risky Descent: depth - 1. Confirmed.
-- Horn minigame: one minigame per stat line. Confirmed.
-- Golden Floor: 5% base, +2% per Golden Horn up to 15%, +10% flat on a successful Risky Descent. Confirmed.
+- Last gate on a failed Risky Descent: depth - 1.
+- Horn minigame: one minigame per stat line.
+- Golden Floor: 5% base, +2% per Golden Horn owned, 15% cap on that part, +10% flat from a successful Risky Descent on top.
+- Golden Floor fossil bonus starts at +10% and upgrades to +30%. Golden Horn chance starts at 50% and upgrades to 100%. Golden upgrades are bought on a Golden Floor only.
+- Session goals reset at local midnight (default), phase order as above (default).
 
-## Open questions (defaults in brackets)
+## Open questions
 
-1. **Golden Floor upgrades:** [a small set of Golden-only upgrades, bought only while on a Golden Floor, levels kept]. Or did you mean the floor itself levels up?
-2. **Golden Horns counted:** [owned, including unequipped, so the 15% cap takes 5 horns]. If only equipped horns count, the cap is out of reach with 1 to 3 slots.
-3. **Does the 15% cap include Risky Descent's +10%?** [No: the cap applies to base + horns, and Risky adds on top, up to 25%.]
-4. **Golden horn rate on a Golden Floor:** [every horn sounded there is golden]. Or a chance per sounding.
-5. **Session goals reset:** [local midnight].
-6. **Phase order:** [as above]. Phases 1 and 2 are independent.
+1. **Gilt as the Golden currency** (see Phase 4): time-based, only on a Golden Floor, never reset. Or pay in fossils?
+2. Should *Slow Gold* (extra decay slowdown) exist, or stop at the two upgrades above?
