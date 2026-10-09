@@ -25,12 +25,9 @@ const KEY = 'geode-choir-v1';
         await page.goto(server.url); await page.waitForFunction(() => !!window.__geodeSimulation?.api);
         assert((await page.locator('#heartText').innerText()).includes('depth 34'));
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.canKindle()), false);
-        // There is no shell UI yet. Exercise the shared rules against the actual Heartstone UI.
-        await page.evaluate(async () => {
-          const { equipShell } = await import('/src/seashells.js');
-          const api = window.__geodeSimulation.api;
-          equipShell(api.S, 1); api.updateUI(); api.save();
-        });
+        await page.evaluate(() => { window.__geodeSimulation.api.setWorld('sea'); window.__geodeSimulation.api.setTab('deep'); window.__geodeSimulation.api.updateUI(); });
+        await page.locator('[data-shell-equip="1"]').click();
+        await page.evaluate(() => { window.__geodeSimulation.api.setWorld('cave'); window.__geodeSimulation.api.updateUI(); });
         assert((await page.locator('#heartText').innerText()).includes('depth 26'));
         assert((await page.locator('#heartText').innerText()).includes('17 soundings'));
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.canKindle()), true);

@@ -1,3 +1,4 @@
+import { discoverShell, finishShell, equipShell, shellDiscounts, shellDiscoveryChance, shellSlots } from './seashells.js';
 import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
   soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
@@ -1998,6 +1999,26 @@ import { createState } from './state.js';
     });
   }
 
+  let shellViewKey = '';
+  function renderShells() {
+    if (S.tab !== 'deep') return;
+    const key = JSON.stringify(S.shells);
+    if (key === shellViewKey) return;
+    shellViewKey = key;
+    const bonus = shellDiscounts(S);
+    $('shellSummary').textContent = `${S.shells.equipped.length}/${shellSlots(S)} equipped · −${bonus.depth} depth · −${bonus.soundings} Heartstone soundings · ${pct(shellDiscoveryChance(S))} discovery chance`;
+    $('shellDiscovery').textContent = S.shells.lastSounding ? `Discovery checked through sounding ${S.shells.lastSounding}.` : 'Your first Sea sounding can discover a shell.';
+    $('shellPending').innerHTML = S.shells.pending.map(p => `<p>Shell #${p.id} is waiting. <button type="button" data-shell-auto="${p.id}">Finish with Auto</button></p>`).join('');
+    $('shellInventory').innerHTML = S.shells.items.map(p => `<div class="stat"><b>${['Common','Epic','Mythic'][p.r]} shell #${p.id}</b><p>−${p.depth} depth · −${[0,1,3][p.r]} soundings</p><button type="button" data-shell-equip="${p.id}" ${!S.shells.equipped.includes(p.id) && S.shells.equipped.length >= shellSlots(S) ? 'disabled' : ''}>${S.shells.equipped.includes(p.id) ? 'Unequip' : 'Equip'}</button></div>`).join('') || '<p class="note">No shells yet. Discovery starts at 20% per successful Sea sounding.</p>';
+  }
+  $('shellSection').addEventListener('click', e => {
+    const auto = e.target.closest('[data-shell-auto]'), equip = e.target.closest('[data-shell-equip]');
+    if (auto) finishShell(S, +auto.dataset.shellAuto);
+    else if (equip) equipShell(S, +equip.dataset.shellEquip);
+    else return;
+    save(); updateUI();
+  });
+
   function buildShop() {
     $('caveAutoCategories').innerHTML = Object.entries(CAVE_CATEGORIES).map(([k, c]) =>
       `<label><input type="checkbox" data-cave-category="${k}"> ${c.name}</label>`).join('');
@@ -2803,6 +2824,7 @@ import { createState } from './state.js';
     const q = S.sea, got = fathomGain();
     if (!canSound() || got <= 0) return false;
     resetSounding(S, got);
+    const shell = discoverShell(S);
     S.sea.lv.rain = S.sea.soundings + 2 * S.sea.deep.rain;
     S.sea.lv.light = S.sea.deep.light ? 1 : 0;
     for (const k of Object.keys(S.seen)) if (k.startsWith('v_') || k === 'canSound') delete S.seen[k];
@@ -2810,6 +2832,7 @@ import { createState } from './state.js';
     afterStateChange();
     const h = gainHorn(0);
     whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}`);
+    if (shell) whisper('A seashell answers. Sound it in The Deep, or finish with Auto.');
     save();
     return true;
   }
@@ -3410,6 +3433,7 @@ import { createState } from './state.js';
     setH('choirInfo', `The cave above sings <b>${fmt(S.idleRate || 0)} hum/s</b> on its own, lifting all tide <b>×${fmtX(choirBonus())}</b>. Whichever world you aren't in keeps earning <b>${pct(quietEff())}</b> of its idle rate. Choir upgrades are never lost.`);
 
     renderCaveAutomation();
+    renderShells();
 
     // horns
     setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
