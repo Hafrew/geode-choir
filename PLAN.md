@@ -138,22 +138,22 @@ Natural runs finish in about **4.25 hours** (3.96–4.85 h, seeds 1–5, see [pl
 - Offline behavior is unchanged (no offline shopping).
 
 ### Staged Patient Choir
-Replace the single 100,000-fathom switch that opens all nine categories with a ladder. Costs and gates are **proposed** and must be tuned with the simulator.
+Replace the single 100,000-fathom switch that opens all nine categories with a ladder. Costs and gates are **proposed** and must be tuned with the simulator. They are scaled to a real mid-run save: with two Heartstones and about 32 soundings, a player held about 21.7 million fathoms and earned about 150,000 fathoms per sounding, so prices in the hundreds of thousands would be bought instantly. Aim for each stage to cost roughly 30–60 minutes of income at the time its Heartstone gate opens.
 
 | Stage | Opens | Gate | Proposed price |
 |---|---|---|---|
 | Patient Choir | Voices, Tuning, Crystals | Heartstone 2 | 100,000 fathoms (unchanged) |
-| Second Verse | Wonders, Attunement | Heartstone 2 | ~250,000 fathoms |
-| Deep Verse | Strata, Illuminations | Heartstone 3 | ~1,000,000 fathoms |
-| Final Verse | Horn upgrades, Sunvein upgrades | Heartstone 4 | ~4,000,000 fathoms |
+| Second Verse | Wonders, Attunement | Heartstone 2 | ~10,000,000 fathoms |
+| Deep Verse | Strata, Illuminations | Heartstone 3 | ~50,000,000 fathoms |
+| Final Verse | Horn upgrades, Sunvein upgrades | Heartstone 4 | ~250,000,000 fathoms |
 
 Existing saves that already own Patient Choir keep what they have paid for: their categories open, no refund, no double charge, and the new stages are bought normally.
 
 ### Longer run: more Heartstones
-- Raise the Heartstone requirement for the finale from **3 to 4 or 5**. **Recommended: 5.** With slots arriving at Heartstones 3 and 4, a target of 4 would hand over the last slot at the moment the finale is one step away; 5 gives the new slots time to matter.
+- Raise the Heartstone requirement for the finale from **3 to 5** (decided). Rationale: with slots arriving at Heartstones 3 and 4, a target of 4 would hand over the last slot one step before the end; 5 gives the new slots time to matter.
 - The finale's actual-sounding requirement (currently 25) is already below the cumulative gate for later Heartstones (20/24/28/32…), so it must be raised with the Heartstone count (about 36 for five Heartstones), or the sounding requirement stops mattering.
 - Heartstone cost (`1e7 × 10^h` lumen) and depth (`12 + 22h`) keep growing, so Heartstone 4 and 5 are large steps. The sim decides whether they need easing.
-- Goal to measure: a mean natural finish of about **6–8 hours** (proposed), with no seed far outside that range. The 20-feat requirement and the 100,000-fathom entry price are re-checked.
+- Goal to measure: a mean natural finish of about **6–8 hours** (proposed), with no seed far outside that range. The 20-feat requirement and the 100,000-fathom entry price are re-checked. At that mid-run balance the entry price is trivial, so the 1.11.0 offering needs to be rescaled with the rest.
 - Existing saves with three or four Heartstones keep them; a completed finale stays completed.
 
 ### Validation
