@@ -2821,7 +2821,7 @@ import { createState } from './state.js';
       const c = { t: 1, x: 0, y: 0 }; setObjPx(c, spot.x, spot.y);
       S.crystals.push(c);
     }
-    let msg = `Depth ${S.depth}. You carry ${got} fossil${got > 1 ? 's' : ''} down. The cave now sings in ${MODES[S.depth % MODES.length].name.toLowerCase()}.`;
+    let msg = `Depth ${S.depth}. You carry ${fmt(got)} fossil${got > 1 ? 's' : ''} down. The cave now sings in ${MODES[S.depth % MODES.length].name.toLowerCase()}.`;
     if (fall) msg += ` The floor gave way twice, and you fell a floor further.`;
     if (rubble) msg += ' You land in rubble: this floor will need half again as much to break through.';
     if (vein) msg += ` You land on a vein: ${vein} extra fossil${vein > 1 ? 's' : ''}.`;
@@ -2845,7 +2845,7 @@ import { createState } from './state.js';
     refreshAll();
     afterStateChange();
     const h = gainHorn(0);
-    whisper(`Sounding ${S.sea.soundings}. You haul up ${got} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}${shell ? ' A seashell answers. Sound it in The Deep, or finish with Auto.' : ''}`);
+    whisper(`Sounding ${S.sea.soundings}. You haul up ${fmt(got)} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}${shell ? ' A seashell answers. Sound it in The Deep, or finish with Auto.' : ''}`);
     save();
     return true;
   }
@@ -3307,7 +3307,7 @@ import { createState } from './state.js';
   }
   function updateStrip(sea, prog, locked, got) {
     const ready = prog >= 1 && !locked;
-    chip('chipDesc', locked ? 'Settling' : sea ? 'Sound' : 'Descend', locked ? mmss(sea ? S.sea.cool / tickRate() : S.cool) : ready ? '+' + got : Math.floor(prog * 100) + '%', prog, ready);
+    chip('chipDesc', locked ? 'Settling' : sea ? 'Sound' : 'Descend', locked ? mmss(sea ? S.sea.cool / tickRate() : S.cool) : ready ? '+' + fmt(got) : Math.floor(prog * 100) + '%', prog, ready);
     $('chipDesc').classList.toggle('sea', sea);
     const showHeart = !sea && (S.lumenTotal >= 1e4 || S.hearts > 0);
     setHid('chipHeart', !showHeart);
@@ -3468,7 +3468,7 @@ import { createState } from './state.js';
         ? `The sea is still settling: <b>${mmss(q.cool / tickRate())}</b> before you can sound again. Faster Tick speeds it; 2, 5, 10 and 20 total soundings shorten it.${tideProg < 1 ? ` Ring <b>${fmt(need)}</b> tide to reach the depths.` : ''}`
         : tideProg < 1
         ? `Ring <b>${fmt(need)}</b> tide in this sea to sound deeper. You lose its bells, voices, oysters and pearls, but gain <b class="fat">fathoms</b> for the Deep, tide ×1.6 per sounding, and a horn.`
-        : `Sound now for <b class="fat">${got} fathom${got > 1 ? 's' : ''}</b> and a horn, or keep ringing: fathoms grow more slowly the more you ring here.`);
+        : `Sound now for <b class="fat">${fmt(got)} fathom${got > 1 ? 's' : ''}</b> and a horn, or keep ringing: fathoms grow more slowly the more you ring here.`);
       if (canSound()) once('canSound');
     } else {
       need = deepenAt(); const humProg = Math.min(1, S.run / need); got = fossilGain();
@@ -3479,7 +3479,7 @@ import { createState } from './state.js';
         ? `The floor is still settling: <b>${mmss(S.cool)}</b> before you can descend again. Quests under Strata shorten this.${humProg < 1 ? ` Sing <b>${fmt(need)}</b> hum to break through.` : ''}`
         : humProg < 1
         ? `${S.rubble ? 'Rubble from the fall: this floor asks for half again as much. ' : ''}Sing <b>${fmt(need)}</b> hum in this cave to break through the floor. You lose its crystals, voices and shards, but carry down <b class="fos">fossils</b> for Strata, hum ×2 per depth, and maybe a horn.`
-        : `Descend now for <b class="fos">${got} fossil${got > 1 ? 's' : ''}</b>, or keep singing: fossils grow more slowly the more you sing here.`);
+        : `Descend now for <b class="fos">${fmt(got)} fossil${got > 1 ? 's' : ''}</b>, or keep singing: fossils grow more slowly the more you sing here.`);
       if (prog >= 1) once('canDescend');
     }
     setHid('freshText', sea);
@@ -3499,7 +3499,7 @@ import { createState } from './state.js';
     if (!descArmed || Date.now() - descArmed > 3000) {
       descArmed = 0;
       const unit = sea ? 'fathom' : 'fossil';
-      btn.textContent = locked ? `Settling · ${mmss(sea ? q.cool / tickRate() : S.cool)}` : prog < 1 ? (sea ? 'Sound the depths' : 'Descend') : `${sea ? 'Sound' : 'Descend'} · +${got} ${unit}${got > 1 ? 's' : ''}`;
+      btn.textContent = locked ? `Settling · ${mmss(sea ? q.cool / tickRate() : S.cool)}` : prog < 1 ? (sea ? 'Sound the depths' : 'Descend') : `${sea ? 'Sound' : 'Descend'} · +${fmt(got)} ${unit}${got > 1 ? 's' : ''}`;
     }
     if (!resetArmed || Date.now() - resetArmed > 3000) { resetArmed = 0; if ($('resetBtn').textContent !== 'Forget everything') $('resetBtn').textContent = 'Forget everything'; }
     renderTip();
