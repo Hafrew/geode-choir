@@ -20,6 +20,8 @@ import { createState } from './state.js';
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
   const VERSION = '1.10.1';
+  // Release channel shown beside the version; saves and version checks use VERSION alone.
+  const CHANNEL = 'beta';
   // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
   const CHANGES = [
     { ver: '1.10.1', date: '2026-10-09', head: 'Pearl and Pattern', items: [
@@ -1819,11 +1821,11 @@ import { createState } from './state.js';
   }
   function maybeShowNews() { if (cmpVer(S.seenVer, VERSION) < 0 && !newsOpen && !awayOpen) setTimeout(() => { if (!awayOpen) openNews('auto'); }, 600); }
   $('newsBtn').addEventListener('click', () => { closeSettings(); openNews('history'); });
-  $('verChip').textContent = 'v' + VERSION;
+  $('verChip').textContent = `v${VERSION} ${CHANNEL}`;
   $('verChip').addEventListener('click', () => { if (!newsOpen && !sceneOpen && !cinematic) openNews('history'); });
   $('newsClose').addEventListener('click', closeNews);
   window.addEventListener('keydown', e => { if (newsOpen && e.key === 'Escape') closeNews(); });
-  $('verNote').textContent = `Geode Choir ${VERSION}`;
+  $('verNote').textContent = `Geode Choir ${VERSION} (${CHANNEL})`;
 
   // ---------- numbers, save codes ----------
   function syncNum() { syncSeg('num', S.numfmt); }
@@ -3037,7 +3039,7 @@ import { createState } from './state.js';
   let creditsOpen = false;
   function openCredits() {
     creditsOpen = true;
-    $('creditsSub').textContent = `Geode Choir ${VERSION}`;
+    $('creditsSub').textContent = `Geode Choir ${VERSION} (${CHANNEL})`;
     $('creditsText').textContent = 'Thank you for listening. The caves are still singing, and so is the sea. Keep going for as long as you like: nothing here ends, it only gets deeper.';
     $('creditsRows').innerHTML = [
       ['Time played', fmtDur(S.stats.playSec || 0)], ['Shouts and stones', fmt(S.shouts + S.sea.throws)],

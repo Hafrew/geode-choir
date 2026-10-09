@@ -31,7 +31,7 @@ const legacyHorn = { id: 1, r: 0, name: 'Plain Ram Horn', lines: [{ stat: 'hum',
           }, { key: KEY, horn: legacyHorn });
           const response = await page.goto(server.url);
           assert.equal(response.status(), 200);
-          assert.equal(await page.title(), 'Geode Choir');
+          assert.equal(await page.title(), 'Geode Choir (beta)');
           await page.locator('#cv').waitFor({ state: 'visible' });
           // Returning saves show the release dialog after the initial scene settles.
           await page.waitForTimeout(1000);
