@@ -2,7 +2,7 @@ import { createState, freshStats, freshSea } from './state.js';
 import { normalizeCaveAutomation } from './automation.js';
 import { normalizeShells, shellDiscounts } from './seashells.js';
 import { normalizePearls } from './pearls.js';
-import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState } from './horns.js';
+import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState, sanitizeHorns } from './horns.js';
 import { KNEE, SUN_GUARANTEE } from './progression.js';
 const cmpVer = (a, b) => {
   const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
@@ -69,14 +69,11 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   // Saves from before the Chronicle: rebuild what the stats can tell us.
   S.stats.maxDepth = Math.max(S.stats.maxDepth, S.depth || 0);
   S.stats.descents = Math.max(S.stats.descents || 0, S.stats.maxDepth);
-  if (Array.isArray(d.horns)) {
-    S.stats.hornsFound = Math.max(S.stats.hornsFound, d.horns.length);
-    for (const h of d.horns) if (h && RARITY[h.r]) S.stats.bestHorn = Math.max(S.stats.bestHorn, h.r);
-  }
   if (!Array.isArray(S.crystals) || !S.crystals.length) S.crystals = fresh().crystals;
   S.wonders = Array.isArray(S.wonders) ? S.wonders.filter(o => WONDERS[o.k]) : [];
-  S.horns = Array.isArray(S.horns) ? S.horns.filter(h => h && RARITY[h.r] && Array.isArray(h.lines)) : [];
-  S.coll = S.coll && typeof S.coll === 'object' && !Array.isArray(S.coll) ? S.coll : {};
+  sanitizeHorns(S);
+  S.stats.hornsFound = Math.max(S.stats.hornsFound, S.horns.length);
+  for (const h of S.horns) S.stats.bestHorn = Math.max(S.stats.bestHorn, h.r);
   S.hornQueue = Math.max(0, Math.min(9, Math.floor(+S.hornQueue) || 0));
   S.hornAuto = !!S.hornAuto;
   if (S.floor !== 'sunvein' && !FLOORS[S.floor]) S.floor = 'still';

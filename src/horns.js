@@ -206,6 +206,40 @@ function acquireHorn(S, h, capacity = 30) {
     if (eq.length < cap) eq.push(h.id);
   }
 }
+// Imported saves are untrusted text, and horn names reach innerHTML, so keep only what the game itself could have written.
+const cleanName = v => String(v == null ? '' : v).replace(/[^A-Za-z0-9 '\u2019-]/g, '').trim().slice(0, 60);
+const cleanInt = (v, max = 1e9) => Math.max(0, Math.min(max, Math.floor(Number(v)) || 0));
+function sanitizeHorns(S) {
+  const seen = new Set();
+  S.horns = (Array.isArray(S.horns) ? S.horns : []).map(h => {
+    if (!h || typeof h !== 'object') return null;
+    const r = Math.floor(Number(h.r)), id = cleanInt(h.id);
+    if (!(r >= 0 && r < RARITY.length) || !id || seen.has(id)) return null;
+    const lines = (Array.isArray(h.lines) ? h.lines : []).slice(0, 4)
+      .filter(l => l && Object.prototype.hasOwnProperty.call(HSTATS, l.stat) && ['pct', 'mult', 'flat', 'flatpct', 'discount'].includes(l.kind) && Number.isFinite(+l.v))
+      .map(l => ({ stat: l.stat, kind: l.kind, v: Math.max(0, Math.min(1e4, +l.v)) }));
+    if (!lines.length) return null;
+    seen.add(id);
+    const o = { id, r, name: cleanName(h.name) || `Worn ${ANIMALS[0]} Horn`, lines };
+    if (h.gold) o.gold = true;
+    if (Number.isFinite(+h.q)) o.q = Math.max(0, Math.min(1, +h.q));
+    if (h.seed) o.seed = cleanInt(h.seed, 4294967295) || 1;
+    if (h.trait && typeof h.trait === 'object') o.trait = { id: String(h.trait.id), quality: +h.trait.quality };
+    if (h.salvaged) { o.salvaged = true; if (h.salvageReason === 'filter' || h.salvageReason === 'full') o.salvageReason = h.salvageReason; }
+    if (h.ivoryFound != null) o.ivoryFound = cleanInt(h.ivoryFound);
+    if (h.replacedHorn && typeof h.replacedHorn === 'object') o.replacedHorn = { name: cleanName(h.replacedHorn.name), ivory: cleanInt(h.replacedHorn.ivory) };
+    return o;
+  }).filter(Boolean);
+  S.hornSeq = Math.max(cleanInt(S.hornSeq), ...S.horns.map(h => h.id));
+  const coll = {};
+  for (const [k, c] of Object.entries(S.coll && typeof S.coll === 'object' ? S.coll : {})) {
+    const [fam, col] = k.split(':');
+    if (!FAMS.includes(fam) || !(col === 'g' || (/^\d$/.test(col) && +col < RARITY.length)) || !c || typeof c !== 'object') continue;
+    coll[k] = { seed: cleanInt(c.seed, 4294967295) || 1, name: cleanName(c.name) || 'Horn', ls: (Array.isArray(c.ls) ? c.ls : []).filter(x => Object.prototype.hasOwnProperty.call(HSTATS, x)).slice(0, 4),
+      n: Math.max(1, cleanInt(c.n)), r: Math.max(0, Math.min(RARITY.length - 1, cleanInt(c.r, 99))) };
+  }
+  S.coll = coll;
+}
 function normalizeHornState(S) {
   const settings = S.hornInventory || {};
   S.hornInventory = { autoEquip: settings.autoEquip === true,
@@ -298,4 +332,4 @@ function createHorn(S, plan, perfs, chosenTrait, random = Math.random) {
 export { loadoutScore, bestLoadout, applyAutoEquip, matchesSalvageFilter, acquireHorn, IVORY_LEVELS, discoveryIvory, grantDiscoveryIvory, RARITY, HSTATS, ANIMALS, ADJ, PRIMORDIAL, RARITY_LEVELS, PITY_AT, TRAITS, TRAIT_CHOICE_AT,
 hash32, rng32, FAMS, FAM_OF, famOf, rarityOdds, rarityRevealed, primordialUnlocked, visibleRarities,
 normalSlots, primordialSlots, equippedIds, AUTO_P, traitQuality, traitValue, activeTraits, hornBoost,
-lineValue, hornBonuses, normalizeHornState, recordCollection, rollHornPlan, createHorn, soundingDifficulty };
+lineValue, hornBonuses, normalizeHornState, sanitizeHorns, recordCollection, rollHornPlan, createHorn, soundingDifficulty };
