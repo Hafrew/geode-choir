@@ -12,7 +12,7 @@ Goal: make the gaps between descents more engaging **without changing how long t
 
 ## Scope
 
-Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x) and **1.6.0 Phase 1** (status strip and hover stats), on this branch.
+Done already: **1.5.1 Sinking Stone multiplier** (1x to 10x, default 2x) **1.6.0 Phase 1** (status strip and hover stats) and **1.7.0 Phase 2** (Horns tab rebuild, procedural SVG horns, Collection), on this branch.
 
 In: top status strip, hover lifetime/max stats, Horns tab rebuild, procedural then 3D horns, horn minigame, descent minigame with Risky Descent, floor identities, biomes, Chronicle drip, offline return report, horn sets, session goals, horn/bell music.
 
@@ -50,7 +50,7 @@ The Descend and Heartstone panels currently live in the Glow tab column under th
 
 Sim impact: none.
 
-## Phase 2: Horns tab rebuild and horn visuals (1.7.0)
+## Phase 2: Horns tab rebuild and horn visuals (1.7.0, done)
 
 **Horns tab sub-tabs:** *Upgrades* (rack, ear, whetstone, branching, and the shop) · *Inventory* · *Sounding* (placeholder until Phase 3) · *Collection*.
 
@@ -167,7 +167,5 @@ The last gate is the previous depth (depth - 1). Confirmed.
 - Golden Floor fossil bonus starts at +10% and upgrades to +30%. Golden Horn chance starts at 50% and upgrades to 100%. Golden upgrades are bought on a Golden Floor only.
 - Session goals reset at local midnight (default), phase order as above (default).
 
-## Open questions
-
-1. **Gilt as the Golden currency** (see Phase 4): time-based, only on a Golden Floor, never reset. Or pay in fossils?
-2. Should *Slow Gold* (extra decay slowdown) exist, or stop at the two upgrades above?
+## Resolved
+- Golden upgrades are paid in **Gilt**, as proposed in Phase 4. *Slow Gold* is dropped: the Golden upgrades are *Rich Vein* and *Gilded Breath* only.

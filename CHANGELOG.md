@@ -2,6 +2,18 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.7.0: The Horn Rack (2026-10-09)
+
+### Added
+- **Horns tab in four pages:** Upgrades, Inventory, Sounding, Collection.
+- **Unique horn art.** Every horn is drawn from a seed, its shape family (from the animal in its name: curl, tines, sweep, spear, twist, tusk, crescent, conch), its rarity (material, rim, glow, sparkles) and its stats (a gem for each stat, more growth rings on better horns).
+- **Inventory:** worn horns sit in slots, a detail view shows the selected horn with Wear/Take off/Salvage, and a rarity filter narrows the grid.
+- **Sounding:** the timer to the next horn, the odds, and how many horns remain before a guaranteed Epic or better.
+- **Collection:** 40 designs (8 shapes x 5 rarities). Finding a horn, even one salvaged at once, adds it, and it counts how many you've found.
+
+### Existing saves
+- Old horns get a seed (so a stable look) and are added to the Collection. Bonuses, odds and pity are unchanged. Horns do not use `Math.random` for their look, so the random stream the sim sees is the same as before apart from the horn name picks.
+
 ## 1.6.0: The Status Strip (2026-10-09)
 
 ### Added
