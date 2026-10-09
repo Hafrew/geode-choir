@@ -2,6 +2,54 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## 1.8.0: The Sounding (2026-10-09)
+
+### Added
+- **Horn calls are sounded by you.** When the horn timer runs out a call waits (up to 3; the clock holds while they wait). The Horn chip turns into "Sound horn" and opens the Sounding page. The rarity is spun first, then you play one note for each stat on the horn: a needle sweeps a bar, and you click, tap or press Space when it is in the glowing zone. How close you get sets that stat, from 0.5x to 1.5x its usual value. A mid result is exactly the usual value.
+- **Extra horns.** Playing above average gives up to a 25% chance of a second horn with the call.
+- **Sound horns automatically** (Sounding page): every call gives an average result straight away, as horns always did before. "Finish with an average result" does the same mid-sounding.
+- **Keen Ear** widens the glowing zone as well as shortening the timer.
+- Half-played horns are saved: reloading the page keeps your place and the rarity already spun, so a reload can't reroll it.
+
+### Unchanged
+- Horns from descending, sounding the depths, kindling a Heartstone and the Horn Call in the rack still arrive at once (or, for the rack, as a waiting call unless auto is on).
+- Odds, pity and the horn cap.
+
+### Sim
+- `tools/sim` turns on automatic sounding so a bot run behaves as before. With it on, horn rolls use the same random draws in the same order as 1.7.0.
+
+## 1.7.0: The Horn Rack (2026-10-09)
+
+### Added
+- **Horns tab in four pages:** Upgrades, Inventory, Sounding, Collection.
+- **Unique horn art.** Every horn is drawn from a seed, its shape family (from the animal in its name: curl, tines, sweep, spear, twist, tusk, crescent, conch), its rarity (material, rim, glow, sparkles) and its stats (a gem for each stat, more growth rings on better horns).
+- **Inventory:** worn horns sit in slots, a detail view shows the selected horn with Wear/Take off/Salvage, and a rarity filter narrows the grid.
+- **Sounding:** the timer to the next horn, the odds, and how many horns remain before a guaranteed Epic or better.
+- **Collection:** 40 designs (8 shapes x 5 rarities). Finding a horn, even one salvaged at once, adds it, and it counts how many you've found.
+
+### Existing saves
+- Old horns get a seed (so a stable look) and are added to the Collection. Bonuses, odds and pity are unchanged. Horns do not use `Math.random` for their look, so the random stream the sim sees is the same as before apart from the horn name picks.
+
+## 1.6.0: The Status Strip (2026-10-09)
+
+### Added
+- **Status strip** at the top of the stage: Descend (or Sound, in the sea), Heartstone and Horn chips, visible on every tab. Each has a ring that fills, a countdown or percentage, and a glow when ready. Descend and Heartstone open their full panel over the cave; Horn jumps to the Horns tab. Esc or a click elsewhere closes the panel, and descending closes it too. The chips drop to a second row on narrower screens.
+- **Hover stats.** Hover (or focus, or tap) the hum count and rate, or any currency pill, to see held now, this floor or Heartstone, lifetime, and best. Fossils, lumen and ivory now keep lifetime counts that Heartstones don't reset.
+
+### Changed
+- The Descend and Heartstone panels moved out of the side column into the strip's panels. Nothing about how they work changed.
+
+### Existing saves
+- Lifetime fossils, lumen and ivory start from what your save still knows (this Heartstone's totals and held ivory), so they may start low. Bests start at 0 and fill in as you play.
+
+## 1.5.1: Sinking Deeper (2026-10-09)
+
+### Added
+- **Sinking Stone setting.** A − and + beside the Sinking Stone set how many times what the floor needs you must have sung before it descends on its own, from 1x to 10x. The default stays at 2x, so nothing changes until you touch it. Turning the stone off, or waiting longer, still pays more fossils than descending early, because fossils grow with how far past the threshold you sang.
+
+### Existing saves
+- Saves get 2x. Nothing is removed or refunded.
+
 ## 1.5.0: The Fading Update (2026-10-06)
 
 ### Added
