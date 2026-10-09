@@ -1,5 +1,6 @@
 import { createState, freshStats, freshSea } from './state.js';
 import { normalizeCaveAutomation } from './automation.js';
+import { normalizeShells } from './seashells.js';
 import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState } from './horns.js';
 import { KNEE } from './progression.js';
 const cmpVer = (a, b) => {
@@ -96,6 +97,7 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   if (!Array.isArray(S.sea.bells) || !S.sea.bells.length) S.sea.bells = freshSea().bells;
   S.sea.oysters = Array.isArray(S.sea.oysters) ? S.sea.oysters : [];
   S.sea.objs = Array.isArray(S.sea.objs) ? S.sea.objs.filter(o => PEARLOBJ[o.pk]) : [];
+  normalizeShells(S);
   if (S.world !== 'sea' || !S.sea.unlocked) S.world = 'cave';
   if (!TABS.includes(S.tab)) S.tab = S.world;
   if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'auto';
