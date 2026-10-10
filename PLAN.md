@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current source version: **1.10.7 beta** (combined variety and staged automation release). Everything through 1.10.5, save-import sanitization (#37), and offline horns/module extraction (#38) is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current source version: **1.10.7 beta** (combined variety and staged automation release). Everything through 1.10.5, save-import sanitization (#37), and offline horns/module extraction (#38) is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.535 hours**, exactly matching 1.10.5 across seeds 1–5 (see [Patient Verses validation](tools/sim/patient-verses.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
