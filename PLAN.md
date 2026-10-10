@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current release: **1.10.4 beta** (Pearl Case, in #35). Everything through 1.10.3 (Sunvein pity) and the number-format fix is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current source version: **1.10.5 beta** (beta hardening, implemented in this change). Everything through 1.10.4, save-import sanitization (#37), and offline horns/module extraction (#38) is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -38,7 +38,7 @@ Current release: **1.10.4 beta** (Pearl Case, in #35). Everything through 1.10.3
 | Unreleased | Fossil and fathom gains follow the number format setting | Delivered (#31); audit for other raw numbers is in 1.10.5 |
 | **1.10.3** | Luck Evens Out: Sunvein pity (+1 point per dry descent up to +5, guaranteed on the 30th) | Delivered (#33); the per-descent step is an assumption to confirm |
 | **1.10.4** | Pearl Case: pearl items that feel like horns (rarities, art, three-slot strand, grind to pearl dust) | Delivered in #35 (draft pending pacing check) |
-| **1.10.5** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | **Next pass**; no balance changes |
+| **1.10.5** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | Implemented in this change; no balance changes |
 | **1.10.6** | Variety pass, part 2: skippable descents and cave events | Proposed; replaces the earlier pacing-lever ideas (see findings) |
 | **1.10.7** | Auto-buy horns and staged Patient Choir unlocks | Proposed; prices depend on measured pacing |
 | **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.7, using the measured economy |
@@ -145,14 +145,14 @@ Pearls become collectible items, like horns. Decisions (agreed): items **persist
 
 ## 1.10.5 — Beta hardening
 
-From the post-merge code review of 1.10.1. No balance or progression changes; the seeded parity rule applies.
+Implemented from the post-merge review of 1.10.1. No balance or progression changes.
 
-- **Safe save import (security) — delivered on `feature/save-import-hardening`** (names reduced to plain characters, ids/seeds/rarities/lines validated, bad entries dropped, `tools/save-import.test.mjs`); a generic `esc()` helper is not needed because no remaining save field reaches `innerHTML` unvalidated (pearl and shell names derive from seeds). Original finding: Shared `GC1:` save codes are only checked for a numeric `hum`, and horn/collection names from a save reach `innerHTML` (`title` attributes, Sounding results, Collection cells). A crafted code could inject markup or script into the importing player's page. In `restoreState`, regenerate horn names from their seeds (or accept only a strict name pattern) and coerce `id`/`seed` to integers; add one `esc()` helper for interpolated template HTML. Add a test that imports a hostile name and asserts that it renders as text.
-- **Save-failure warning.** `save()` swallows storage errors, so a full or blocked localStorage silently loses progress. Show one toast per session when a save or backup write fails.
-- **Inventory render cost.** The UI refreshes every 0.12 s; rebuild horn/shell grids only when their contents change (an inventory revision counter), so large inventories stay smooth on phones. Verify with a several-hundred-horn fixture at 390px.
-- **One test command and CI.** Add a `package.json` `test` script that runs the unit tests and every browser smoke suite, and a GitHub Action that runs the unit tests on each PR to `main`. Stacked PRs that merge only into their parent branch (#20–#24) should be caught by a check that their changes reached `main`.
-- **Number-format audit.** Fossil and fathom gains were printed as raw integers (for example 384738384) and are fixed (#31). Search the UI for any other interpolated numbers that bypass `fmt()` (shop prices, popovers, toasts, the Chronicle, Deep/Choir upgrade text) and fix them, with one browser check at large values.
-- Optional: one formatting pass (about 150 lines in `main.js` exceed 200 characters), in its own PR so review diffs stay readable.
+- **Safe save import:** merged in #37; the hardening browser suite now verifies a hostile horn name creates no markup or script execution.
+- **Save-failure warning:** one toast per session for failed save, backup, or imported-save writes. Retry behavior and save-code export remain available.
+- **Inventory render cost:** view-local content revision counters gate horn, shell, and pearl card rebuilding. Resource, timing, pending-note, and formation updates do not replace unchanged inventory cards or focused buttons. Diagnostic 300-horn and 300-shell fixtures cover desktop/mobile, with content/equipment changes still refreshing correctly. Snapshot comparison remains linear in inventory size; no persistent save schema change.
+- **One test command and CI:** `npm test` discovers every unit/browser suite; Node 24, pinned Playwright, and lockfile. Actions runs units for PRs/pushes to main. A separate integration check flags parent-target PRs and merged commits not reachable from main; a local Git fixture tests the parent-only merge case.
+- **Number-format audit:** offerings, horn ivory/replacement/salvage messages, vein rewards, unbounded counts, Chronicle stats, and Deep/Cave upgrade descriptions use the selected format. Bounded levels, item IDs, timings and percentages keep exact displays. Large-value browser checks cover short and scientific formats.
+- **Validation:** all unit and browser suites plus a short seed-1 parity comparison. Full-game pacing and a developer-toolbar unlock run remain outside this pass. Optional bulk source formatting stays a separate future PR.
 
 The beta label is removed when 1.11.0 lands and this hardening is complete.
 
@@ -211,7 +211,7 @@ Unit tests for the shopping interval and for loading bad ids. Browser smoke chec
 
 ## 1.11.0 — The Last Chorus
 
-Replace immediate first-time finale completion with a **roughly 30-minute interactive expedition** after paying the entry offering. Proposed cost **100,000 fathoms**, subject to 1.10.0 natural-economy checks; current cost remains 50,000 until a gameplay release changes it. No further mandatory payments. Entry requires **36 actual soundings, five Heartstones** (set in 1.10.2; 1.10.5 may raise the soundings), and 20 feats. The 100,000-fathom entry price is trivial at measured mid-run balances and is rescaled with the staged automation prices.
+Replace immediate first-time finale completion with a **roughly 30-minute interactive expedition** after paying the entry offering. Proposed cost **100,000 fathoms**, subject to 1.10.0 natural-economy checks; current cost remains 50,000 until a gameplay release changes it. No further mandatory payments. Entry requires **36 actual soundings, five Heartstones** (set in 1.10.2; unchanged by 1.10.5), and 20 feats. The 100,000-fathom entry price is trivial at measured mid-run balances and is rescaled with the staged automation prices.
 
 | Chapter, about six minutes each | Interaction |
 |---|---|

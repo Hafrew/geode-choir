@@ -58,23 +58,19 @@ The versioned roadmap and remaining decisions are in [PLAN.md](PLAN.md).
 
 ## Validation
 
-Browser checks and simulations require Node and Playwright. Install Playwright with `npm install -g playwright@1.64.0`, then either install its browser with `playwright install chromium` or point `CHROMIUM` at an existing compatible Chromium executable.
+Development checks require Node 24 and Playwright. Install the pinned tools with `npm ci`, then `npx playwright install chromium`, or point `CHROMIUM` at a compatible installed Chromium executable.
 
 ```bash
-node tools/smoke.js
-node --test tools/*.test.mjs
-node tools/horns-smoke.js
-node tools/horn-inventory-smoke.js
-node tools/qol-smoke.js
-node tools/offline-horns-smoke.js
-node tools/seashells-smoke.js
-node tools/sea-pacing-smoke.js
-node tools/pearls-smoke.js
-node tools/dev-smoke.js
+npm test
+# Focused checks:
+npm run test:unit
+npm run test:browser
 node tools/sim/run.js --hours 0.1 --seed 1 --out /tmp/geode-smoke.json
 ```
 
-Both commands start and stop their own temporary local server. The smoke test covers desktop and mobile gameplay, settings, saved progress, and legacy save migration. Both checks use fallback fonts to avoid external network dependencies; they do not test Google Fonts delivery.
+`npm test` runs every unit test and discovers every browser smoke suite, sequentially. Browser checks start and stop their own temporary server, cover desktop/mobile, and use fallback fonts; they do not test Google Fonts delivery. Developer-toolbar unlock checks additionally need `GEODE_DEV_CODE` (the locked/default paths always run).
+
+GitHub Actions runs unit tests on pull requests to `main` and pushes to `main`. The integration job flags PRs targeting parent branches and merged PRs whose merge commit has not reached `main`, so a parent-only merge cannot be mistaken for a shipped change.
 
 Use `--hornStart primordial` for a diagnostic run with the rarity upgrade and Primordial rack already unlocked (no free horns or currency). This measures the maximum-upgrade effect, not natural unlock timing. Use `--hornUpgrades 0` to disable Rarity Weaving and Primordial purchases while retaining the current ivory economy. Fast simulations skip canvas painting while retaining the physics and seeded gameplay draws.
 

@@ -1,3 +1,4 @@
+import { createInventoryRevision } from './inventory-revision.js';
 import { shellSVG } from './shell-art.js';
 import { SHELL_RARITIES, shellSlots, shellDiscoveryChance, shellDiscounts,
   finishShell, equipShell, shellNeedle, hitShell } from './seashells.js';
@@ -5,7 +6,8 @@ import { SHELL_RARITIES, shellSlots, shellDiscoveryChance, shellDiscounts,
 // Presentation owns no rewards or currency rules. Pending timing state lives in the save.
 export function createShellUI({ state, active, changed }) {
   const $ = id => document.getElementById(id);
-  let key = '', resultKey = '';
+  let key = '', resultKey = '', renderedInventoryRevision = -1;
+  const inventoryRevision = createInventoryRevision();
   const rarity = r => SHELL_RARITIES[r].name;
   $('shellSection').addEventListener('click', e => {
     const button = e.target.closest('button[data-shell-action]');
@@ -52,6 +54,10 @@ export function createShellUI({ state, active, changed }) {
           <button type="button" data-shell-action="auto" data-id="${p.id}">Finish with Auto</button>
           <p class="note">Auto gives ${[1,3,8][p.r]} depth reduction, including after a partial performance. Equip the shell to use it.</p></article>`;
       }).join('');
+    }
+    const revision = inventoryRevision([sh.items, sh.equipped, shellSlots(S)]);
+    if (revision !== renderedInventoryRevision) {
+      renderedInventoryRevision = revision;
       // Strongest first, keep every distinct item: there is no inventory cap or forced salvage.
       $('shellInventory').innerHTML = [...sh.items].sort((a, b) => b.r - a.r || b.depth - a.depth || a.id - b.id).map(p => {
         const worn = sh.equipped.includes(p.id), full = sh.equipped.length >= shellSlots(S);
