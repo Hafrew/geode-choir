@@ -30,6 +30,12 @@ After each successful Sea sounding, discovery has a 20% chance to find a shell (
 
 Equip one shell, or buy the permanent second slot for **500 fathoms**. Shell Listening costs **25/50/100/200/400/800 fathoms**, raising discovery by five percentage points per level to 50%. Equipped discounts add and apply only to Heartstone eligibility, never actual depth, milestones, rewards, or the finale's 25-sounding requirement. Distinct identical shells can equip together. Inventory has no cap or forced salvage in this pass. Shells, upgrades, and pending soundings survive every reset.
 
+## Offline horns
+
+After at least 20 seconds away, the horn timer advances at the usual away efficiency (35% plus horn bonuses, capped at 100%), with Faster Tick and Keen Ear. At most **five new arrivals** are granted per return, regardless of absence length; time beyond that cap is consumed, not saved for more batches. Horns must already be unlocked.
+
+Manual arrivals become waiting calls, preserving existing calls and unfinished sounding notes. The saved waiting capacity is nine, including a pending sounding; a full queue receives no additional calls. Active play still holds the clock at three waiting calls. With **Sound horns automatically** enabled, only the new arrivals are discovered immediately using the usual ivory, auto-equip, and salvage rules. The return card reports calls or discovered horns. Hidden tabs use the same accounting, and returning saves the result immediately.
+
 ## Development layout
 
 - `index.html`: page markup.
@@ -40,6 +46,9 @@ Equip one shell, or buy the permanent second slot for **500 fathoms**. Shell Lis
 - `src/seashells.js`: shell discovery/scoring, dedicated slots, fixed sounding discounts, pending manual/Auto completion, and normalization.
 - `src/shell-art.js`: deterministic SVG seashell illustrations based on existing item identity and rarity.
 - `src/shell-ui.js`: shell result spinner, saved three-note timing presentation, inventory, and equipment controls.
+- `src/changes.js`: release history used by What’s new.
+- `src/save-store.js`: browser storage, backup swaps, GC1 codes, and import/reload write protection.
+- `src/offline-horns.js`: capped away-time horn clock and shared queue limits.
 - `src/saves.js`: serialization, compatibility migration, and restoration without DOM or storage access.
 - `src/progression.js`: descent/sea rewards and thresholds, Heartstone eligibility and state resets, plus trait-aware decay/Gilt rules.
 - `src/main.js`: initialization, the game loop, gameplay orchestration, rendering, audio, and UI. Canvas, audio, and UI extraction remains a later refactor.
@@ -53,10 +62,11 @@ Browser checks and simulations require Node and Playwright. Install Playwright w
 
 ```bash
 node tools/smoke.js
-node --test tools/horns.test.mjs tools/automation.test.mjs tools/seashells.test.mjs tools/sea-pacing.test.mjs
+node --test tools/*.test.mjs
 node tools/horns-smoke.js
 node tools/horn-inventory-smoke.js
 node tools/qol-smoke.js
+node tools/offline-horns-smoke.js
 node tools/seashells-smoke.js
 node tools/sea-pacing-smoke.js
 node tools/pearls-smoke.js

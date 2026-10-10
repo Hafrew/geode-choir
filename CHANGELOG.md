@@ -5,6 +5,7 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 ## Unreleased
 
 ### Added
+- Offline horn arrivals: the horn clock advances at away efficiency with Faster Tick and Keen Ear. Each absence grants at most five new calls; manual calls wait for sounding, while Auto discovers the new horns using the normal equip/salvage and ivory rules. Existing calls and unfinished notes are preserved, with at most nine waiting manual calls including a pending sounding. Return reports include the arrivals, and accounting is saved immediately to prevent duplicate grants on reload.
 - Developer toolbar for testing, unlocked by an access code entered under Settings → Access code. The toolbar module is only downloaded after a valid code, and it can add or set resources, set hearts, depth, soundings, floor and omen, clear cooldowns, force the next descent to be a Sunvein, form a pearl, warp time away, grant horns, shells and pearls of a chosen rarity, and copy the save. Any use marks the save (`stats.devUsed`). `tools/make-dev-code.js` makes a new random code and writes only its salted hash to `src/dev-config.js`; this is a convenience lock for a static game, not security.
 
 ### Fixed
@@ -12,6 +13,7 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - Fossil and fathom gains on the Descend and Sound buttons, the top strip chip, the panel text, and the descent and sounding messages now use the number format setting (for example 384M) instead of the raw number.
 
 ### Changed
+- Extract What's-new history into `src/changes.js` and browser save/backup/import/export orchestration into `src/save-store.js`. State migration and progression formulas remain in their existing modules; save format and runtime version stay unchanged.
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 

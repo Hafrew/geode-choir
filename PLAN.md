@@ -48,8 +48,8 @@ Current release: **1.10.4 beta** (Pearl Case, in #35). Everything through 1.10.3
 | **1.15.0** · original Phase 6, part 2 | Horn sets and cosmetic session goals | Collection integration; passive rewards remain undecided |
 | **1.16.0** · original Phase 6, part 3 | Broader horn/bell procedural music | Reuses finale audio work; respects sound/accessibility settings |
 | **1.17.0** · original Phase 7 | Optional 3D horn presentation | SVG fallback, lazy loading, no progression changes |
-| Unassigned | Offline horn arrivals capped at five | Discussed proposal; behavior not confirmed, not a prerequisite |
-| Ongoing | Split `src/main.js` into modules | Refactor track; no version bump, ±2% parity rule applies |
+| Unreleased | Offline horn arrivals capped at five | Implemented in this change; manual/Auto, hidden-tab, and reload checks |
+| Ongoing | Split `src/main.js` into modules | Changelog and browser save management extracted in this change; horn UI remains |
 
 Versions formerly suggested for original Phases 5–7 are superseded by this table. Optional reserved releases do not block later work and may be omitted without renumbering the other reservations.
 
@@ -69,7 +69,7 @@ Sunvein arrival chance is 5% plus two percentage points per owned Gilded horn, c
 - Primordial sounding has 6–8-second lead-ins, narrower/faster timing, trait strength `0.5 + quality` (50%–150%), and trait choice at quality ≥0.9. Auto gives quality 0.5 and a random trait. No miss deadline.
 - Horn discoveries give **5 ivory**, including kept/salvaged horns. Ivory Echo adds 5 per level to 30, costing 25/50/100/200/400. Salvage gives **3/10/35/75/250/500**. Discovery and salvage grants are independently once-only; no retrospective payout.
 - Auto-equip supports Balanced/Cave/Sea scoring and independent racks. Automatic salvage applies only to new spares; equipped/Gilded protection stays in force. Inventory cap remains 30 horns.
-- Faster Tick advances horn work and scales all displayed horn countdowns consistently. Offline horn arrivals are not implemented by this fix.
+- Faster Tick advances horn work and scales all displayed horn countdowns consistently. Offline horn arrivals are implemented by the unnumbered pass below.
 - Patient Choir costs **100,000 fathoms** after two Heartstones, supports nine cave purchase categories and currency reserves, defaults off, persists through resets, and operates only in the active cave. No offline shop simulation or automatic horn-call purchase.
 
 ### Sea balance implemented in 1.9.8
@@ -273,18 +273,20 @@ Avoid stacking duplicate audio loops on world changes/reloads. Respect mute, bro
 
 Derive tube/lathe geometry from existing seeds, rarity, and stats. Lazy-load a pinned three.js dependency when Inventory/Collection opens. Keep deterministic SVG as the fallback for load failure or absent WebGL. Support slow idle rotation and drag controls, pause rendering while hidden, and respect reduced motion. No item rerolls or progression changes; static hosting remains build-free.
 
-## Unassigned proposal — Offline horn arrivals
+## Unreleased — Offline horn arrivals
 
-The user suggested offline idle horns capped at **five on return**, regardless of absence length. Exact manual pending-call versus Auto item handling and interaction with an existing queue remain unconfirmed. Keep this separate from the offline report and horn timer fix. If adopted, define timestamp consumption, one-return cap, queue preservation, and once-only processing before assigning a release; no retroactive inventory sweep or lost pending horn.
+Implemented at the user's request without assigning a release number. After the existing 20-second minimum absence, the unlocked horn timer advances using away efficiency, Faster Tick, and Keen Ear. Each return grants at most **five new arrivals**. Manual calls preserve existing calls and pending notes, using the existing nine-call save capacity (including a pending sounding). Auto discovers only new arrivals through normal horn acquisition, ivory, equip, and salvage rules. Excess time is consumed; a capped Auto batch starts a fresh interval, while a full manual queue holds its timer as in active play. No retroactive inventory sweep.
+
+Hidden frames pause while away accounting owns the clock. Hidden saves retain the departure timestamp; return accounting saves the new timer, queue, and rewards immediately. Return reports show the arrivals even when resource rates are zero. Unit tests and desktop/mobile browser checks cover the cap, partial work, full/legacy queues, pending notes, Auto rewards, hidden returns, and reload without duplicate grants.
 
 ## Ongoing — `main.js` module split
 
 `src/main.js` holds about 3,800 lines in one closure. Continue the incremental extraction already used for shells, automation, progression, and saves, one reviewable PR each, with the smoke suites as the guard:
 
-1. Changelog data (`CHANGES`) to `src/changes.js`.
+1. **Extracted in this change:** changelog data (`CHANGES`) to `src/changes.js`.
 2. Horn Sounding minigame and inventory UI (around lines 2280–2640) to a `horn-ui.js`, matching `shell-ui.js`.
-3. Save/load, backup, and import/export codes into `saves.js`.
-4. Reward and cost formulas (`fossilGain`, `fathomGain`, `heartCost`, and related) into `progression.js`, so tests and the simulator import them directly instead of through `simulation.api`.
+3. **Extracted:** state restoration/migration in `saves.js`; browser storage, backup, GC1 codes, and import write protection now in `save-store.js`. `main.js` retains state/UI wiring.
+4. **Already extracted:** reward/cost formulas and Heartstone eligibility in `progression.js`; `main.js` and the simulator share these rules.
 
 Extraction never blocks a feature release, and the canvas/audio rewrite stays out of scope.
 
@@ -310,7 +312,7 @@ Extraction never blocks a feature release, and the canvas/audio rewrite stays ou
 | New finale invalidates old completion or charges twice | Preserve completed saves; persisted once-only payment, cosmetic replay |
 | Current simulator finishes at eligibility | Add paid expedition completion; report all three time marks |
 | Optional Sea bonus might erase fathom nerf | Separate bounded-income validation; chance/multiplier unconfirmed |
-| Offline report implies offline horn gains/shop automation | Report implemented accounting only; horn-arrival proposal unassigned |
+| Offline report implies offline horn gains/shop automation | Report implemented accounting only; horn arrivals handled separately by the capped unnumbered pass |
 | Freshness reward starts from an already fresh floor | Bounded extension/offset, no negative age or over-cap freshness |
 | Risky failure could replay arrival/depth rewards | Explicit failed-landing rules and consumed reward accounting required |
 | Old scope excluded puzzles/events | Ordinary cave events, choose-three arrival choices, rhythm shouts, resonance puzzles, and settling tasks remain excluded. Approved Last Chorus encounters/pulse alignment are a finale-specific exception |
