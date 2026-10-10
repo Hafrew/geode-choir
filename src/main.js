@@ -451,7 +451,7 @@ import { createState } from './state.js';
     else if (lite === 2 && n < 380) lite = 1;
   }
   function pushFloat(f) {
-    if (lite && floats.length > 12) return;
+    if (lite && floats.length > (S.fx === 'calm' ? 5 : 12)) return;
     floats.push(f);
   }
 
@@ -1184,9 +1184,10 @@ import { createState } from './state.js';
   }
 
   function drawRings(hue) {
+    const dim = calmDim();
     for (const r of rings) {
-      ctx.strokeStyle = r.col ? `rgba(${r.col},${r.life * 0.5})` :
-        r.idle ? `hsla(${hue}, 60%, ${LT ? 35 : 80}%, ${r.life * 0.25})` : `hsla(${hue}, 80%, ${LT ? 32 : 82}%, ${r.life * 0.55})`;
+      ctx.strokeStyle = r.col ? `rgba(${r.col},${r.life * 0.5 * dim})` :
+        r.idle ? `hsla(${hue}, 60%, ${LT ? 35 : 80}%, ${r.life * 0.25 * dim})` : `hsla(${hue}, 80%, ${LT ? 32 : 82}%, ${r.life * 0.55 * dim})`;
       ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2); ctx.stroke();
     }
@@ -1202,6 +1203,9 @@ import { createState } from './state.js';
 
   const buckets = [[], [], [], []];
   const BUCKET_A = [0.2, 0.38, 0.62, 0.92];
+  // Calm mode is purely visual: ripples and echoes are drawn fainter, thinner and sparser. Rewards and physics never read these.
+  const calmDim = () => S.fx === 'calm' ? 0.5 : 1;
+  const calmEvery = (n, keep) => S.fx === 'calm' && n > keep ? Math.ceil(n / keep) : 1;
   function drawCave() {
     if (simulation?.fast) return;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -1221,7 +1225,7 @@ import { createState } from './state.js';
     const hue = echoHue();
     for (const b of buckets) b.length = 0;
     // Busy caves draw a sample of the echoes, each a little brighter, so the screen stays readable.
-    const every = lite === 2 ? Math.ceil(P.length / 300) : 1;
+    const every = Math.max(lite === 2 ? Math.ceil(P.length / 300) : 1, calmEvery(P.length, 160));
     for (let i = 0; i < P.length; i += every) {
       const p = P[i];
       buckets[p.e > 0.65 ? 3 : p.e > 0.35 ? 2 : p.e > 0.15 ? 1 : 0].push(p);
@@ -1230,8 +1234,8 @@ import { createState } from './state.js';
     const tail = lite ? 0.018 : 0.032;
     for (let k = 0; k < 4; k++) {
       const bk = buckets[k]; if (!bk.length) continue;
-      ctx.strokeStyle = `hsla(${hue}, ${LT ? '75%, 30%' : '85%, 74%'}, ${lite ? BUCKET_A[k] * 0.8 : BUCKET_A[k]})`;
-      ctx.lineWidth = 1.2 + k * 0.35;
+      ctx.strokeStyle = `hsla(${hue}, ${LT ? '75%, 30%' : '85%, 74%'}, ${(lite ? BUCKET_A[k] * 0.8 : BUCKET_A[k]) * calmDim()})`;
+      ctx.lineWidth = (1.2 + k * 0.35) * (S.fx === 'calm' ? 0.8 : 1);
       ctx.beginPath();
       for (const p of bk) { ctx.moveTo(p.x - p.vx * tail, p.y - p.vy * tail); ctx.lineTo(p.x, p.y); }
       ctx.stroke();
@@ -1369,15 +1373,15 @@ import { createState } from './state.js';
     ctx.save(); ctx.clip(seaPath);
     ctx.globalCompositeOperation = ADD();
     for (const b of buckets) b.length = 0;
-    const every = lite === 2 ? Math.ceil(ripples.length / 90) : 1;
+    const every = Math.max(lite === 2 ? Math.ceil(ripples.length / 90) : 1, calmEvery(ripples.length, 36));
     for (let i = 0; i < ripples.length; i += every) {
       const rp = ripples[i];
       buckets[rp.e > 0.65 ? 3 : rp.e > 0.35 ? 2 : rp.e > 0.15 ? 1 : 0].push(rp);
     }
     for (let k = 0; k < 4; k++) {
       const bk = buckets[k]; if (!bk.length) continue;
-      ctx.strokeStyle = `rgba(${LT ? '15,70,85' : '190,240,240'},${BUCKET_A[k] * 0.7})`;
-      ctx.lineWidth = 1.2 + k * 0.4;
+      ctx.strokeStyle = `rgba(${LT ? '15,70,85' : '190,240,240'},${BUCKET_A[k] * 0.7 * calmDim()})`;
+      ctx.lineWidth = (1.2 + k * 0.4) * (S.fx === 'calm' ? 0.75 : 1);
       ctx.beginPath();
       for (const rp of bk) { ctx.moveTo(rp.x + rp.r, rp.y); ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2); }
       ctx.stroke();
@@ -3350,7 +3354,7 @@ import { createState } from './state.js';
     setHid('worlds', !q.unlocked);
     $('wCave').setAttribute('aria-pressed', String(!sea));
     $('wSea').setAttribute('aria-pressed', String(sea));
-    if (setOpen) setT('fxNote', `Auto trims glows and halos when more than about 100 things are moving. Calm always does, and draws at lower resolution.${S.fx === 'auto' ? (lite ? ' Right now it is trimming.' : ' Right now it is drawing everything.') : ''}`);
+    if (setOpen) setT('fxNote', `Auto trims glows and halos when more than about 100 things are moving. Calm always does, draws at lower resolution, and shows ripples and echoes fainter and sparser (rewards are unchanged).${S.fx === 'auto' ? (lite ? ' Right now it is trimming.' : ' Right now it is drawing everything.') : ''}`);
 
     setHid('pillShard', sea || !shardsOn()); setT('shardVal', fmt(S.shards));
     setHid('pillFossil', sea || !(S.depth >= 1 || S.fossilsTotal > 0)); setT('fossilVal', fmt(S.fossils));
