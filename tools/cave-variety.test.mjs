@@ -36,3 +36,9 @@ test('invalid event records are dropped and Heartstones cancel queued dives whil
   normalizeCaveVariety(S); assert.equal(S.caveVariety.pending.length, 2);
   S = resetHeartstone(S, '1.10.7'); assert.equal(S.caveVariety.remaining, 0); assert.equal(S.caveVariety.pending.length, 2);
 });
+
+test('corrupt imported depth or Heartstone metadata cannot hang or break event rendering', () => {
+  const S = createState('1.10.7'); S.depth = 1e308; queueCaveEvents(S, 1e308, 100); assert.equal(S.caveVariety.pending.length, 0);
+  S.depth = 100000; S.hearts = 1.5; queueCaveEvents(S, 0, 100); assert.equal(S.caveVariety.pending.length, 3);
+  assert(S.caveVariety.pending.every(p => Number.isInteger(p.type) && p.type >= 0 && p.type < 3));
+});

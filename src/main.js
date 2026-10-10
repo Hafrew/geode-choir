@@ -847,7 +847,7 @@ import { createState } from './state.js';
       }
     }
     if (shopping) runShopping();
-    if (S.caveVariety.remaining && !S.caveVariety.pending.length && !canKindle()
+    if (S.caveVariety.remaining && neutralCaveEventsReady() && !canKindle()
       && S.cool <= 0 && S.run >= S.caveVariety.ratio * deepenAt()) {
       if (descend()) S.caveVariety.remaining--;
       save();
@@ -2694,16 +2694,17 @@ import { createState } from './state.js';
   });
 
   function startDive(size = S.caveVariety.diveSize, ratio = 1) {
-    if (S.world !== 'cave' || ![1, 2, 3].includes(size) || S.caveVariety.remaining || S.caveVariety.pending.length) return false;
+    if (S.world !== 'cave' || ![1, 2, 3].includes(size) || S.caveVariety.remaining || !neutralCaveEventsReady()) return false;
     if (!descend()) return false;
     if (size > 1) for (const p of S.caveVariety.pending) chooseCaveEvent(S, p.id, 'safe');
     S.caveVariety.remaining = size - 1; S.caveVariety.ratio = Math.min(100, Math.max(1, ratio)); save(); return true;
   }
   function descend(opts) {
-    if (S.world !== 'cave' || S.caveVariety.pending.length) return false;
+    if (S.world !== 'cave' || !neutralCaveEventsReady()) return false;
     const oldDepth = S.depth;
     const got = fossilGain();
     if (got <= 0 || S.cool > 0) return false;
+    for (const p of [...S.caveVariety.pending]) finishCaveEvent(S, p.id, true);
     const oldBiome = biomeIdx(S.depth);
     const carry = S.illum.carry;
     const oldWonders = S.wonders.map(o => ({ k: o.k, x: o.x, y: o.y, charge: 0 })), oldWB = S.wBought;
@@ -2776,7 +2777,8 @@ import { createState } from './state.js';
   let holding = false, holdT = 0;
   const heartBtn = $('heartBtn');
   const autoCaveEvents = () => S.caveVariety.autoEvents || S.caveVariety.remaining > 0 || !!simulation?.fast || !!(S.illum.autodescend && S.toggles.autodescend);
-  const canKindle = () => (S.caveVariety.pending.every(p => p.choice === 'safe' || !p.choice && autoCaveEvents()) && kindleReady(S, omen()));
+  const neutralCaveEventsReady = () => S.caveVariety.pending.every(p => p.choice === 'safe' || !p.choice && autoCaveEvents());
+  const canKindle = () => (neutralCaveEventsReady() && kindleReady(S, omen()));
   const startHold = () => { if (canKindle() && !cinematic) { initAudio(); holding = true; } };
   const stopHold = () => { holding = false; };
   heartBtn.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
@@ -3453,7 +3455,7 @@ import { createState } from './state.js';
     setT('descPct', Math.floor(prog * 100) + '%');
     updateStrip(sea, prog, locked, got);
     const btn = $('descBtn');
-    const eventWaiting = !sea && S.caveVariety.pending.length > 0;
+    const eventWaiting = !sea && !neutralCaveEventsReady();
     btn.disabled = !!eventWaiting || (!sea && S.caveVariety.remaining > 0);
     btn.classList.toggle('poor', prog < 1);
     if (!descArmed || Date.now() - descArmed > 3000) {

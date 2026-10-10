@@ -36,12 +36,11 @@ const { serve } = require('./serve');
         assert.equal(await page.locator('#diveSize').inputValue(), '3');
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.caveVariety.remaining), 2);
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.caveVariety.pending[0].choice), 'safe');
-        await page.locator('[data-event-auto]').click();
         const next = await page.evaluate(() => {
           const a = window.__geodeSimulation.api, S = a.S; a.endScene(); S.world = 'sea'; S.cool = 0; S.run = 1e10;
           const before = S.stats.descents; a.runAutomation(); const paused = S.stats.descents === before;
-          S.world = 'cave'; a.runAutomation(); a.updateUI(); return { paused, count: S.stats.descents - before, remaining: S.caveVariety.remaining, lock: S.cool };
-        }); assert(next.paused); assert.equal(next.count, 1); assert.equal(next.remaining, 1); assert(next.lock > 0);
+          S.world = 'cave'; a.runAutomation(); a.updateUI(); return { paused, count: S.stats.descents - before, remaining: S.caveVariety.remaining, lock: S.cool, completed: S.caveVariety.completed };
+        }); assert(next.paused); assert.equal(next.completed, 1); assert.equal(next.count, 1); assert.equal(next.remaining, 1); assert(next.lock > 0);
         if (await page.locator('#popDesc').isHidden()) await page.locator('#chipDesc').click();
         await page.locator('#diveCancel').click(); assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.caveVariety.remaining), 0);
         const rack = await page.evaluate(() => {

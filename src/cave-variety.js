@@ -26,8 +26,10 @@ export function normalizeCaveVariety(S) {
 }
 export function queueCaveEvents(S, oldDepth, haul) {
   const V = S.caveVariety;
-  for (let floor = Math.floor(oldDepth / 5) * 5 + 5; floor <= S.depth; floor += 5) {
-    V.pending.push({ id: ++V.nextId, floor, type: (floor / 5 + S.hearts) % CAVE_EVENTS.length,
+  if (!Number.isSafeInteger(oldDepth) || oldDepth < 0 || !Number.isSafeInteger(S.depth)) return;
+  const hearts = Number.isSafeInteger(S.hearts) ? Math.max(0, S.hearts) : 0;
+  for (let floor = Math.floor(oldDepth / 5) * 5 + 5; floor <= S.depth && V.pending.length < 3; floor += 5) {
+    V.pending.push({ id: ++V.nextId, floor, type: (floor / 5 + hearts) % CAVE_EVENTS.length,
       haul, elapsed: 0, choice: null });
   }
 }

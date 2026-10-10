@@ -23,11 +23,11 @@ Final seeded comparison is running. Completed results will replace this paragrap
 
 ## Rules and compatibility checks
 
-- 68 unit tests pass, including stage sequencing, exact funds, Heartstone gates, old-owner migration, rarity factors, rack validation/protection, milestone crossings, once-only event payments, paused timers and scaled freshness trades.
+- 69 unit tests pass, including stage sequencing, exact funds, Heartstone gates, old-owner migration, rarity factors, rack validation/protection, milestone crossings, once-only event payments, paused timers and scaled freshness trades.
 - All 11 browser suites pass on desktop and 390px mobile. The new suite covers queued locks, Sea pause, cancellation, reload, milestone safety, shopping slots, legacy ownership and actual wear/salvage protection.
 - A controlled browser comparison uses the same random stream for three manual descents and a three-descent dive. Total charged locks, depth, fossils, Sunvein dry count, descents and shaft outcomes match exactly. Dives reduce requests, without a mechanical lock or reward shortcut.
 - All four recorded Heartstone saves load with balances, horn ids and progression intact.
-- A ready Heartstone can finish committed neutral/Auto events immediately; manual unchosen events and trades remain blocked until resolved. Neutral events no longer refresh unrelated bonus caches.
+- A safe event paused during a Sea visit resolves when the ordinary descent lock has been paid, without adding a wait on return. A ready Heartstone can finish committed neutral/Auto events immediately; manual unchosen events and trades remain blocked until resolved. Neutral events no longer refresh unrelated bonus caches.
 - Manual event choices persist, cannot be changed after commitment, and resolve once. No new shopping or event advancement occurs offline. Gilded ownership-based Sunvein luck remains unchanged by rack placement.
 
 ## Prices
