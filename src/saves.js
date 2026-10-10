@@ -1,3 +1,4 @@
+import { SAVED_HORN_QUEUE_CAP } from './offline-horns.js';
 import { createState, freshStats, freshSea } from './state.js';
 import { normalizeCaveAutomation } from './automation.js';
 import { normalizeShells, shellDiscounts } from './seashells.js';
@@ -74,7 +75,7 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   sanitizeHorns(S);
   S.stats.hornsFound = Math.max(S.stats.hornsFound, S.horns.length);
   for (const h of S.horns) S.stats.bestHorn = Math.max(S.stats.bestHorn, h.r);
-  S.hornQueue = Math.max(0, Math.min(9, Math.floor(+S.hornQueue) || 0));
+  S.hornQueue = Math.max(0, Math.min(SAVED_HORN_QUEUE_CAP, Math.floor(+S.hornQueue) || 0));
   S.hornAuto = !!S.hornAuto;
   if (S.floor !== 'sunvein' && !FLOORS[S.floor]) S.floor = 'still';
   if (S.depth < 3 && S.floor !== 'still') S.floor = 'still';
