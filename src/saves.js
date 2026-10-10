@@ -1,6 +1,7 @@
+import { normalizeCaveVariety } from './cave-variety.js';
 import { SAVED_HORN_QUEUE_CAP } from './offline-horns.js';
 import { createState, freshStats, freshSea } from './state.js';
-import { normalizeCaveAutomation } from './automation.js';
+import { normalizeCaveAutomation, normalizeShoppingRack } from './automation.js';
 import { normalizeShells, shellDiscounts } from './seashells.js';
 import { normalizePearls } from './pearls.js';
 import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState, sanitizeHorns } from './horns.js';
@@ -90,6 +91,7 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   for (const h of S.horns) { if (!h.seed) h.seed = hash32(h.id * 0x9E3779B1 + h.r * 7919) || 1; }
   for (const h of S.horns) { const k = famOf(h) + ':' + (h.gold ? 'g' : h.r); if (!S.coll[k]) recordCollection(S, h); }
   normalizeHornState(S);
+  normalizeShoppingRack(S);
   const fs = freshSea(), ds = d.sea || {};
   S.sea = Object.assign(fs, ds);
   for (const k of ['lv', 'deep', 'choir', 'pBought']) S.sea[k] = mergeObj(freshSea()[k], ds[k]);
@@ -120,6 +122,7 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   S.finale = Math.max(0, +d.finale || 0);
   if (!OMENS[S.omen]) S.omen = 'steady';
   S.rubble = d.rubble ? 1 : 0;
+  normalizeCaveVariety(S);
   S.cool = Math.max(0, +d.cool || 0);
   S.age = Math.max(0, +d.age || 0); S.wind = d.wind ? 1 : 0;
   S.quests = d.quests && typeof d.quests === 'object' ? d.quests : {};

@@ -72,6 +72,7 @@ const visibleRarities = S => RARITY.slice(0, rarityRevealed(S) ? 6 : 5);
 const normalSlots = S => 1 + S.hornUp.rack;
 const primordialSlots = S => primordialUnlocked(S) ? 2 + S.hornUp.firstRack : 0;
 const equippedIds = S => [...S.equipped, ...(S.primordialEquipped || [])];
+const protectedHornIds = S => [...equippedIds(S), ...(S.caveAutomation?.rack || [])];
 const traitQuality = perfs => perfs?.length ? perfs.reduce((a, p) => a + p, 0) / perfs.length : 0.5;
 function traitValue(h) {
   const t = TRAITS.find(t => t.id === h.trait?.id);
@@ -130,7 +131,7 @@ function loadoutScore(S) {
 function bestLoadout(S) {
   const draft = { ...S, equipped: [...S.equipped], primordialEquipped: [...S.primordialEquipped] };
   const racks = [
-    { key: 'equipped', cap: normalSlots(S), pool: S.horns.filter(h => h.r !== PRIMORDIAL) },
+    { key: 'equipped', cap: normalSlots(S), pool: S.horns.filter(h => h.r !== PRIMORDIAL && !S.caveAutomation?.rack?.includes(h.id)) },
     { key: 'primordialEquipped', cap: primordialSlots(S), pool: S.horns.filter(h => h.r === PRIMORDIAL) },
   ];
   // Keep the current loadout on ties, then greedily fill and improve each slot.
@@ -170,7 +171,7 @@ function matchesSalvageFilter(S, h) {
   return !!S.hornInventory.salvage[h.r] && (!h.gold || S.hornInventory.gilded);
 }
 function salvageSpare(S, h) {
-  if (equippedIds(S).includes(h.id)) return false;
+  if (protectedHornIds(S).includes(h.id)) return false;
   const index = S.horns.indexOf(h); if (index < 0) return false;
   S.horns.splice(index, 1);
   const amount = RARITY[h.r].ivory;
@@ -191,7 +192,7 @@ function acquireHorn(S, h, capacity = 30) {
   if (S.horns.length > capacity) {
     if (equippedIds(S).includes(h.id)) {
       // Keep a newly equipped upgrade by replacing an unprotected spare.
-      const worn = new Set(equippedIds(S));
+      const worn = new Set(protectedHornIds(S));
       const spare = S.horns.filter(x => x.id !== h.id && !worn.has(x.id) && (!x.gold || matchesSalvageFilter(S, x)))
         .sort((a, b) => singleHornScore(S, a) - singleHornScore(S, b) || a.id - b.id)[0];
       if (spare && salvageSpare(S, spare)) { h.replacedHorn = { name: spare.name, ivory: RARITY[spare.r].ivory }; return; }

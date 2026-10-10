@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current source version: **1.10.5 beta** (beta hardening, implemented in this change). Everything through 1.10.4, save-import sanitization (#37), and offline horns/module extraction (#38) is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current source version: **1.10.7 beta** (combined variety and staged automation release). Everything through 1.10.5, save-import sanitization (#37), and offline horns/module extraction (#38) is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.56 hours** (see [The Longer Road validation](tools/sim/longer-road.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -38,9 +38,9 @@ Current source version: **1.10.5 beta** (beta hardening, implemented in this cha
 | Unreleased | Fossil and fathom gains follow the number format setting | Delivered (#31); audit for other raw numbers is in 1.10.5 |
 | **1.10.3** | Luck Evens Out: Sunvein pity (+1 point per dry descent up to +5, guaranteed on the 30th) | Delivered (#33); the per-descent step is an assumption to confirm |
 | **1.10.4** | Pearl Case: pearl items that feel like horns (rarities, art, three-slot strand, grind to pearl dust) | Delivered in #35 (draft pending pacing check) |
-| **1.10.5** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | Implemented in this change; no balance changes |
-| **1.10.6** | Variety pass, part 2: skippable descents and cave events | Proposed; replaces the earlier pacing-lever ideas (see findings) |
-| **1.10.7** | Auto-buy horns and staged Patient Choir unlocks | Proposed; prices depend on measured pacing |
+| **1.10.5** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | Delivered (#39); no balance changes |
+| **1.10.6** | Variety pass, part 2: batched descents and cave events | Combined into 1.10.7; no separate release |
+| **1.10.7** | Cave dives, milestone events, shopping horn rack and staged Patient Choir | Implemented together; see release validation below |
 | **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.7, using the measured economy |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
@@ -129,7 +129,7 @@ Mean **6.56h**, up from **4.25h**. Findings that shape the next passes:
 - **A bigger depth step lengthens the run only slightly and adds the repetition players already feel** (see player feedback below). Depth steps of 24 and 26 were simulated (seeds 1–3): means of 6.77h and 7.09h against 6.56h, so each +2 on the step adds only about 0.2–0.3h, much less than the extra levels suggest, because deeper levels take less time each as income grows with depth. A weak lever; see [tools/sim/longer-road.md](tools/sim/longer-road.md).
 - **Player feedback: the cave depth leg is repetitive** ("flat clicking", no events), and a real run had 65 descents with no Sunvein. The response is variety, not length: see the variety pass (1.10.3 and 1.10.6).
 - **Real saves are faster than the bot early.** One save had two Heartstones at 2.6h played, against 3.5–3.7h for the bot. Expect real finishes below 6.5h; calibrate with player saves.
-- **Fathoms have little to spend on.** Typical income is about 150,000 per sounding; a large held balance in one save was a single old windfall, not income. Staged Patient Choir prices (1.10.6) are the planned sink.
+- **Fathoms have little to spend on.** Typical income is about 150,000 per sounding; a large held balance in one save was a single old windfall, not income. Staged Patient Choir prices (1.10.7) are the planned sink.
 - **Sunveins work as designed.** A save with a recorded 9.02 arrival lump but a 2.64 balance was explained by gilt spent on Sunvein upgrades (Rich Vein and Gilded Breath), not a bug. Forced-descent testing gave 7.4% with one Gilded horn (expected 7%); a 0-in-65 dry spell is about a 4% event. The system has no bad-luck protection and no way to raise the 5% base other than Gilded horns, which only Sunveins produce.
 
 ## 1.10.4 — Pearl Case
@@ -168,46 +168,26 @@ Why: the cave depth leg is the pacing gate (see findings) and is also the repeti
 - Saves from before 1.10.3 start the counter at zero; it is clamped to 0–29 on load.
 - Validation: unit tests for the counter, the maximum bonus, the guarantee, and migration; a forced-descent check of rates with and without pity; the longest dry streak never exceeds 29; sim finish times unchanged within noise (Sunvein effects are modest: 25% slower decay, 10% more fossils).
 
-### Skippable descents (idea agreed; must not shorten the run)
-Players like the idea of skipping descents, but the descent settling lock is what keeps the game from being quick, and fossils and lumen grow steeply with depth, so a descent that drops several levels for the price of one would break pacing. Constraints:
-- **Time to depth must not drop.** A skip of N levels charges the settling lock for each skipped level (N locks, paid up front or as a lock debt), so skipping saves clicks, not time. Simulate before and after; the finish time must stay within about ±2% for the same play.
-- **Rewards are not multiplied.** Fossils come from the landing only (or a reduced share for skipped floors); no per-level rewards are paid twice. Lumen and hum keep accruing normally. No skipped floor can strand a quest or milestone that needs landing on it (events and the Heartstone depth are checked at the landing depth).
-- **Forms to choose from:** a "Dive" control that lets you pay several locks at once; skip charges earned from events or a Sunvein arrival (still charging the lock); or an automation option that batches ready descents. Auto-descend remains available and must not silently skip more than the player allows.
-- Open: whether Sunveins and floor identities are rolled only at the landing floor (proposed) and how skipped floors count for stats such as best depth.
+### Dives and cave events (delivered together in 1.10.7)
 
-### Cave events (proposed; reverses the earlier exclusion of ordinary cave events)
-- Milestone floors: every fifth level, a short event of about 10–20 seconds with a real choice and a trade-off (for example freshness against fossils, or a one-off hum boost against a longer lock), not extra clicking.
-- Auto mode picks the safe option, in line with the rule that every challenge has an accessible Auto path. Outcomes are saved, once-only, and cannot be rerolled by reloading. Events do not change the Heartstone depth requirement or strand progress.
-- Open: the shape (small choices, or a timing or aiming moment), the number of event types for a first pass, and how events interact with skippable descents and the future descent minigame (1.12.0).
-- Validation: seeded sim with Auto choices; finish time stays near 6.5h; no event can be skipped to lose a reward permanently.
+The agreed implementation batches **1–3 ordinary descents**. Every landing pays its full normal settling lock, earns its ordinary reward, rolls its own floor/fall/Sunvein, and checks every crossed fifth-depth milestone. This supersedes the earlier landing-only reward/roll proposal: there are no skipped or duplicated rewards. Queues persist through reloads, pause in the Sea, can be cancelled, and stop for a ready Heartstone. Kindling clears the remaining queue.
 
-Process for the whole pass: simulate seeds 1–5 with `tools/sim/run.js`, compare finish times and per-Heartstone gaps, check the Heartstone saves in `tools/saves` still load, and gather real player timings to calibrate. Changes preserve earned balances, items, and paid levels; existing saves keep their Heartstones.
+Every fifth depth queues one of three short themed events, including milestones crossed by a shaft fall. The 15-second listening period runs during ordinary settling, only while the cave is visible and active. Saved choices are irreversible and resolved once. Neutral Auto keeps the normal haul; fossils adds 10% of that haul and 30 work seconds to settling; freshness spends up to 10% of the haul to remove up to 60 seconds of floor age, scaling down if the fossils have already been spent. The explicit Finish with Auto button completes listening immediately, retaining a choice already made. Dives and ordinary auto-descent select the neutral choice. Unresolved events block further descents; a ready Heartstone resolves committed neutral/Auto events immediately, while an unchosen manual event or a trade must be resolved first; the status chip points to the choice panel. Events and shopping do not advance offline.
 
-## 1.10.7 — Auto-buy horns, staged automation
+## 1.10.7 — Shopping horns and staged automation
 
-The goal is automation that has to be earned instead of arriving as one flat unlock. Staged prices depend on the pacing chosen in the variety pass (1.10.3 and 1.10.6) and should be set from measured income at the time each Heartstone gate opens.
+The dedicated shopping rack holds up to **3 spare Epic, Legendary or Mythic horns**. It adds no worn stat bonuses and does not change normal horn call timing. Ownership-based gilded Sunvein luck remains unchanged. Slot one opens with Patient Choir at two Heartstones, slot two at three, slot three at four. Gilded counts one rarity higher for eligibility and interval; Primordial horns remain ineligible. The base 0.5-second shopping round is multiplied by 0.90 per Epic, 0.80 per Legendary, and 0.65 per Mythic or higher effective rarity, with a 0.1-second floor. Rack horns cannot be worn or salvaged, and auto-equip and overflow cleanup protect them. Load migration drops duplicate, worn, missing or ineligible ids.
 
-### Auto-buy horns
-- A dedicated rack of up to **3 slots** for **Epic, Legendary, and Mythic** horns, used only to speed up Patient Choir shopping. Slotted horns give **no stat effect** anywhere; their only effect is a shorter shopping interval.
-- Slots: **1st** with Patient Choir, **2nd at Heartstone 3**, **3rd at Heartstone 4**. No fathom cost for the slots.
-- Interval: base 0.5 s, multiplied per horn (proposed Epic ×0.90, Legendary ×0.80, Mythic ×0.65), with a **0.1 s floor**. Gilded counts one rarity higher.
-- A slotted horn cannot also be in the normal or Primordial racks, and auto-salvage and fusing skip it. Ids are validated on load, so a missing or ineligible horn is dropped.
-- Offline behavior is unchanged (no offline shopping).
-
-### Staged Patient Choir
-Replace the single 100,000-fathom switch that opens all nine categories with a ladder. Costs and gates are **proposed** and must be tuned with the simulator. They are scaled to a real mid-run save (about 2.6 hours played, two Heartstones, 32 soundings): typical income was about 150,000 fathoms per sounding, one sounding per two-minute settling lock, so roughly 4–5 million fathoms an hour. The 21.7 million held in that save was mostly one old windfall (a recorded single haul of 21.1 million, from before the harsher fathom curve), so it is not typical income. Aim for each stage to cost roughly 30–60 minutes of income at the time its Heartstone gate opens.
-
-| Stage | Opens | Gate | Proposed price |
+| Stage | Opens | Gate | Price |
 |---|---|---|---|
-| Patient Choir | Voices, Tuning, Crystals | Heartstone 2 | 100,000 fathoms (unchanged) |
-| Second Verse | Wonders, Attunement | Heartstone 2 | ~3,000,000 fathoms |
-| Deep Verse | Strata, Illuminations | Heartstone 3 | ~15,000,000 fathoms |
-| Final Verse | Horn upgrades, Sunvein upgrades | Heartstone 4 | ~60,000,000 fathoms |
+| Patient Choir | Voices, Tuning, Crystals | Heartstone 2 | 100,000 fathoms |
+| Second Verse | Wonders, Attunement | Heartstone 2 | 3,000,000 fathoms |
+| Deep Verse | Strata, Illuminations | Heartstone 3 | 15,000,000 fathoms |
+| Final Verse | Horn upgrades, Sunvein upgrades | Heartstone 4 | 25,000,000 fathoms |
 
-Existing saves that already own Patient Choir keep what they have paid for: their categories open, no refund, no double charge, and the new stages are bought normally.
+Verses must be bought in order; newly opened categories start off. Existing saves that already paid for Patient Choir are migrated to **all four verses**, preserving their toggles and reserves, with no refund or extra charge. Resets keep ownership, settings and the rack.
 
-### Validation
-Unit tests for the shopping interval and for loading bad ids. Browser smoke checks for slotting, unlocking at Heartstones 3 and 4, staged purchases, old-save migration, and reload. Seeds 1–5 rerun for finish time, with an automation-on and automation-off comparison. The unlock prices and the interval multipliers stay marked proposed until then.
+The earlier 60M Final Verse proposal was reduced to 25M based on seeded late-run hauls and Faster Tick settling intervals. The target is roughly 30–60 minutes of **active Sea income**, not elapsed time spent mostly in the cave; player strategy, horn rolls and Deep purchases still vary substantially. These optional stages never become a finale requirement. Full results and limits are recorded in [combined release validation](tools/sim/patient-verses.md).
 
 ## 1.11.0 — The Last Chorus
 

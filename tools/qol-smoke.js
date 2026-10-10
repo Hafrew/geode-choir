@@ -15,7 +15,7 @@ const KEY = 'geode-choir-v1';
         await page.addInitScript(key => {
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
-          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.8', seenVer: '1.10.5', hum: 1,
+          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ ver: '1.9.8', seenVer: '1.10.7', hum: 1,
             hornsOn: true, hornTimer: 3, hearts: 1, depth: 1, sea: { unlocked: true, fathoms: 100000 },
             lore: { prologue: 1 }, saved: Date.now() }));
         }, KEY);
@@ -124,6 +124,8 @@ const KEY = 'geode-choir-v1';
           const before = S.crystals.length; api.runAutomation(); S.toggles.autobuy = 0;
           return { before, after: S.crystals.length, hum: S.hum };
         }); assert.equal(legacySeeker.before, legacySeeker.after); assert.equal(legacySeeker.hum, 1000);
+        assert.equal(await page.locator('[data-cave-category="wonders"]').isDisabled(), true);
+        await page.evaluate(() => { const api = window.__geodeSimulation.api; api.S.hearts = 4; api.S.sea.fathoms = 43000000; for (let i = 1; i < 4; i++) api.buyAutomationStage(i); api.updateUI(); });
         await page.locator('[data-cave-category="wonders"]').check();
         await page.evaluate(() => { const api = window.__geodeSimulation.api; api.S.shards = 100; api.runAutomation(); api.updateUI(); });
         assert.equal(await page.evaluate(() => window.__geodeSimulation.api.S.toggles.autobuy), 0);

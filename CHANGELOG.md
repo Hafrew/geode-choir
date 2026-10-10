@@ -17,6 +17,19 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.10.7: Patient Verses (2026-10-10)
+
+Combines the planned 1.10.6 variety pass and 1.10.7 automation update.
+
+### Added
+- A 1–3-floor dive selector batches normal descents, paying each floor's full settling lock and checking its rewards, falls, Sunveins and milestones. Queues persist on reload, pause in the Sea, and can be cancelled.
+- Three themed events at every fifth depth: neutral normal rewards, extra fossils with longer settling, or fossils traded for freshness. Choices are saved and pay once; Auto and dives use the safe neutral path.
+- A separate shopping rack for eligible spare horns: 1/2/3 slots at 2/3/4 Heartstones. Rarity and gilding reduce Patient Choir's shopping interval without worn bonuses. Rack horns are protected from wear, auto-equip, salvage and overflow cleanup.
+
+### Changed
+- Patient Choir unlocks sequential verses at 100K, 3M, 15M and 25M fathoms. Existing paid owners retain all nine categories, settings and reserves without another charge.
+- Shopping and cave events remain inactive offline. Heartstone and finale requirements stay unchanged.
+
 ## 1.10.5: A Steadier Choir (2026-10-10)
 
 ### Fixed

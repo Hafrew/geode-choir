@@ -42,8 +42,15 @@
         <h2><span style="font-family:var(--body);letter-spacing:.16em;text-transform:uppercase;font-weight:600" id="descTitle">Descend</span> <span id="descPct">0%</span></h2>
         <div class="bar"><i id="descBar"></i></div>
         <p id="descText"></p>
+        <section id="caveVarietyPanel">
+          <div id="caveEventChoices" aria-live="polite"></div>
+          <label>Descents per dive <select id="diveSize"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+          <button type="button" id="diveCancel" hidden>Cancel queued descents</button>
+          <p class="note" id="diveStatus"></p>
+          <label><input type="checkbox" id="eventAuto"> Choose the safe option automatically at cave events</label>
+        </section>
         <p id="freshText" class="note"></p>
-      <p id="floorText" class="note"></p>
+        <p id="floorText" class="note"></p>
         <button class="bigbtn" id="windBtn" type="button" hidden>Second Wind</button>
         <button class="bigbtn poor" id="descBtn" type="button">Descend</button>
       </section>
@@ -139,7 +146,8 @@
         <h2>Patient Choir</h2>
         <div class="list" id="shopCaveAutomation"></div>
         <div id="caveAutoControls" hidden>
-          <p class="note">Buys one affordable upgrade per enabled category every half-second while you are in the cave. Uses normal shop unlocks and limits. Categories and reserves are kept through every reset.</p>
+          <p class="note" id="shoppingRackNote"></p><div id="shoppingRack"></div>
+            <p class="note">Buys one affordable upgrade per enabled category at the shopping rack’s interval while you are in the cave. Uses normal shop unlocks and limits. Categories and reserves are kept through every reset.</p>
           <fieldset class="hornsalvage"><legend>Automatic cave purchases</legend><div id="caveAutoCategories"></div></fieldset>
           <fieldset class="hornsalvage"><legend>Keep at least this much currency</legend><div id="caveAutoReserves"></div></fieldset>
           <p class="note">Horn calls are manual; Horn upgrades spends ivory only. Sunvein upgrades buy only on a Sunvein. Buying Patient Hands, Crystal Seeker or Sinking Stone enables it as usual; an owned switch keeps its setting. Disable Crystals here if you prefer Crystal Seeker’s highest-tier purchases. These purchases pause in the sea and while you are away.</p>

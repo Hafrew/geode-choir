@@ -1,3 +1,4 @@
+import { freshCaveVariety } from './cave-variety.js';
 import { createCaveAutomation } from './automation.js';
 import { freshShells } from './seashells.js';
 import { freshPearls } from './pearls.js';
@@ -34,6 +35,7 @@ const createState = version => ({
   primordialEquipped: [],
   hornInventory: { autoEquip: false, focus: 'balanced', salvage: [false, false, false, false, false, false], gilded: false },
   caveAutomation: createCaveAutomation(),
+  caveVariety: freshCaveVariety(),
   shells: freshShells(),
   pearls: freshPearls(),
   heartSeaLegacy: null,
