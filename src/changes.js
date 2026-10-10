@@ -1,5 +1,10 @@
 // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
 export const CHANGES = [
+  { ver: '1.10.5', date: '2026-10-10', head: 'A Steadier Choir', items: [
+    'If a save or backup cannot be written, a warning appears once per session. Copy a save code from Settings to keep your progress when browser storage is full or blocked.',
+    'Horn, shell and pearl inventories keep their cards in place until the inventory changes. Shell timing and pearl formation still update live.',
+    'Large offerings, rewards, progression counts and upgrade descriptions now follow your number-format setting. Imported horn names and collection data are validated before display.',
+  ] },
   { ver: '1.10.4', date: '2026-10-09', head: 'Pearl Case', items: [
     'Oysters now sometimes hold a real pearl. Time spent in the Sea slowly forms one (about two minutes), and the next oyster to open reveals it. Each pearl has a rarity, its own name and art, and one to three small Sea bonuses: tide, bell value, crossing bonus, fathoms, or more pearl dust from oysters.',
     'The new Pearl case in the Pearls tab holds every pearl you find. Wear up to three on the strand (bonuses multiply, and any one stat tops out at +60%), take them off, or grind one into pearl dust.',

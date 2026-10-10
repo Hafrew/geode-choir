@@ -1,0 +1,14 @@
+{
+  "name": "geode-choir",
+  "version": "1.10.5",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:unit && npm run test:browser",
+    "test:unit": "node --test tools/*.test.mjs",
+    "test:browser": "node tools/run-browser-tests.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  },
+  "type": "commonjs"
+}

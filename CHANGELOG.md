@@ -17,6 +17,19 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 - The development layout separates page markup, styles, JavaScript, and state defaults. Serve the game over HTTP and deploy `styles.css` and `src/` alongside `index.html`; opening the HTML directly is no longer supported. Gameplay and saved progress are unchanged.
 - The simulation loads the actual application through a local HTTP server instead of patching the HTML. Added desktop/mobile smoke checks for gameplay and legacy saves.
 
+## 1.10.5: A Steadier Choir (2026-10-10)
+
+### Fixed
+- A failed save, backup, or imported-save write now shows one warning per session. Save codes can still be copied to keep progress when storage is full or blocked.
+- Horn, shell, and pearl cards rebuild only when their inventory view changes. Unrelated resource refreshes, shell notes, oyster openings, and pearl formation preserve card elements and keyboard focus.
+- Large Undersong offerings, horn ivory messages, vein rewards, progression counts, Chronicle stats, and upgrade descriptions follow the selected number format. Timings, percentages, bounded levels and item identifiers remain exact.
+- Imported horn and collection fields are validated before display (merged in #37; hostile-name browser regression added in this release).
+
+### Development
+- `npm test` runs all units and discovers every browser smoke suite. Pinned Playwright, a lockfile, and explicit source-module types make the Node 24 setup reproducible.
+- GitHub Actions runs unit tests on PRs/pushes to main and flags parent-only PR merges that have not reached main.
+- No gameplay, balance, or save-format changes. The beta label remains.
+
 ## 1.10.4: Pearl Case (2026-10-09)
 
 ### Added

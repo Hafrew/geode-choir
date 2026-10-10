@@ -34,3 +34,17 @@ test('failed import preserves state and does not reload or suppress later saves'
   storage.setItem = original;
   store.save(); assert.equal(store.read().hum, 3);
 });
+
+test('save, backup and replacement write failures warn only once per session and successful retries still write', () => {
+  for (const first of ['save', 'backupNow', 'replaceSaveAndReload']) {
+    let warnings = 0, blocked = true;
+    const map = new Map([['gc', '{"hum":1}']]);
+    const storage = { getItem: k => map.get(k), setItem: (k, v) => { if (blocked) throw Error('quota'); map.set(k, v); } };
+    const store = createSaveStore({ key: 'gc', serialize: () => ({ hum: 2 }), storage: () => storage,
+      session: () => storage, reload: () => {}, onFailure: () => warnings++ });
+    store[first]({ hum: 3 });
+    store.save(); store.backupNow(); store.replaceSaveAndReload({ hum: 3 });
+    assert.equal(warnings, 1, first);
+    blocked = false; store.save(); assert.equal(store.read().hum, 2);
+  }
+});

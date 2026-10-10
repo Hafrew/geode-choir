@@ -1,3 +1,4 @@
+import { createInventoryRevision } from './inventory-revision.js';
 import { CHANGES } from './changes.js';
 import { createSaveStore } from './save-store.js';
 import { advanceOfflineHorns, ACTIVE_HORN_QUEUE_CAP } from './offline-horns.js';
@@ -24,7 +25,7 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.4';
+  const VERSION = '1.10.5';
   // Release channel shown beside the version; saves and version checks use VERSION alone.
   const CHANNEL = 'beta';
 
@@ -1695,7 +1696,7 @@ import { createState } from './state.js';
 
   // ---------- numbers, save codes ----------
   function syncNum() { syncSeg('num', S.numfmt); }
-  document.querySelectorAll('[data-num-opt]').forEach(b => b.addEventListener('click', () => { S.numfmt = b.dataset.numOpt; syncNum(); updateUI(); }));
+  document.querySelectorAll('[data-num-opt]').forEach(b => b.addEventListener('click', () => { S.numfmt = b.dataset.numOpt; syncNum(); hornsDirty = true; updateUI(); if (chronOpen) renderChronicle(); save(); }));
   const saveMsg = t => { $('saveMsg').textContent = t; };
   let loadArmed = 0, restoreArmed = 0;
   function syncBackupBtn() {
@@ -1851,7 +1852,7 @@ import { createState } from './state.js';
       },
     });
   }
-  const lvl = (label, n, pre = 'Lv ') => `${label}<span class="lv">${pre}${n}</span>`;
+  const lvl = (label, n, pre = 'Lv ') => `${label}<span class="lv">${pre}${typeof n === 'number' ? fmt(n) : n}</span>`;
   // A levelled upgrade. o: parent, icon, unit, name, get(), inc(), base, g, max, desc(l), show(), gate, pre, single, onBuy
   function lvItem(o) {
     const costOf = () => Math.ceil(o.base * Math.pow(o.g, o.get()));
@@ -1934,7 +1935,7 @@ import { createState } from './state.js';
       parent, icon, unit: 'hum', name, base, g, show, desc, gate: 'u_' + k,
       get: () => S.lv[k], inc: () => { S.lv[k]++; }, ...extra,
     });
-    cv_('shopVoices', 'lungs', 'Lungs', ICONS.lungs(), 25, 1.55, () => true, l => `Each shout: ${shoutN(l)} → ${shoutN(l + 1)} echoes`);
+    cv_('shopVoices', 'lungs', 'Lungs', ICONS.lungs(), 25, 1.55, () => true, l => `Each shout: ${fmt(shoutN(l))} → ${fmt(shoutN(l + 1))} echoes`);
     cv_('shopVoices', 'drips', 'Drip', ICONS.drip(), 40, 1.42, () => S.run >= 12, () => 'Water falls every ~3s and splashes 4 echoes. Rings any crystal it lands on.', { pre: '×', onBuy: () => once('firstDrip') });
     cv_('shopVoices', 'bats', 'Bat', ICONS.bat(), 700, 1.45, () => S.run >= 250, () => 'Flutters through the dark, shouting every ~5s with your lungs.', { pre: '×', onBuy: () => once('firstBat') });
     cv_('shopTuning', 'chisel', 'Chisel', ICONS.chisel(), 400, 2.4, () => S.run >= 100 || S.crystals.length >= 6, l => `Room for ${maxCrystals()} → ${maxCrystals() + 1} crystals`, { max: 12 });
@@ -1970,8 +1971,8 @@ import { createState } from './state.js';
       l => l >= tickMax() ? 'Time gates run as fast as this Heartstone allows. Another Heartstone raises the limit.' : `Time gates (the descent lock, Sea settling, horn timers) run ×${fmtX(Math.pow(1.1, l))} → ×${fmtX(Math.pow(1.1, l + 1))} faster. The floor's fade stays on real time.`,
       () => S.depth >= 1 || S.strata.tick > 0);
     st('old', 'Old Echoes', ICONS.layers(), 2, 1.9, 1e9, l => `All hum ×${fmtX(softPow(1.3, l))} → ×${fmtX(softPow(1.3, l + 1))}`);
-    st('lungs', 'Deep Lungs', ICONS.lungs(), 2, 1.7, 1e9, l => `Every descent starts with Lungs Lv ${2 * l} → ${2 * (l + 1)}`);
-    st('water', 'Old Water', ICONS.drip(), 2, 1.7, 1e9, l => `Every descent starts with ${2 * l} → ${2 * (l + 1)} extra drips`);
+    st('lungs', 'Deep Lungs', ICONS.lungs(), 2, 1.7, 1e9, l => `Every descent starts with Lungs Lv ${fmt(2 * l)} → ${fmt(2 * (l + 1))}`);
+    st('water', 'Old Water', ICONS.drip(), 2, 1.7, 1e9, l => `Every descent starts with ${fmt(2 * l)} → ${fmt(2 * (l + 1))} extra drips`);
     st('seed', 'Seed Crystals', ICONS.gem('#b58cff'), 4, 2, 6, l => `Every descent starts with ${l} → ${l + 1} amethyst already placed`);
     st('wide', 'Wide Cavern', ICONS.widen(), 5, 2.4, 6, l => `Room for 3 more crystals (+${3 * l} → +${3 * (l + 1)})`);
     st('fault', 'Fault Lines', ICONS.crack(), 4, 2, 12, l => `Crystals crack after ${fmt(40 * Math.pow(0.8, l))} → ${fmt(40 * Math.pow(0.8, l + 1))} ringing, shedding shards sooner`);
@@ -2025,7 +2026,7 @@ import { createState } from './state.js';
       parent, icon, unit: 'tide', name, base, g, show, desc, gate: 'v_' + k,
       get: () => S.sea.lv[k], inc: () => { S.sea.lv[k]++; }, ...extra,
     });
-    sv('shopSeaVoices', 'skips', 'Skipping Stones', ICONS.stone(), 25, 1.6, () => true, l => `Each throw skips ${skipsN(l)} → ${skipsN(l + 1)} times across the water`);
+    sv('shopSeaVoices', 'skips', 'Skipping Stones', ICONS.stone(), 25, 1.6, () => true, l => `Each throw skips ${fmt(skipsN(l))} → ${fmt(skipsN(l + 1))} times across the water`);
     sv('shopSeaVoices', 'rain', 'Rain', ICONS.drip('#a9dbe4'), 40, 1.42, () => S.sea.run >= 12, () => 'A drop lands somewhere every ~3s and makes a small ripple.', { pre: '×', onBuy: () => once('firstRain') });
     sv('shopSeaVoices', 'fish', 'Leaping Fish', ICONS.fish(), 700, 1.45, () => S.sea.run >= 250, () => 'Jumps every ~5s: a ripple where it leaves and another where it lands. They often cross.', { pre: '×', onBuy: () => once('firstFish') });
     sv('shopSeaVoices', 'light', 'Lighthouse', ICONS.lighthouse(), 5000, 2.6, () => S.sea.run >= 2500,
@@ -2067,8 +2068,8 @@ import { createState } from './state.js';
       get: () => S.sea.deep[k], inc: () => { S.sea.deep[k]++; }, ...extra,
     });
     dp('current', 'Deep Current', ICONS.layers('#9aa7ff'), 2, 1.9, 1e9, l => `All tide ×${fmtX(softPow(1.3, l))} → ×${fmtX(softPow(1.3, l + 1))}`);
-    dp('rain', 'Old Rain', ICONS.drip('#9aa7ff'), 2, 1.7, 1e9, l => `Every sounding starts with ${2 * l} → ${2 * (l + 1)} extra rain`);
-    dp('buoys', 'Long Moorings', ICONS.widen('#9aa7ff'), 5, 2.4, 6, l => `Room for 2 more bells (+${2 * l} → +${2 * (l + 1)})`);
+    dp('rain', 'Old Rain', ICONS.drip('#9aa7ff'), 2, 1.7, 1e9, l => `Every sounding starts with ${fmt(2 * l)} → ${fmt(2 * (l + 1))} extra rain`);
+    dp('buoys', 'Long Moorings', ICONS.widen('#9aa7ff'), 5, 2.4, 6, l => `Room for 2 more bells (+${fmt(2 * l)} → +${fmt(2 * (l + 1))})`);
     dp('beds', 'Pearl Beds', ICONS.oyster(), 4, 2, 12, l => `Oysters open after ${fmt(30 * Math.pow(0.8, l))} → ${fmt(30 * Math.pow(0.8, l + 1))} washing`);
     dp('record', 'Plumb Line', ICONS.down('#9aa7ff'), 6, 2.3, 1e9, l => `Fathoms from each sounding ×${fmt(Math.pow(PLUMB_STEP, l))} → ×${fmt(Math.pow(PLUMB_STEP, l + 1))}`);
     dp('light', 'Pale Lighthouse', ICONS.lighthouse(), 8, 1, 1, l => l ? 'Every sounding starts with a lighthouse already lit.' : 'Every sounding starts with a lighthouse already lit.', { single: true });
@@ -2168,9 +2169,9 @@ import { createState } from './state.js';
   }
   function hornMsg(h) {
     const rn = RARITY[h.r].name.toLowerCase();
-    const base = `${/^[aeiou]/.test(rn) ? 'An' : 'A'} ${rn} horn: the ${h.name}. +${h.ivoryFound} discovery ivory.`;
-    if (h.salvaged) return `${base} ${h.salvageReason === 'filter' ? 'Your salvage filter' : 'Your full inventory'} turned it into ${RARITY[h.r].ivory} salvage ivory.`;
-    if (h.replacedHorn) return `${base} You’re wearing it. ${h.replacedHorn.name} was salvaged for ${h.replacedHorn.ivory} ivory to make room.`;
+    const base = `${/^[aeiou]/.test(rn) ? 'An' : 'A'} ${rn} horn: the ${h.name}. +${fmt(h.ivoryFound)} discovery ivory.`;
+    if (h.salvaged) return `${base} ${h.salvageReason === 'filter' ? 'Your salvage filter' : 'Your full inventory'} turned it into ${fmt(RARITY[h.r].ivory)} salvage ivory.`;
+    if (h.replacedHorn) return `${base} You’re wearing it. ${h.replacedHorn.name} was salvaged for ${fmt(h.replacedHorn.ivory)} ivory to make room.`;
     return equippedIds(S).includes(h.id) ? `${base} You're wearing it.` : `${base} Equip it in the Horns tab.`;
   }
   function lineText(h, l) {
@@ -2303,7 +2304,14 @@ import { createState } from './state.js';
     else if (hornSub === 'sounding') renderSounding();
     else if (hornSub === 'collection') renderColl();
   }
+  const inventoryRevision = createInventoryRevision();
+  let renderedInventoryRevision = -1;
   function renderInventory() {
+    if (!S.horns.some(h => h.id === hornSel)) hornSel = (S.equipped[0] || S.horns[0]?.id) || 0;
+    const revision = inventoryRevision([S.horns, S.equipped, S.primordialEquipped,
+      S.hornUp, S.hornInventory, HB, S.numfmt, hornSel, hornFilterR]);
+    if (revision === renderedInventoryRevision) return;
+    renderedInventoryRevision = revision;
     const settings = S.hornInventory;
     $('hornAutoEquip').checked = settings.autoEquip;
     $('hornEquipFocus').value = settings.focus;
@@ -2339,7 +2347,7 @@ import { createState } from './state.js';
       det.innerHTML = `<div class="art">${hornSVG(sel, 124, 'd')}</div>
         <div><div class="hn">${sel.name}</div><div class="hr">${sel.gold ? 'Gilded · ' : ''}${RARITY[sel.r].name}${on ? ' · worn' : ''}</div></div>
         <ul>${sel.lines.map(l => `<li style="--gc:${STAT_COL[l.stat] || '#fff'}"><i></i>${lineText(sel, l)}</li>`).join('')}${traitMarkup(sel)}</ul>
-        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}" ${settings.autoEquip ? 'disabled title="Turn off auto-equip to change worn horns manually"' : ''}>${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${RARITY[sel.r].ivory} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
+        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}" ${settings.autoEquip ? 'disabled title="Turn off auto-equip to change worn horns manually"' : ''}>${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${fmt(RARITY[sel.r].ivory)} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
     }
     // rarity filter
     const names = ['All', ...visibleRarities(S).map(r => r.name)];
@@ -2702,10 +2710,10 @@ import { createState } from './state.js';
       const c = { t: 1, x: 0, y: 0 }; setObjPx(c, spot.x, spot.y);
       S.crystals.push(c);
     }
-    let msg = `Depth ${S.depth}. You carry ${fmt(got)} fossil${got > 1 ? 's' : ''} down. The cave now sings in ${MODES[S.depth % MODES.length].name.toLowerCase()}.`;
+    let msg = `Depth ${fmt(S.depth)}. You carry ${fmt(got)} fossil${got > 1 ? 's' : ''} down. The cave now sings in ${MODES[S.depth % MODES.length].name.toLowerCase()}.`;
     if (fall) msg += ` The floor gave way twice, and you fell a floor further.`;
     if (rubble) msg += ' You land in rubble: this floor will need half again as much to break through.';
-    if (vein) msg += ` You land on a vein: ${vein} extra fossil${vein > 1 ? 's' : ''}.`;
+    if (vein) msg += ` You land on a vein: ${fmt(vein)} extra fossil${vein > 1 ? 's' : ''}.`;
     if (onSun()) msg += ' A Sunvein: gold runs through the stone.';
     else if (S.floor !== 'still') msg += ` A ${FLOORS[S.floor].name.toLowerCase()} floor. ${FLOORS[S.floor].text}`;
     if (biomeIdx(S.depth) !== oldBiome) msg += ` You enter the ${BIOMES[biomeIdx(S.depth)].name}.`;
@@ -2726,7 +2734,7 @@ import { createState } from './state.js';
     refreshAll();
     afterStateChange();
     const h = gainHorn(0);
-    whisper(`Sounding ${S.sea.soundings}. You haul up ${fmt(got)} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}${shell ? ' A seashell answers. Sound it in The Deep, or finish with Auto.' : ''}`);
+    whisper(`Sounding ${fmt(S.sea.soundings)}. You haul up ${fmt(got)} fathom${got > 1 ? 's' : ''} of line. ${hornMsg(h)}${shell ? ' A seashell answers. Sound it in The Deep, or finish with Auto.' : ''}`);
     save();
     return true;
   }
@@ -2764,7 +2772,7 @@ import { createState } from './state.js';
       const wake = () => {
         $('veil').classList.remove('on');
         cinematic = false;
-        whisper(`Heartstone ${S.hearts}. All hum and tide are now ×${fmt(Math.pow(3, S.hearts))}. The mountain feels ${omen().name.toLowerCase()}. ${hornMsg(h)}`);
+        whisper(`Heartstone ${fmt(S.hearts)}. All hum and tide are now ×${fmt(Math.pow(3, S.hearts))}. The mountain feels ${omen().name.toLowerCase()}. ${hornMsg(h)}`);
         $('hint').hidden = S.sea.throws >= 3;
       };
       // The first kindling is told as a scene over the dark; later ones just wake you.
@@ -2866,7 +2874,7 @@ import { createState } from './state.js';
     { id: 'finale', ch: 6, title: 'The Undersong', when: () => S.finale > 0, cards: () => [
       ['The Answer', 'You pour the offering into the water and shout once, the way you did on the first day, into a dark you no longer remember being small.'],
       ['Below the Tower', 'The sea lets go of the line. Beneath the bell tower the air fills with voices: not ghosts, not echoes, but a choir, every singer of Hollowmere, mid-breath, holding the note they were singing when the mountain closed.'],
-      ['What They Were Waiting For', `They had not been lost. They had been holding the note, all of them, until someone sang the next one. It took ${fmt(S.shouts)} ${S.shouts === 1 ? 'shout' : 'shouts'}, ${S.sea.soundings} soundings, ${S.hearts} Heartstones and ${Object.keys(S.feats).length} feats. It took exactly as long as it took.`],
+      ['What They Were Waiting For', `They had not been lost. They had been holding the note, all of them, until someone sang the next one. It took ${fmt(S.shouts)} ${S.shouts === 1 ? 'shout' : 'shouts'}, ${fmt(S.sea.soundings)} soundings, ${fmt(S.hearts)} Heartstones and ${Object.keys(S.feats).length} feats. It took exactly as long as it took.`],
       ['The Song Closes', 'Hum from the cave above and tide from the sea below meet at the tower, and the interval resolves. The mountain is warm. The water is bright. Somewhere, a door that was never locked swings open.'],
       ['Hollowmere', 'The town does not come back. It does not need to. It sings, and you are in the choir, third bench from the left, where your name was cut before you arrived. The song is complete. It will keep going anyway.'],
     ] },
@@ -2930,7 +2938,7 @@ import { createState } from './state.js';
     $('creditsRows').innerHTML = [
       ['Time played', fmtDur(S.stats.playSec || 0)], ['Shouts and stones', fmt(S.shouts + S.sea.throws)],
       ['Hum sung', fmt(S.total)], ['Tide rung', fmt(S.sea.total)], ['Deepest cave', S.stats.maxDepth], ['Soundings', S.sea.soundings],
-      ['Heartstones', S.hearts], ['Feats', `${Object.keys(S.feats).length} / ${FEATS.length}`],
+      ['Heartstones', fmt(S.hearts)], ['Feats', `${Object.keys(S.feats).length} / ${FEATS.length}`],
     ].map(r => `<div class="stat"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
     $('credits').hidden = false; $('creditsClose').focus();
   }
@@ -2954,18 +2962,18 @@ import { createState } from './state.js';
     if (!on) return;
     const done = S.finale > 0, ready = songReady(), afford = S.sea.fathoms >= SONG_COST;
     setT('songNote', done ? 'The Song is complete. The choir under the tower keeps singing, and so do you.'
-      : ready ? `Everything is in place. Answering costs ${SONG_COST} fathoms, an offering poured into the water.`
+      : ready ? `Everything is in place. Answering costs ${fmt(SONG_COST)} fathoms, an offering poured into the water.`
       : 'Something under the tower is waiting for an answer. It wants proof that you have heard the whole mountain and the whole sea.');
-    setH('songReqs', done ? '' : songReqs().map(r => `<div class="stat${r.have >= r.need ? ' done' : ''}"><span>${r.label}</span><b>${r.have >= r.need ? '✓' : `${r.have} / ${r.need}`}</b></div>`).join(''));
+    setH('songReqs', done ? '' : songReqs().map(r => `<div class="stat${r.have >= r.need ? ' done' : ''}"><span>${r.label}</span><b>${r.have >= r.need ? '✓' : `${fmt(r.have)} / ${fmt(r.need)}`}</b></div>`).join(''));
     const btn = $('songBtn');
-    setT('songBtn', done ? 'Hear it again' : `Answer the Undersong · ${SONG_COST} fathoms`);
+    setT('songBtn', done ? 'Hear it again' : `Answer the Undersong · ${fmt(SONG_COST)} fathoms`);
     btn.classList.toggle('poor', !done && !(ready && afford));
   }
   $('songBtn').addEventListener('click', () => {
     initAudio();
     if (S.finale) { if (!sceneOpen && !cinematic) playScene('finale', AFTER_SCENE.finale); return; }
     if (!songReady()) { whisper('Not yet. The tower wants more than this.'); return; }
-    if (S.sea.fathoms < SONG_COST) { whisper(`You need ${SONG_COST} fathoms to make the offering.`); return; }
+    if (S.sea.fathoms < SONG_COST) { whisper(`You need ${fmt(SONG_COST)} fathoms to make the offering.`); return; }
     answerSong();
   });
 
@@ -2981,7 +2989,7 @@ import { createState } from './state.js';
   }
   function updateQuests() {
     setT('questNote', `After a descent the floor takes ${mmss(descentLock())} to settle. Each quest below makes it ${mmss(LOCK_STEP)} shorter, down to ${mmss(LOCK_MIN)}.`);
-    setH('questList', QUESTS.map(qd => { const done = !!S.quests[qd.id]; return `<div class="stat${done ? ' done' : ''}"><span><b style="font-weight:600;color:var(--text)">${qd.name}</b> · ${qd.desc}</span><b>${done ? '✓' : Math.min(qd.have(), qd.need) + ' / ' + qd.need}</b></div>`; }).join(''));
+    setH('questList', QUESTS.map(qd => { const done = !!S.quests[qd.id]; return `<div class="stat${done ? ' done' : ''}"><span><b style="font-weight:600;color:var(--text)">${qd.name}</b> · ${qd.desc}</span><b>${done ? '✓' : fmt(Math.min(qd.have(), qd.need)) + ' / ' + fmt(qd.need)}</b></div>`; }).join(''));
   }
 
   // ---------- toasts ----------
@@ -3126,8 +3134,8 @@ import { createState } from './state.js';
       ['Time played', fmtDur(st.playSec || 0)],
       ['Shouts', fmt(S.shouts)], ['Stones thrown', fmt(S.sea.throws)],
       ['Hum sung, all told', fmt(S.total)], ['Tide rung, all told', fmt(S.sea.total)],
-      ['Deepest cave', st.maxDepth], ['Soundings', S.sea.soundings], ['Heartstones', S.hearts],
-      ['Crystals fused', fmt(st.fuses)], ['Biggest chord', st.maxChord], ['Gong booms', fmt(st.booms)],
+      ['Deepest cave', fmt(st.maxDepth)], ['Soundings', fmt(S.sea.soundings)], ['Heartstones', fmt(S.hearts)],
+      ['Crystals fused', fmt(st.fuses)], ['Biggest chord', fmt(st.maxChord)], ['Gong booms', fmt(st.booms)],
       ['Shards shed', fmt(st.shards)], ['Crossings rung', fmt(st.crossings)], ['Pearl dust gathered', fmt(st.pearls)],
       ['Horns found', fmt(st.hornsFound)], ['Horns held', S.horns.length],
       ...visibleRarities(S).map((r, i) => [`${r.name} horns held`, held[i]]),
@@ -3266,8 +3274,8 @@ import { createState } from './state.js';
     setT('crystalCount', `${S.crystals.length} / ${maxCrystals()}`);
     setT('bellCount', `${q.bells.length} / ${bellCap()}`);
     setH('depthChip', sea
-      ? `<b>Sounding ${q.soundings}</b><span>${MODES[(q.soundings + 1) % MODES.length].name}</span>${SK.tm > 1.001 ? `<span class="mono">×${fmt(SK.tm)}</span>` : ''}`
-      : `<b>Depth ${S.depth}</b><span>${MODES[S.depth % MODES.length].name}</span>${K.dm > 1.001 ? `<span class="mono">×${fmt(K.dm)}</span>` : ''}${onSun() ? '<span class="ftag gold">Sunvein</span>' : S.floor !== 'still' ? `<span class="ftag">${FLOORS[S.floor].name}</span>` : ''}`);
+      ? `<b>Sounding ${fmt(q.soundings)}</b><span>${MODES[(q.soundings + 1) % MODES.length].name}</span>${SK.tm > 1.001 ? `<span class="mono">×${fmt(SK.tm)}</span>` : ''}`
+      : `<b>Depth ${fmt(S.depth)}</b><span>${MODES[S.depth % MODES.length].name}</span>${K.dm > 1.001 ? `<span class="mono">×${fmt(K.dm)}</span>` : ''}${onSun() ? '<span class="ftag gold">Sunvein</span>' : S.floor !== 'still' ? `<span class="ftag">${FLOORS[S.floor].name}</span>` : ''}`);
     { const ct = sea ? '' : floorBlurb().replace(/<[^>]*>/g, ''); const dc = $('depthChip'); if (dc.title !== ct) dc.title = ct; }
     setT('lifetime', q.unlocked ? `${fmt(S.total)} hum · ${fmt(q.total)} tide, all told` : `${fmt(S.total)} hum sung, all told`);
     setHid('worlds', !q.unlocked);
@@ -3284,7 +3292,7 @@ import { createState } from './state.js';
     setHid('pillFathom', !sea || !(q.soundings >= 1 || q.fathomsTotal > 0)); setT('fathomVal', fmt(q.fathoms));
     setHid('pillIvory', !S.hornsOn); setT('ivoryVal', fmt(S.ivory));
     setHid('pillGilt', !(S.stats.sunveins > 0 || S.gilt > 0)); setT('giltVal', fmt(Math.floor(S.gilt)));
-    setHid('pillHeart', !S.hearts); setT('heartVal', S.hearts);
+    setHid('pillHeart', !S.hearts); setT('heartVal', fmt(S.hearts));
     setHid('chronDot', !!S.seen.chron);
 
     let others = 0;
@@ -3316,10 +3324,10 @@ import { createState } from './state.js';
       once('heartSeen');
       const cost = heartCost(), can = canKindle();
       const tick = ok => ok ? '✓' : '·';
-      setT('heartCount', S.hearts ? `${S.hearts} kindled` : '');
-      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${heartDepth()}</b> (you're at ${S.depth}), <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)})${S.hearts ? ` and <b>${tick(S.sea.soundings >= heartSea())} ${heartSea()} soundings</b> of the sea (you have ${S.sea.soundings})` : ''}. ${S.hearts ? `The mountain feels <b>${omen().name.toLowerCase()}</b> this time. ${omen().text} ` : ''}Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}.${S.heartSeaLegacy ? ' Your already-met Sea milestone is preserved for this Heartstone; the next uses the new requirement.' : ''} Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn. It also unlocks <b>${nextOffset()[0]}</b>: ${nextOffset()[1]}.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
+      setT('heartCount', S.hearts ? `${fmt(S.hearts)} kindled` : '');
+      setH('heartText', `Needs <b>${tick(S.depth >= heartDepth())} depth ${fmt(heartDepth())}</b> (you're at ${fmt(S.depth)}), <b>${tick(S.lumen >= cost)} ${fmt(cost)} lumen</b> (you have ${fmt(S.lumen)})${S.hearts ? ` and <b>${tick(S.sea.soundings >= heartSea())} ${fmt(heartSea())} soundings</b> of the sea (you have ${fmt(S.sea.soundings)})` : ''}. ${S.hearts ? `The mountain feels <b>${omen().name.toLowerCase()}</b> this time. ${omen().text} ` : ''}Kindling it resets the whole cave: hum, depth, shards, fossils, strata, lumen and illuminations. You keep your horns${S.hearts ? ' and the sea' : ''}.${S.heartSeaLegacy ? ' Your already-met Sea milestone is preserved for this Heartstone; the next uses the new requirement.' : ''} Every Heartstone makes all hum and tide <b>×3</b> forever and brings an epic-or-better horn. It also unlocks <b>${nextOffset()[0]}</b>: ${nextOffset()[1]}.${S.hearts ? '' : ' The first one opens the Sunless Sea.'}`);
       heartBtn.classList.toggle('poor', !can);
-      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < heartDepth() ? `Reach depth ${heartDepth()} first` : S.sea.soundings < heartSea() ? `Sound the sea ${heartSea()} times first` : 'Not enough lumen');
+      setT('heartLabel', can ? (holding ? 'Keep holding…' : 'Hold to kindle') : S.depth < heartDepth() ? `Reach depth ${fmt(heartDepth())} first` : S.sea.soundings < heartSea() ? `Sound the sea ${fmt(heartSea())} times first` : 'Not enough lumen');
     }
 
     // choir
@@ -3392,7 +3400,8 @@ import { createState } from './state.js';
   // =====================================================================
   const serialize = () => serializeState(S, hiddenAt || Date.now());
   const saveStore = createSaveStore({ key: KEY, serialize,
-    storage: () => localStorage, session: () => sessionStorage, reload: () => location.reload() });
+    storage: () => localStorage, session: () => sessionStorage, reload: () => location.reload(),
+    onFailure: () => toast('Save failed', 'Progress could not be saved. Storage may be full or blocked. Copy a save code from Settings to keep your progress.', 'warn') });
   function save() { saveStore.save(); }
   const { backupNow, readBackup, encodeSave, decodeSave, replaceSaveAndReload } = saveStore;
   // On phones and tablets, a small dismissible note that the game is made for a computer. Remembered per device, outside the save.

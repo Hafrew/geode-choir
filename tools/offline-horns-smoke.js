@@ -16,7 +16,7 @@ const KEY = 'geode-choir-v1';
           window.__testNow = Date.now(); Date.now = () => window.__testNow;
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
-          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ hum: 1, ver: '1.10.4', seenVer: '1.10.4',
+          if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ hum: 1, ver: '1.10.4', seenVer: '1.10.5',
             hornsOn: true, hornAuto: auto, hornQueue: 2, hornTimer: 360, lore: { prologue: 1 },
             hornInventory: { autoEquip: auto, focus: 'balanced', salvage: [true, true, true, true, true, true], gilded: false },
             saved: Date.now() - 21600000 }));

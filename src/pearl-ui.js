@@ -1,3 +1,4 @@
+import { createInventoryRevision } from './inventory-revision.js';
 import { PEARL_RARITY, PEARL_STATS, PEARL_SLOTS, PEARL_STAT_CAP, PEARL_FORM_SECONDS, equipPearl, grindPearl, pearlBonuses } from './pearls.js';
 import { pearlSVG } from './pearl-art.js';
 
@@ -5,7 +6,8 @@ const pct = v => `+${Math.round((v - 1) * 100)}%`;
 // Presentation only: every rule lives in pearls.js.
 export function createPearlUI({ state, active, changed }) {
   const $ = id => document.getElementById(id);
-  let key = '';
+  let renderedInventoryRevision = -1;
+  const inventoryRevision = createInventoryRevision();
   $('pearlSection').addEventListener('click', e => {
     const button = e.target.closest('button[data-pearl-action]');
     if (!button) return;
@@ -24,13 +26,14 @@ export function createPearlUI({ state, active, changed }) {
   const lines = p => p.lines.map(l => `${PEARL_STATS[l.stat]} <b>${pct(l.v)}</b>`).join(' · ');
   function render() {
     if (!active()) return;
-    const S = state(), P = S.pearls, next = JSON.stringify({ ...P, nacre: Math.floor(P.nacre / 10) });
-    if (next === key) return;
-    key = next;
+    const S = state(), P = S.pearls;
     const bonus = pearlBonuses(S), total = Object.entries(bonus).filter(([, v]) => v > 1.0001)
       .map(([k, v]) => `${PEARL_STATS[k]} ${pct(v)}${v >= PEARL_STAT_CAP - 1e-9 ? ' (cap)' : ''}`).join(' · ');
     $('pearlSummary').textContent = `${P.equipped.length}/${PEARL_SLOTS} on the strand${total ? ' · ' + total : ''} · ${P.items.length} kept · `
       + (P.nacre >= PEARL_FORM_SECONDS ? 'A pearl has formed: the next oyster to open reveals it.' : `Next pearl forming in the Sea (${Math.floor(100 * P.nacre / PEARL_FORM_SECONDS)}%).`);
+    const revision = inventoryRevision([P.items, P.equipped]);
+    if (revision === renderedInventoryRevision) return;
+    renderedInventoryRevision = revision;
     const byId = new Map(P.items.map(p => [p.id, p]));
     $('pearlStrand').innerHTML = Array.from({ length: PEARL_SLOTS }, (_, i) => {
       const p = byId.get(P.equipped[i]);

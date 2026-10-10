@@ -19,7 +19,7 @@ const KEY = 'geode-choir-v1';
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
           if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({
-            ver: '1.10.4', seenVer: '1.10.4', hum: 1, hearts: 1, world: 'sea', tab: 'sea', depth: 5,
+            ver: '1.10.4', seenVer: '1.10.5', hum: 1, hearts: 1, world: 'sea', tab: 'sea', depth: 5,
             lore: { prologue: 1 }, saved: Date.now(), sea: { unlocked: true, soundings: 3, fathoms: 10 },
           }));
         }, KEY);

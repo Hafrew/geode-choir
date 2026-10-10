@@ -1,11 +1,16 @@
 // Browser persistence orchestration. Rules/migration stay in saves.js; storage
 // and navigation are supplied so the same behavior can be verified without a DOM.
-export function createSaveStore({ key, serialize, storage, session, reload, now = Date.now }) {
+export function createSaveStore({ key, serialize, storage, session, reload, now = Date.now, onFailure = () => {} }) {
   const backupKey = key + '-backup';
-  let noSave = false;
+  let noSave = false, warned = false;
+  function writeFailed() {
+    if (warned) return;
+    warned = true;
+    onFailure();
+  }
   function save() {
     if (noSave) return;
-    try { storage().setItem(key, JSON.stringify(serialize())); } catch (_) {}
+    try { storage().setItem(key, JSON.stringify(serialize())); } catch (_) { writeFailed(); }
   }
   function read() {
     try { return JSON.parse(storage().getItem(key) || 'null'); } catch (_) { return null; }
@@ -14,7 +19,7 @@ export function createSaveStore({ key, serialize, storage, session, reload, now 
     try {
       const data = raw != null ? raw : storage().getItem(key);
       if (data) storage().setItem(backupKey, JSON.stringify({ at: now(), data }));
-    } catch (_) {}
+    } catch (_) { writeFailed(); }
   }
   function readBackup() {
     try {
@@ -33,7 +38,7 @@ export function createSaveStore({ key, serialize, storage, session, reload, now 
   }
   function replaceSaveAndReload(d) {
     save(); backupNow();
-    try { storage().setItem(key, JSON.stringify(d)); } catch (_) { return false; }
+    try { storage().setItem(key, JSON.stringify(d)); } catch (_) { writeFailed(); return false; }
     noSave = true;
     try { session().setItem('gc-fresh-import', '1'); } catch (_) {}
     reload();
