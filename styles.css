@@ -502,9 +502,15 @@
 #caveVarietyPanel { display: grid; gap: 10px; margin: 16px 0; }
 #caveVarietyPanel label { display: flex; align-items: center; gap: 8px; }
 #caveVarietyPanel select { font: inherit; color: var(--text); background: var(--slab); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
-#caveEventChoices article { display: grid; gap: 8px; margin: 12px 0; }
+#caveEventChoices article { display: grid; gap: 8px; margin: 12px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--slab); }
+#caveEventChoices article p { margin: 0; color: var(--muted); font-size: 0.8125rem; }
+#caveEventChoices article p:last-of-type { color: var(--text); }
+#caveEventChoices [data-event-auto] { background: transparent; color: var(--muted); }
+#shoppingRack { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; color: var(--muted); font-size: 0.8125rem; }
+#shoppingRackNote { margin-bottom: 4px; }
 #caveEventChoices h3 { margin: 0; }
-#caveEventChoices button, #diveCancel { min-height: 40px; white-space: normal; }
+#caveEventChoices button, #diveCancel { min-height: 40px; white-space: normal; text-align: left; }
+#shoppingRack button { min-height: 36px; white-space: normal; text-align: left; flex: 0 1 auto; max-width: 100%; }
 #caveEventChoices button, #diveCancel, #shoppingRack button { padding: 8px 12px; font: inherit; color: var(--text); background: var(--slab-2); border: 1px solid var(--line-2); border-radius: 8px; cursor: pointer; }
 #caveEventChoices button:disabled { opacity: .5; cursor: default; }
 #caveVarietyPanel button:focus-visible, #caveVarietyPanel select:focus-visible, #shoppingRack button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }

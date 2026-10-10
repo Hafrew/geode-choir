@@ -4,6 +4,9 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ## Unreleased
 
+### Changed
+- Cave event cards and the shopping-horn rack get their own card and chip layout (spacing, wrapping, left-aligned choices) so they stay tidy in the narrow Descend panel.
+
 ### Added
 - Offline horn arrivals: the horn clock advances at away efficiency with Faster Tick and Keen Ear. Each absence grants at most five new calls; manual calls wait for sounding, while Auto discovers the new horns using the normal equip/salvage and ivory rules. Existing calls and unfinished notes are preserved, with at most nine waiting manual calls including a pending sounding. Return reports include the arrivals, and accounting is saved immediately to prevent duplicate grants on reload.
 - Developer toolbar for testing, unlocked by an access code entered under Settings → Access code. The toolbar module is only downloaded after a valid code, and it can add or set resources, set hearts, depth, soundings, floor and omen, clear cooldowns, force the next descent to be a Sunvein, form a pearl, warp time away, grant horns, shells and pearls of a chosen rarity, and copy the save. Any use marks the save (`stats.devUsed`). `tools/make-dev-code.js` makes a new random code and writes only its salted hash to `src/dev-config.js`; this is a convenience lock for a static game, not security.

@@ -3308,7 +3308,7 @@ import { createState } from './state.js';
     const key = JSON.stringify(V.pending.map(({ elapsed, ...p }) => p));
     if (key !== eventKey) {
       eventKey = key;
-      $('caveEventChoices').innerHTML = V.pending.map(p => `<article class="stat"><h3>${CAVE_EVENTS[p.type].name} · Depth ${fmt(p.floor)}</h3>
+      $('caveEventChoices').innerHTML = V.pending.map(p => `<article><h3>${CAVE_EVENTS[p.type].name} · Depth ${fmt(p.floor)}</h3>
         <p>${CAVE_EVENTS[p.type].text}</p><p id="eventTimer${p.id}"></p>
         <button type="button" data-event="${p.id}" data-choice="safe" ${p.choice ? 'disabled' : ''}>Keep the normal reward</button>
         <button type="button" data-event="${p.id}" data-choice="fossils" ${p.choice ? 'disabled' : ''}>+${fmt(Math.floor(p.haul * .1))} fossils · settle 30s longer</button>
