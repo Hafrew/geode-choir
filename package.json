@@ -1,6 +1,6 @@
 {
   "name": "geode-choir",
-  "version": "1.10.5",
+  "version": "1.10.7",
   "private": true,
   "scripts": {
     "test": "npm run test:unit && npm run test:browser",

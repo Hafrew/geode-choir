@@ -1,3 +1,4 @@
+import { CAVE_EVENTS, CAVE_EVENT_SECONDS, queueCaveEvents, chooseCaveEvent, finishCaveEvent, tickCaveEvents } from './cave-variety.js';
 import { createInventoryRevision } from './inventory-revision.js';
 import { CHANGES } from './changes.js';
 import { createSaveStore } from './save-store.js';
@@ -6,7 +7,7 @@ import { createShellUI } from './shell-ui.js';
 import { createPearlUI } from './pearl-ui.js';
 import { PEARL_RARITY, PEARL_SLOTS, tickPearls, openOyster, applyPearls, bestPearls, equipPearl as equipPearlItem, grindPearl as grindPearlItem } from './pearls.js';
 import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscoveryCost, shellDiscoveryChance } from './seashells.js';
-import { CAVE_AUTOMATION_COST, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
+import { AUTOMATION_STAGES, automationStage, categoryUnlocked, shoppingSlots, shoppingEligible, shoppingInterval, slotShoppingHorn, buyAutomationStage, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
 import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
   soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, FINALE_HEARTS, PLUMB_STEP, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   depthThreshold, seaThreshold, fossilReward, fathomReward, sunPityBonus, sunveinRoll, SUN_GUARANTEE, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
@@ -25,7 +26,7 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.5';
+  const VERSION = '1.10.7';
   // Release channel shown beside the version; saves and version checks use VERSION alone.
   const CHANNEL = 'beta';
 
@@ -828,7 +829,10 @@ import { createState } from './state.js';
     if (t === 3) once('firstMoonstone');
   }
 
-  function runAutomation() {
+  function runShopping() {
+    runCaveShopping(S, shopSpecs, have, () => { refreshAll(); syncVoices(); }, category => tabVisible(category.tab));
+  }
+  function runAutomation(shopping = true) {
     if (S.world !== 'cave') return;
     if (S.illum.autofuse && S.toggles.autofuse) {
       for (let t = 0; t < TIERS.length - 1; t++) {
@@ -842,8 +846,13 @@ import { createState } from './state.js';
         if (S.hum - crystalCost(t) >= (S.caveAutomation.unlocked ? S.caveAutomation.reserves.hum : 0)) { buyCrystal(t); break; }
       }
     }
-    runCaveShopping(S, shopSpecs, have, () => { refreshAll(); syncVoices(); }, category => tabVisible(category.tab));
-    if (S.illum.autodescend && S.toggles.autodescend && S.cool <= 0 && S.run >= sinkMult() * deepenAt()) descend();
+    if (shopping) runShopping();
+    if (S.caveVariety.remaining && neutralCaveEventsReady() && !canKindle()
+      && S.cool <= 0 && S.run >= S.caveVariety.ratio * deepenAt()) {
+      if (descend()) S.caveVariety.remaining--;
+      save();
+    }
+    if (!S.caveVariety.remaining && S.illum.autodescend && S.toggles.autodescend && S.cool <= 0 && S.run >= sinkMult() * deepenAt()) descend();
   }
 
   // =====================================================================
@@ -1909,17 +1918,13 @@ import { createState } from './state.js';
       `<label><input type="checkbox" data-cave-category="${k}"> ${c.name}</label>`).join('');
     $('caveAutoReserves').innerHTML = Object.entries(CAVE_RESERVES).map(([k, name]) =>
       `<label>${name}<input type="number" min="0" step="any" inputmode="decimal" data-cave-reserve="${k}" aria-label="Reserve ${name.toLowerCase()}"></label>`).join('');
-    addItem({ parent: 'shopCaveAutomation', icon: ICONS.gear(), unit: 'fathom',
-      name: () => 'Patient Choir', show: () => S.hearts >= 2 || S.caveAutomation.unlocked,
-      cost: () => S.caveAutomation.unlocked ? null : CAVE_AUTOMATION_COST,
-      blocked: () => S.hearts < 2,
-      desc: () => S.caveAutomation.unlocked ? 'Cave upgrade automation is unlocked forever. Choose categories and reserves below.'
-        : 'Unlock cave upgrade automation forever. Requires two Heartstones. Categories start off; choose which shops can spend and how much to reserve.',
-      buy: () => {
-        if (S.hearts < 2 || S.caveAutomation.unlocked || !spend('fathom', CAVE_AUTOMATION_COST)) return false;
-        S.caveAutomation.unlocked = true; save(); return true;
-      },
-    });
+    AUTOMATION_STAGES.forEach((stage, index) => addItem({ parent: 'shopCaveAutomation', icon: ICONS.gear(), unit: 'fathom',
+      name: () => stage.name, show: () => index <= automationStage(S) && (S.hearts >= 2 || S.caveAutomation.unlocked),
+      cost: () => index < automationStage(S) ? null : stage.cost,
+      blocked: () => index !== automationStage(S) || S.hearts < stage.hearts,
+      desc: () => `${stage.categories.map(k => CAVE_CATEGORIES[k].name).join(', ')}. Requires ${stage.hearts} Heartstones. Owned categories stay available through resets.`,
+      buy: () => { const bought = buyAutomationStage(S, index); if (bought) save(); return bought; },
+    }));
     // ------------------------------- cave: crystals, voices, tuning (hum)
     TIERS.forEach((tier, t) => addItem({
       bulk: true, parent: 'shopCrystals', icon: ICONS.gem(tier.color), unit: 'hum',
@@ -2309,7 +2314,7 @@ import { createState } from './state.js';
   function renderInventory() {
     if (!S.horns.some(h => h.id === hornSel)) hornSel = (S.equipped[0] || S.horns[0]?.id) || 0;
     const revision = inventoryRevision([S.horns, S.equipped, S.primordialEquipped,
-      S.hornUp, S.hornInventory, HB, S.numfmt, hornSel, hornFilterR]);
+      S.hornUp, S.hornInventory, S.caveAutomation.rack, shoppingSlots(S), HB, S.numfmt, hornSel, hornFilterR]);
     if (revision === renderedInventoryRevision) return;
     renderedInventoryRevision = revision;
     const settings = S.hornInventory;
@@ -2345,9 +2350,9 @@ import { createState } from './state.js';
       const on = eq.has(sel.id);
       det.style.setProperty('--rc', rcOf(sel));
       det.innerHTML = `<div class="art">${hornSVG(sel, 124, 'd')}</div>
-        <div><div class="hn">${sel.name}</div><div class="hr">${sel.gold ? 'Gilded · ' : ''}${RARITY[sel.r].name}${on ? ' · worn' : ''}</div></div>
+        <div><div class="hn">${sel.name}</div><div class="hr">${sel.gold ? 'Gilded · ' : ''}${RARITY[sel.r].name}${S.caveAutomation.rack.includes(sel.id) ? ' · shopping' : on ? ' · worn' : ''}</div></div>
         <ul>${sel.lines.map(l => `<li style="--gc:${STAT_COL[l.stat] || '#fff'}"><i></i>${lineText(sel, l)}</li>`).join('')}${traitMarkup(sel)}</ul>
-        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}" ${settings.autoEquip ? 'disabled title="Turn off auto-equip to change worn horns manually"' : ''}>${on ? 'Take off' : 'Wear'}</button><button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${fmt(RARITY[sel.r].ivory)} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
+        <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}" ${settings.autoEquip ? 'disabled title="Turn off auto-equip to change worn horns manually"' : ''}>${on ? 'Take off' : 'Wear'}</button>${S.caveAutomation.unlocked && shoppingEligible(sel) ? `<button type="button" data-act="shopping" data-id="${sel.id}">${S.caveAutomation.rack.includes(sel.id) ? 'Remove from shopping rack' : 'Slot for shopping'}</button>` : ''}<button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${fmt(RARITY[sel.r].ivory)} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
     }
     // rarity filter
     const names = ['All', ...visibleRarities(S).map(r => r.name)];
@@ -2543,7 +2548,10 @@ import { createState } from './state.js';
     if (!btn) return;
     const id = +btn.dataset.id, h = S.horns.find(x => x.id === id);
     if (!h) return;
-    if (btn.dataset.act === 'eq') {
+    if (btn.dataset.act === 'shopping') {
+      if (!slotShoppingHorn(S, id)) { whisper('Take this horn off first, or make space in the shopping rack.'); return; }
+    } else if (btn.dataset.act === 'eq') {
+      if (S.caveAutomation.rack.includes(id)) { whisper('Remove this horn from the shopping rack before wearing it.'); return; }
       if (S.hornInventory.autoEquip) return;
       const eq = h.r === PRIMORDIAL ? S.primordialEquipped : S.equipped;
       const slots = h.r === PRIMORDIAL ? primordialSlots(S) : hornSlots();
@@ -2552,6 +2560,7 @@ import { createState } from './state.js';
       else if (eq.length >= slots) { whisper(`You can only wear ${slots} ${h.r === PRIMORDIAL ? 'Primordial ' : ''}horn${slots === 1 ? '' : 's'} here. Take one off first, or upgrade this rack.`); return; }
       else eq.push(id);
     } else {
+      if (S.caveAutomation.rack.includes(id)) { whisper('Remove this horn from the shopping rack before salvaging it.'); return; }
       if (!salvageArmed[id] || Date.now() - salvageArmed[id] > 3000) { salvageArmed[id] = Date.now(); btn.textContent = 'Click again to salvage'; return; }
       S.horns.splice(S.horns.indexOf(h), 1);
       for (const eq of [S.equipped, S.primordialEquipped]) { const i = eq.indexOf(id); if (i >= 0) eq.splice(i, 1); }
@@ -2574,15 +2583,28 @@ import { createState } from './state.js';
     $('caveAutomationSec').hidden = S.hearts < 2 && !settings.unlocked;
     $('caveAutoControls').hidden = !settings.unlocked;
     if (!settings.unlocked || S.tab !== 'strata') return;
-    for (const input of $('caveAutoCategories').querySelectorAll('input')) input.checked = settings.categories[input.dataset.caveCategory];
+    for (const input of $('caveAutoCategories').querySelectorAll('input')) {
+      const key = input.dataset.caveCategory;
+      input.checked = settings.categories[key]; input.disabled = !categoryUnlocked(S, key);
+      input.parentElement.title = input.disabled ? 'Buy the next Patient Choir verse to unlock this category.' : '';
+    }
+    setT('shoppingRackNote', `${settings.rack.length}/${shoppingSlots(S)} shopping horns · one shopping round every ${shoppingInterval(S).toFixed(3)}s. These horns give no normal stats.`);
+    setH('shoppingRack', settings.rack.map(id => {
+      const h = S.horns.find(h => h.id === id);
+      return h ? `<button type="button" data-shopping-remove="${id}">${h.name} · Remove</button>` : '';
+    }).join('') || 'Slot spare Epic, Legendary or Mythic horns from Horns → Inventory. Gilded counts one rarity higher.');
     for (const input of $('caveAutoReserves').querySelectorAll('input')) {
       if (document.activeElement !== input) input.value = settings.reserves[input.dataset.caveReserve];
     }
   }
+  $('shoppingRack').addEventListener('click', e => {
+    const button = e.target.closest('[data-shopping-remove]'); if (!button) return;
+    slotShoppingHorn(S, +button.dataset.shoppingRemove); refreshAll(); save(); updateUI();
+  });
   $('caveAutoControls').addEventListener('change', e => {
     const input = e.target, settings = S.caveAutomation;
     if (!settings.unlocked) return;
-    if (input.dataset.caveCategory) settings.categories[input.dataset.caveCategory] = input.checked;
+    if (input.dataset.caveCategory) { if (!categoryUnlocked(S, input.dataset.caveCategory)) return; settings.categories[input.dataset.caveCategory] = input.checked; }
     else if (input.dataset.caveReserve) {
       const value = Number(input.value);
       settings.reserves[input.dataset.caveReserve] = Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -2655,7 +2677,7 @@ import { createState } from './state.js';
       return;
     }
     descArmed = 0;
-    if (S.world === 'sea') sound(); else descend();
+    if (S.world === 'sea') sound(); else startDive();
   });
   $('resetBtn').addEventListener('click', () => {
     if (Date.now() - resetArmed > 3000) { resetArmed = Date.now(); $('resetBtn').textContent = 'Click again to forget'; return; }
@@ -2671,9 +2693,18 @@ import { createState } from './state.js';
     whisper('The cave forgets you. Shout again.');
   });
 
+  function startDive(size = S.caveVariety.diveSize, ratio = 1) {
+    if (S.world !== 'cave' || ![1, 2, 3].includes(size) || S.caveVariety.remaining || !neutralCaveEventsReady()) return false;
+    if (!descend()) return false;
+    if (size > 1) for (const p of S.caveVariety.pending) chooseCaveEvent(S, p.id, 'safe');
+    S.caveVariety.remaining = size - 1; S.caveVariety.ratio = Math.min(100, Math.max(1, ratio)); save(); return true;
+  }
   function descend(opts) {
+    if (S.world !== 'cave' || !neutralCaveEventsReady()) return false;
+    const oldDepth = S.depth;
     const got = fossilGain();
-    if (got <= 0 || S.cool > 0) return;
+    if (got <= 0 || S.cool > 0) return false;
+    for (const p of [...S.caveVariety.pending]) finishCaveEvent(S, p.id, true);
     const oldBiome = biomeIdx(S.depth);
     const carry = S.illum.carry;
     const oldWonders = S.wonders.map(o => ({ k: o.k, x: o.x, y: o.y, charge: 0 })), oldWB = S.wBought;
@@ -2695,6 +2726,8 @@ import { createState } from './state.js';
       } else { S.floor = rollFloor(); S.stats.sunDry = Math.min(SUN_GUARANTEE - 1, S.stats.sunDry + 1); }
     }
     S.cool = descentLock(); S.stats.descents++;
+    queueCaveEvents(S, oldDepth, got + vein);
+    if (S.caveVariety.remaining) for (const p of S.caveVariety.pending) chooseCaveEvent(S, p.id, 'safe');
     S.stats.fossilsLife += got + vein; S.stats.bestHaul = Math.max(S.stats.bestHaul, got + vein);
     if (fall) S.stats.shafts++; if (rubble) S.stats.rockfalls++; if (vein) S.stats.veins++;
     if (carry) { S.wonders = oldWonders; S.wBought = oldWB; }
@@ -2721,6 +2754,7 @@ import { createState } from './state.js';
     if (S.stats.descents === 1) msg += ' Drag a crystal to the foot of the cave: Fuse joins it with any twin, Crush breaks it up.';
     whisper(msg);
     save();
+    return true;
   }
 
   function sound() {
@@ -2742,7 +2776,9 @@ import { createState } from './state.js';
   // ---------- the Heartstone: press and hold ----------
   let holding = false, holdT = 0;
   const heartBtn = $('heartBtn');
-  const canKindle = () => kindleReady(S, omen());
+  const autoCaveEvents = () => S.caveVariety.autoEvents || S.caveVariety.remaining > 0 || !!simulation?.fast || !!(S.illum.autodescend && S.toggles.autodescend);
+  const neutralCaveEventsReady = () => S.caveVariety.pending.every(p => p.choice === 'safe' || !p.choice && autoCaveEvents());
+  const canKindle = () => (neutralCaveEventsReady() && kindleReady(S, omen()));
   const startHold = () => { if (canKindle() && !cinematic) { initAudio(); holding = true; } };
   const stopHold = () => { holding = false; };
   heartBtn.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
@@ -2755,6 +2791,8 @@ import { createState } from './state.js';
 
   function kindle() {
     if (!canKindle() || cinematic) return;
+    // A ready Heartstone can close committed neutral events without adding a new time gate.
+    for (const p of [...S.caveVariety.pending]) finishCaveEvent(S, p.id, true);
     cinematic = true;
     for (const c of S.crystals) { c.ring = 1; spawn(c.px, c.py, 10, 1, false, null, 0, c.r + 2); }
     chordSound();
@@ -3196,7 +3234,8 @@ import { createState } from './state.js';
   }
   function updateStrip(sea, prog, locked, got) {
     const ready = prog >= 1 && !locked;
-    chip('chipDesc', locked ? 'Settling' : sea ? 'Sound' : 'Descend', locked ? mmss(sea ? S.sea.cool / tickRate() : S.cool) : ready ? '+' + fmt(got) : Math.floor(prog * 100) + '%', prog, ready);
+    if (!sea && S.caveVariety.pending.length) chip('chipDesc', 'Cave event', 'Choose', 1, true);
+    else chip('chipDesc', locked ? 'Settling' : sea ? 'Sound' : 'Descend', locked ? mmss(sea ? S.sea.cool / tickRate() : S.cool) : ready ? '+' + fmt(got) : Math.floor(prog * 100) + '%', prog, ready);
     $('chipDesc').classList.toggle('sea', sea);
     const showHeart = !sea && (S.lumenTotal >= 1e4 || S.hearts > 0);
     setHid('chipHeart', !showHeart);
@@ -3258,8 +3297,38 @@ import { createState } from './state.js';
     if (tipFor === el) hideTip(); else { tipFor = el; renderTip(); }
   });
 
+  let eventKey = '';
+  function renderCaveVariety() {
+    const V = S.caveVariety;
+    $('caveVarietyPanel').hidden = S.world !== 'cave';
+    $('diveSize').value = V.diveSize;
+    $('eventAuto').checked = V.autoEvents;
+    setT('diveStatus', V.remaining ? `${V.remaining} more descents queued. Each waits for the full settling lock and enough hum. Pause by switching worlds; Cancel clears the queue.` : 'Choose up to three ordinary descents. Each landing has its own full wait, rewards and milestone checks. Dives use safe event choices.');
+    $('diveCancel').hidden = !V.remaining;
+    const key = JSON.stringify(V.pending.map(({ elapsed, ...p }) => p));
+    if (key !== eventKey) {
+      eventKey = key;
+      $('caveEventChoices').innerHTML = V.pending.map(p => `<article class="stat"><h3>${CAVE_EVENTS[p.type].name} · Depth ${fmt(p.floor)}</h3>
+        <p>${CAVE_EVENTS[p.type].text}</p><p id="eventTimer${p.id}"></p>
+        <button type="button" data-event="${p.id}" data-choice="safe" ${p.choice ? 'disabled' : ''}>Keep the normal reward</button>
+        <button type="button" data-event="${p.id}" data-choice="fossils" ${p.choice ? 'disabled' : ''}>+${fmt(Math.floor(p.haul * .1))} fossils · settle 30s longer</button>
+        <button type="button" data-event="${p.id}" data-choice="fresh" ${p.choice ? 'disabled' : ''}>Spend up to ${fmt(Math.floor(p.haul * .1))} fossils · refresh up to 60s</button>
+        <button type="button" data-event-auto="${p.id}">Finish with Auto${p.choice ? ' (keep chosen trade)' : ' (safe)'}</button></article>`).join('');
+    }
+    for (const p of V.pending) setT(`eventTimer${p.id}`, p.elapsed < CAVE_EVENT_SECONDS ? `Listening… ${Math.ceil(CAVE_EVENT_SECONDS - p.elapsed)}s. ${p.choice ? 'Choice saved.' : 'Choose a trade, or finish safely with Auto.'}` : 'Ready for your choice.');
+  }
+  $('diveSize').addEventListener('change', e => { S.caveVariety.diveSize = +e.target.value; save(); updateUI(); });
+  $('diveCancel').addEventListener('click', () => { S.caveVariety.remaining = 0; save(); updateUI(); });
+  $('eventAuto').addEventListener('change', e => { S.caveVariety.autoEvents = e.target.checked; save(); updateUI(); });
+  $('caveEventChoices').addEventListener('click', e => {
+    const button = e.target.closest('[data-event], [data-event-auto]'); if (!button) return;
+    if (button.dataset.eventAuto) finishCaveEvent(S, +button.dataset.eventAuto, true);
+    else { chooseCaveEvent(S, +button.dataset.event, button.dataset.choice); finishCaveEvent(S, +button.dataset.event); }
+    refreshAll(); save(); updateUI();
+  });
   function updateUI() {
     if (simulation?.fast) return;
+    renderCaveVariety();
     const sea = S.world === 'sea', q = S.sea;
     setT('tagline', sea ? 'A sea that pays you in ripples.' : 'A cave that pays you in echoes.');
     $('purse').classList.toggle('sea', sea);
@@ -3372,6 +3441,7 @@ import { createState } from './state.js';
         : `Descend now for <b class="fos">${fmt(got)} fossil${got > 1 ? 's' : ''}</b>, or keep singing: fossils grow more slowly the more you sing here.`);
       if (prog >= 1) once('canDescend');
     }
+    if (!sea && S.caveVariety.pending.length) setH('descText', 'A milestone waits below. Choose its reward before the next descent.');
     setHid('freshText', sea);
     if (!sea) setH('freshText', `Floor freshness <b>${Math.round(decayF * 100)}%</b>: hum and lumen fade toward ${Math.round(decayFloor() * 100)}% the longer you stay (about ${Math.round(decayTau() / 60)} min per fade). Descending starts a fresh floor.`);
     setHid('floorText', sea || (S.depth < 3 && !onSun()));
@@ -3385,11 +3455,13 @@ import { createState } from './state.js';
     setT('descPct', Math.floor(prog * 100) + '%');
     updateStrip(sea, prog, locked, got);
     const btn = $('descBtn');
+    const eventWaiting = !sea && !neutralCaveEventsReady();
+    btn.disabled = !!eventWaiting || (!sea && S.caveVariety.remaining > 0);
     btn.classList.toggle('poor', prog < 1);
     if (!descArmed || Date.now() - descArmed > 3000) {
       descArmed = 0;
       const unit = sea ? 'fathom' : 'fossil';
-      btn.textContent = locked ? `Settling · ${mmss(sea ? q.cool / tickRate() : S.cool)}` : prog < 1 ? (sea ? 'Sound the depths' : 'Descend') : `${sea ? 'Sound' : 'Descend'} · +${fmt(got)} ${unit}${got > 1 ? 's' : ''}`;
+      btn.textContent = eventWaiting ? 'Finish the cave event below' : !sea && S.caveVariety.remaining ? 'Dive in progress' : locked ? `Settling · ${mmss(sea ? q.cool / tickRate() : S.cool)}` : prog < 1 ? (sea ? 'Sound the depths' : 'Descend') : `${sea ? 'Sound' : 'Descend'} · +${fmt(got)} ${unit}${got > 1 ? 's' : ''}`;
     }
     if (!resetArmed || Date.now() - resetArmed > 3000) { resetArmed = 0; if ($('resetBtn').textContent !== 'Forget everything') $('resetBtn').textContent = 'Forget everything'; }
     renderTip();
@@ -3493,7 +3565,7 @@ import { createState } from './state.js';
   $('awayClose').addEventListener('click', closeAway);
   $('away').addEventListener('click', e => { if (e.target === $('away')) closeAway(); });
 
-  let hiddenAt = 0;
+  let hiddenAt = 0, shoppingT = 0;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { hiddenAt = Date.now(); save(); }
     else if (hiddenAt) {
@@ -3545,11 +3617,19 @@ import { createState } from './state.js';
       }
     }
     liteT += dt; if (liteT > 0.25) { liteT = 0; updateLite(); govern(); }
-    autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(); }
+    autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(false); }
+    if (!cinematic && S.world === 'cave') {
+      shoppingT += dt;
+      if (shoppingT >= shoppingInterval(S)) { shoppingT = 0; runShopping(); }
+    } else shoppingT = 0;
     if (S.cool > 0) S.cool = Math.max(0, S.cool - dt * tickRate());
     advanceSeaTimer(S, dt, tickRate());
     tickPearls(S, dt);
     shellUI.tick(dt);
+    if (tickCaveEvents(S, dt, S.world === 'cave' && !cinematic && !sceneOpen && !awayOpen && !newsOpen,
+      autoCaveEvents())) {
+      save();
+    }
     storyT += dt; if (storyT >= 0.5) { storyT = 0; checkStory(false); checkQuests(false); }
     if (holding) {
       holdT += dt;
@@ -3671,7 +3751,8 @@ import { createState } from './state.js';
   if (simulation) simulation.api = {
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
-    descend, sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, FINALE_HEARTS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    descend, startDive, shoppingInterval: () => shoppingInterval(S), slotShoppingHorn: id => slotShoppingHorn(S, id), buyAutomationStage: index => buyAutomationStage(S, index),
+    sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, FINALE_HEARTS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
     shellTick: dt => shellUI.tick(dt),
     oysterOpened, bestPearls: () => bestPearls(S), equipPearl: id => equipPearlItem(S, id), grindPearl: id => grindPearlItem(S, id),
     finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),

@@ -12,13 +12,13 @@ test('automatic shopping requires ownership and enabled categories and pauses in
   let count = 0;
   const item = { parent: 'shopVoices', unit: 'hum', cost: () => 25, buy: () => { S.hum -= 25; count++; return true; } };
   const run = () => runCaveShopping(S, [item], () => S.hum, () => {});
-  assert.equal(run(), 0); S.caveAutomation.unlocked = true; assert.equal(run(), 0);
+  assert.equal(run(), 0); S.caveAutomation.unlocked = true; S.caveAutomation.stages = 4; assert.equal(run(), 0);
   S.caveAutomation.categories.voices = true; S.world = 'sea'; assert.equal(run(), 0);
   S.world = 'cave'; assert.equal(run(), 1); assert.equal(count, 1); assert.equal(S.hum, 975);
 });
 
 test('shop automation covers every cave category, buys at most one each, and respects reserves and gates', () => {
-  const S = fresh(); S.caveAutomation.unlocked = true;
+  const S = fresh(); S.caveAutomation.unlocked = true; S.caveAutomation.stages = 4;
   const wallets = { hum: 100, shard: 20, fossil: 20, lumen: 20, ivory: 20, gilt: 20 };
   const bought = [], refreshed = [];
   const item = (parent, unit, cost, name, overrides = {}) => ({ parent, unit, cost: () => cost,
@@ -44,7 +44,7 @@ test('shop automation covers every cave category, buys at most one each, and res
 });
 
 test('failed placement tries another candidate without charging and refreshes between categories', () => {
-  const S = fresh(); S.caveAutomation.unlocked = true; Object.assign(S.caveAutomation.categories, { wonders: true, attunement: true });
+  const S = fresh(); S.caveAutomation.unlocked = true; S.caveAutomation.stages = 4; Object.assign(S.caveAutomation.categories, { wonders: true, attunement: true });
   S.shards = 10; let refreshes = 0;
   const buy = cost => { S.shards -= cost; return true; };
   const items = [{ parent: 'shopWonders', unit: 'shard', cost: () => 1, buy: () => false },
@@ -55,7 +55,7 @@ test('failed placement tries another candidate without charging and refreshes be
 });
 
 test('automation unlock, selections and reserves persist through all resets; legacy settings are off', () => {
-  let S = fresh(); S.hearts = 2; S.caveAutomation.unlocked = true;
+  let S = fresh(); S.hearts = 2; S.caveAutomation.unlocked = true; S.caveAutomation.stages = 4;
   S.caveAutomation.categories.glow = true; S.caveAutomation.reserves.lumen = 12345;
   const keep = structuredClone(S.caveAutomation);
   resetDescent(S, 5); resetSounding(S, 5); S = resetHeartstone(S, '1.9.5');
@@ -70,7 +70,7 @@ test('automation unlock, selections and reserves persist through all resets; leg
 });
 
 test('locked shop ledgers remain unavailable even when individual items have no gate', () => {
-  const S = fresh(); S.caveAutomation.unlocked = true; S.caveAutomation.categories.glow = true;
+  const S = fresh(); S.caveAutomation.unlocked = true; S.caveAutomation.stages = 4; S.caveAutomation.categories.glow = true;
   let count = 0;
   const items = [{ parent: 'shopGlow', unit: 'lumen', cost: () => 4, buy: () => { count++; return true; } }];
   assert.equal(runCaveShopping(S, items, () => 1000, () => {}, category => category.tab !== 'glow'), 0);

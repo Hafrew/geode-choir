@@ -42,7 +42,7 @@ module.exports = function installBot(cfg) {
   const canAct = () => { if (!cfg.actionGap) return true; if (bot.budget >= 1) { bot.budget -= 1; return true; } return false; };
   const unitOf = it => typeof it.unit === 'function' ? it.unit() : it.unit;
   const fathomReserve = S => ((S.sea.soundings >= 3 && !S.finale) ? finaleBudget : 0)
-    + (cfg.extraFathomReserve || 0) + (cfg.patientChoir && !S.caveAutomation.unlocked ? 100000 : 0);
+    + (cfg.extraFathomReserve || 0) + (cfg.patientChoir && S.hearts >= 2 && !S.caveAutomation.unlocked ? 100000 : 0);
 
   function buyLoop(S) {
     const parents = S.world === 'sea' ? SEA : CAVE;
@@ -97,7 +97,7 @@ module.exports = function installBot(cfg) {
     return s;
   }
   function manageHorns(S) {
-    const scored = S.horns.filter(h => h.r !== 5).map(h => [hornScore(h), h]).sort((a, b) => b[0] - a[0]);
+    const scored = S.horns.filter(h => h.r !== 5 && !S.caveAutomation.rack?.includes(h.id)).map(h => [hornScore(h), h]).sort((a, b) => b[0] - a[0]);
     const slots = sim.hornSlots();
     const want = scored.slice(0, slots).map(x => x[1].id);
     if (want.join() !== S.equipped.join()) { S.equipped = want; sim.refreshAll(); }
@@ -118,8 +118,15 @@ module.exports = function installBot(cfg) {
       for (const h of pool) scored.push([hornScore(h) + sim.traitValue(h), h]);
       scored.sort((a, b) => b[0] - a[0]);
     }
+    if (cfg.shopping && S.caveAutomation.unlocked && sim.slotShoppingHorn) {
+      const slots = 1 + (S.hearts >= 3) + (S.hearts >= 4);
+      for (const [, h] of [...scored].reverse()) {
+        if (S.caveAutomation.rack.length >= slots) break;
+        if (!S.equipped.includes(h.id) && h.r + (h.gold ? 1 : 0) >= 2) sim.slotShoppingHorn(h.id);
+      }
+    }
     while (S.horns.length > 14) {                            // salvage the weakest spare horn for ivory
-      const spare = scored.filter(x => !S.equipped.includes(x[1].id) && !(S.primordialEquipped || []).includes(x[1].id)).pop();
+      const spare = scored.filter(x => !S.caveAutomation.rack?.includes(x[1].id) && !S.equipped.includes(x[1].id) && !(S.primordialEquipped || []).includes(x[1].id)).pop();
       if (!spare) break;
       const h = spare[1];
       S.horns.splice(S.horns.indexOf(h), 1); S.ivory += sim.RARITY[h.r].ivory; S.stats.ivoryLife += sim.RARITY[h.r].ivory;
@@ -144,7 +151,9 @@ module.exports = function installBot(cfg) {
     if (want !== S.world && canAct()) sim.setWorld(want);
     if (S.world === 'cave') {
       if (sim.canKindle()) { if (canAct()) bot.kindleNow = true; return; }
-      if (!cfg.noDescend && S.cool <= 0 && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt() && canAct()) { sim.descend(); bot.descents++; }
+      if (!cfg.noDescend && S.cool <= 0 && sim.fossilGain() > 0 && S.run >= cfg.k * sim.deepenAt() && canAct()) {
+        if (!S.caveVariety?.remaining && (cfg.dive > 1 && sim.startDive ? sim.startDive(cfg.dive, cfg.k) : sim.descend())) bot.descents++;
+      }
     } else {
       if (S.sea.soundings < soundingTarget(S)) {
         if ((S.sea.cool || 0) > 0 && S.sea.run >= sim.soundAt()) bot.timerWaitSeaSec += .5;
@@ -163,6 +172,7 @@ module.exports = function installBot(cfg) {
     if (S.finale === 0 && sim.songReady() && S.sea.fathoms >= finaleBudget) { mark('finaleReady', S); bot.done = !cfg.patientChoir || S.caveAutomation.unlocked; }
   }
   function marks(S) {
+    for (let i = 1; i <= (S.caveAutomation.stages || 0); i++) mark('verse' + i, S);
     if (S.caveAutomation.unlocked) mark('patientChoirBought', S);
     if (S.hearts >= 2 && S.sea.fathoms >= 100000) mark('patientChoirAffordable', S);
     if (S.sea.fathoms >= 1575) mark('shellBudget1575', S);
@@ -214,6 +224,7 @@ module.exports = function installBot(cfg) {
     if (sim.cinematic) return;
     if (cfg.actionGap) bot.budget = Math.min(2, bot.budget + 0.5 / cfg.actionGap);
     S.toggles.autodescend = 0; S.toggles.autobuy = cfg.autobuy ? 1 : 0;
+    if (cfg.shopping && S.caveAutomation.unlocked) for (const key of Object.keys(S.caveAutomation.categories)) S.caveAutomation.categories[key] = true;
     manageShells(S);
     managePearls(S);
     progress(S);                                  // descend / sound / kindle / switch world come first, or shopping eats every action

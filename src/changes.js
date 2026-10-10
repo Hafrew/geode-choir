@@ -1,5 +1,11 @@
 // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
 export const CHANGES = [
+  { ver: '1.10.7', date: '2026-10-10', head: 'Patient Verses', items: [
+    'Choose a dive of one, two or three floors. Each descent earns its normal haul, checks for falls and Sunveins, and waits for its full settling time. Queued dives pause in the Sea and survive reloads.',
+    'Every fifth depth brings a short cave event. Keep the normal reward, gather extra fossils with a longer wait, or trade fossils for a fresher floor. Auto takes the safe choice; every saved event pays only once.',
+    'Patient Choir now unlocks in four verses: voices, tuning and crystals first; then wonders and attunement; then Strata and illuminations; finally horn and Sunvein upgrades. Existing owners keep all their categories.',
+    'A dedicated shopping rack holds one eligible horn at two Heartstones, two at three, and three at four. Epic, Legendary and Mythic horns make the Choir shop faster; gilded horns count one rarity higher. Shopping horns add no worn bonuses and are protected from salvage.',
+  ] },
   { ver: '1.10.5', date: '2026-10-10', head: 'A Steadier Choir', items: [
     'If a save or backup cannot be written, a warning appears once per session. Copy a save code from Settings to keep your progress when browser storage is full or blocked.',
     'Horn, shell and pearl inventories keep their cards in place until the inventory changes. Shell timing and pearl formation still update live.',

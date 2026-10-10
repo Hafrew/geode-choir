@@ -14,7 +14,7 @@ const { serve } = require('./serve');
         await page.addInitScript(() => {
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
-          localStorage.setItem('geode-choir-v1', JSON.stringify({ hum: 1, ver: '1.10.5', seenVer: '1.10.5',
+          localStorage.setItem('geode-choir-v1', JSON.stringify({ hum: 1, ver: '1.10.5', seenVer: '1.10.7',
             lore: { prologue: 1 }, hornsOn: true, hearts: 1, sea: { unlocked: true, soundings: 1, run: 10000 }, saved: Date.now(),
             horns: [{ id: 1, r: 2, seed: 7, name: '<img src=x onerror="window.pwned=1">Ram Horn', lines: [{ stat: 'hum', kind: 'pct', v: 50 }] }] }));
         });
@@ -97,7 +97,7 @@ const { serve } = require('./serve');
           return { count: warnings.length, message: warnings[0]?.textContent,
             saved: JSON.parse(localStorage.getItem('geode-choir-v1')).ver };
         });
-        assert.equal(failed.count, 1); assert.match(failed.message, /Copy a save code/); assert.equal(failed.saved, '1.10.5');
+        assert.equal(failed.count, 1); assert.match(failed.message, /Copy a save code/); assert.equal(failed.saved, '1.10.7');
         assert.deepEqual(errors, []);
         console.log(`PASS hardening ${width}px: safe import, 300-item grids, live timing, format audit, save warning (${stable.milliseconds.toFixed(0)}ms/30 updates)`);
       } finally { await context.close(); }
