@@ -2722,6 +2722,9 @@ import { createState } from './state.js';
   $('resetBtn').addEventListener('click', () => {
     if (Date.now() - resetArmed > 3000) { resetArmed = Date.now(); $('resetBtn').textContent = 'Click again to forget'; return; }
     resetArmed = 0;
+    forgetEverything();
+  });
+  function forgetEverything() {
     const muted = S.muted, fx = S.fx, look = S.look, theme = S.theme, numfmt = S.numfmt, ts = S.ts;
     save(); backupNow();
     S = fresh(); S.muted = muted; S.fx = fx; S.look = look; S.theme = theme; S.ts = ts; S.numfmt = numfmt; S.lore.prologue = 1;
@@ -2731,7 +2734,39 @@ import { createState } from './state.js';
     $('hint').hidden = false;
     hornsDirty = true;
     whisper('The cave forgets you. Shout again.');
+  }
+
+  // ---------- title screen and main menu ----------
+  const MENU_KEY = KEY + '-menu';
+  let menuOpen = false, menuGo = null, menuNewArmed = 0;
+  const menuSkipSaved = () => { try { return localStorage.getItem(MENU_KEY) === 'skip'; } catch (_) { return false; } };
+  function showMenu({ returning, go, resume }) {
+    menuOpen = true; menuGo = go; menuNewArmed = 0;
+    $('menu').hidden = false;
+    $('menuSub').textContent = returning ? `Depth ${S.depth} · ${S.hearts} Heartstone${S.hearts === 1 ? '' : 's'} · ${fmt(S.hum)} hum` : 'Click the dark. Listen to what answers.';
+    $('menuContinue').textContent = resume ? 'Resume' : returning ? 'Continue' : 'Begin';
+    $('menuNew').hidden = !returning; $('menuNew').textContent = 'New game';
+    $('menuSkipRow').hidden = !returning; $('menuSkip').checked = menuSkipSaved();
+    $('menuVer').textContent = `v${VERSION} ${CHANNEL}`;
+    $('menuContinue').focus();
+  }
+  function closeMenu() {
+    if (!menuOpen) return;
+    menuOpen = false; $('menu').hidden = true;
+    const go = menuGo; menuGo = null; if (go) go();
+  }
+  $('menuContinue').addEventListener('click', () => { initAudio(); closeMenu(); });
+  $('menuNew').addEventListener('click', () => {
+    if (Date.now() - menuNewArmed > 3000) { menuNewArmed = Date.now(); $('menuNew').textContent = 'Click again: erase and start over'; return; }
+    menuNewArmed = 0; initAudio();
+    forgetEverything(); S.lore.prologue = 0;
+    menuGo = null; menuOpen = false; $('menu').hidden = true;
+    S.seen.chron = 0; playScene('prologue', () => maybeShowNews());
   });
+  $('menuSettings').addEventListener('click', openSettings);
+  $('menuNews').addEventListener('click', () => openNews('history'));
+  $('menuSkip').addEventListener('change', e => { try { e.target.checked ? localStorage.setItem(MENU_KEY, 'skip') : localStorage.removeItem(MENU_KEY); } catch (_) {} });
+  $('menuOpenBtn').addEventListener('click', () => { closeSettings(); showMenu({ returning: true, go: null, resume: true }); });
 
   function startDive(size = S.caveVariety.diveSize, ratio = 1) {
     if (S.world !== 'cave' || ![1, 2, 3].includes(size) || S.caveVariety.remaining || !neutralCaveEventsReady()) return false;
@@ -3249,6 +3284,11 @@ import { createState } from './state.js';
   // =====================================================================
   // the status strip (Descend, Heartstone, Horn) and the hover stats
   // =====================================================================
+  // The depth chip reads "Depth N" and opens to the full line on hover, focus or click.
+  { const dc = $('depthChip'), setDc = open => { dc.classList.toggle('open', open); dc.setAttribute('aria-expanded', String(open)); };
+    dc.addEventListener('click', () => setDc(!dc.classList.contains('open')));
+    dc.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDc(!dc.classList.contains('open')); } });
+    document.addEventListener('pointerdown', e => { if (!dc.contains(e.target)) setDc(false); }); }
   const POPS = [['chipDesc', 'popDesc'], ['chipHeart', 'popHeart']];
   function closePops(except) {
     for (const [c, p] of POPS) {
@@ -3284,6 +3324,9 @@ import { createState } from './state.js';
       chip('chipHeart', 'Heartstone', can ? 'Ready' : Math.floor(f * 100) + '%', f, can);
     } else if (!$('popHeart').hidden) closePops();
     const waiting = hornsWaiting();
+    // Timers stay out of sight until the chip is hovered or focused (the cave Descend chip keeps its own).
+    $('chipDesc').toggleAttribute('data-timer', !!(sea && locked));
+    $('chipHorn').toggleAttribute('data-timer', !waiting);
     setHid('chipHorn', !S.hornsOn && !waiting);
     if (waiting) chip('chipHorn', 'Sound horn', '×' + waiting, 1, true);
     else if (S.hornsOn) { const t = Math.max(0, S.hornTimer); chip('chipHorn', 'Horn', mmss(t / tickRate()), 1 - t / hornInterval(), false); }
@@ -3779,6 +3822,7 @@ import { createState } from './state.js';
     window.claude?.hot?.snapshot?.(() => serialize());
     requestAnimationFrame(t => { last = t; frame(t); });
     if (!simulation?.fast) restoreDev();
+    const begin = () => {
     if (returning && !needPrologue) maybeShowNews();
     if (needPrologue) {
       S.seen.chron = 0;
@@ -3787,6 +3831,11 @@ import { createState } from './state.js';
         if (returning && (caught.lore || caught.feats)) toast('Chronicle', `The Chronicle remembers ${caught.lore} page${caught.lore === 1 ? '' : 's'} and ${caught.feats} feat${caught.feats === 1 ? '' : 's'} from before.`, 'lore');
       });
     }
+    };
+    // Real players see the title screen first; the test harnesses skip it unless they ask for it.
+    const wantMenu = (!simulation || simulation.menu) && !(returning && !needPrologue && menuSkipSaved() && !simulation);
+    if (wantMenu) showMenu({ returning: returning && !needPrologue, go: begin, resume: false });
+    else begin();
   }
   if (simulation) simulation.api = {
     get S() { return S; }, set S(v) { S = v; },
@@ -3801,7 +3850,7 @@ import { createState } from './state.js';
     serialize, load, updateUI, setTab, rollPlan, buildHorn, startSounding, finishSounding, sndHit, renderSounding, renderInventory, renderColl, setHornSub,
     primordialSlots: () => primordialSlots(S), rarityOdds: () => rarityOdds(S), traitValue, discoveryIvory: () => discoveryIvory(S), activeTraits: () => activeTraits(S),
     get HB() { return HB; }, get sndRound() { return sndRound; },
-    get sceneOpen() { return sceneOpen; }, get cinematic() { return cinematic; }, get capP() { return capP; },
+    get menuOpen() { return menuOpen; }, closeMenu, get sceneOpen() { return sceneOpen; }, get cinematic() { return cinematic; }, get capP() { return capP; },
     get chordNow() { return chordNow; },
   };
 

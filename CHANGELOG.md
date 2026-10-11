@@ -6,6 +6,15 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ### Added
 - Settings → Look: Brightness, Glow and Size sliders (with Reset) for crystals, wonders, bells, echoes and ripples in both worlds. They change only how things are drawn; hit areas, rewards and physics are unchanged, and the settings are saved with your game and kept through new games.
+- A title screen and main menu with an animated cave backdrop (drifting glows, sway, rising motes), a glowing crystal emblem with orbiting rings and rippling water, and a glowing title; it respects reduced-motion. Options: Continue/Begin, New game (asks twice), Settings and What's new, with your depth, Heartstones and hum shown for a saved cave. "Skip this screen when I come back" is remembered per device, and Settings → Main menu reopens it.
+
+### Changed
+- The depth chip reads just "Depth N"; the scale name, multiplier and floor tag appear on hover, focus or click. The Horn chip and the Sea's Settling timer stay out of sight until hovered.
+- The game title, tagline and version moved from the side panel to the bottom-right corner of the canvas, in body-text size.
+
+### Fixed
+- On wide stages the Descend/Heartstone/Horn chips sit centred in the top row again instead of dropping to a second row; they only drop below when the stage is too narrow to fit one row.
+- The top bar no longer overlaps itself: the world switch, depth chip, Descend/Heartstone/Horn chips and the Chronicle/Sound/Settings buttons now flow in one stack, so they stay apart at any window width, side panel width or text size, and the Descend and Heartstone panels sit below them. Narrow stages drop the scale name and tighten the chips.
 
 ### Changed
 - Calm effects now draw ripples and echoes fainter, thinner and sparser (fewer overlapping rings in the Sea, fewer streaks in the cave) and keep fewer floating numbers on screen. This is visual only; rewards and ripple physics are unchanged.
