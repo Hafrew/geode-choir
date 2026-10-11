@@ -7,6 +7,10 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 ### Added
 - A title screen and main menu: Continue/Begin, New game (asks twice), Settings and What's new, with your depth, Heartstones and hum shown for a saved cave. "Skip this screen when I come back" is remembered per device, and Settings → Main menu reopens it.
 
+### Changed
+- The depth chip reads just "Depth N"; the scale name, multiplier and floor tag appear on hover, focus or click. The Horn chip and the Sea's Settling timer stay out of sight until hovered.
+- The game title, tagline and version moved from the side panel to the bottom-right corner of the canvas, in body-text size.
+
 ### Fixed
 - The top bar no longer overlaps itself: the world switch, depth chip, Descend/Heartstone/Horn chips and the Chronicle/Sound/Settings buttons now flow in one stack, so they stay apart at any window width, side panel width or text size, and the Descend and Heartstone panels sit below them. Narrow stages drop the scale name and tighten the chips.
 

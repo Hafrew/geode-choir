@@ -3275,6 +3275,11 @@ import { createState } from './state.js';
   // =====================================================================
   // the status strip (Descend, Heartstone, Horn) and the hover stats
   // =====================================================================
+  // The depth chip reads "Depth N" and opens to the full line on hover, focus or click.
+  { const dc = $('depthChip'), setDc = open => { dc.classList.toggle('open', open); dc.setAttribute('aria-expanded', String(open)); };
+    dc.addEventListener('click', () => setDc(!dc.classList.contains('open')));
+    dc.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDc(!dc.classList.contains('open')); } });
+    document.addEventListener('pointerdown', e => { if (!dc.contains(e.target)) setDc(false); }); }
   const POPS = [['chipDesc', 'popDesc'], ['chipHeart', 'popHeart']];
   function closePops(except) {
     for (const [c, p] of POPS) {
@@ -3310,6 +3315,9 @@ import { createState } from './state.js';
       chip('chipHeart', 'Heartstone', can ? 'Ready' : Math.floor(f * 100) + '%', f, can);
     } else if (!$('popHeart').hidden) closePops();
     const waiting = hornsWaiting();
+    // Timers stay out of sight until the chip is hovered or focused (the cave Descend chip keeps its own).
+    $('chipDesc').toggleAttribute('data-timer', !!(sea && locked));
+    $('chipHorn').toggleAttribute('data-timer', !waiting);
     setHid('chipHorn', !S.hornsOn && !waiting);
     if (waiting) chip('chipHorn', 'Sound horn', '×' + waiting, 1, true);
     else if (S.hornsOn) { const t = Math.max(0, S.hornTimer); chip('chipHorn', 'Horn', mmss(t / tickRate()), 1 - t / hornInterval(), false); }

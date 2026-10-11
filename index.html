@@ -24,7 +24,7 @@
           <button type="button" id="wCave" aria-pressed="true">Cave</button>
           <button type="button" id="wSea" aria-pressed="false">Sea</button>
         </div>
-        <div class="chip" id="depthChip"><b>Depth 0</b><span>Major pentatonic</span></div>
+        <div class="chip" id="depthChip" tabindex="0" role="button" aria-expanded="false" title="Show details"><b>Depth 0</b><span>Major pentatonic</span></div>
       </div>
       <div class="hud-right">
         <div class="chip" id="chord" hidden><span>Chord</span><span class="dots"></span><span class="mono" id="chordMult">×1</span></div>
@@ -64,6 +64,10 @@
       </section>
     </div>
     </div>
+    <div class="brand">
+      <h1>Geode Choir <button class="verlink" id="verChip" type="button" title="Version history"></button></h1>
+      <p class="tagline" id="tagline">A cave that pays you in echoes.</p>
+    </div>
     <div class="hint" id="hint">Click the dark to shout.</div>
     <div class="whisper" id="whisper" aria-live="polite"></div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -83,8 +87,6 @@
 
   <aside class="ledger">
     <header>
-      <h1>Geode Choir <button class="verlink" id="verChip" type="button" title="Version history"></button></h1>
-      <p class="tagline" id="tagline">A cave that pays you in echoes.</p>
       <div class="purse" id="purse" data-tip="hum" tabindex="0"><span id="humVal">0</span><small id="humUnit">hum</small></div>
       <div class="rates" data-tip="hum" tabindex="0"><b id="rateVal">0</b> <span id="rateUnit">hum/s</span> &nbsp;·&nbsp; <b id="echoVal">0</b> <span id="echoUnit">echoes ringing</span></div>
       <div class="pills">
