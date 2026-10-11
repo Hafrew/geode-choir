@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { loadPlaywright } = require('./browser');
 const { serve } = require('./serve');
 const KEY = 'geode-choir-v1';
-const SAVE = { ver: '1.10.7', seenVer: '1.10.7', hum: 1234, hearts: 2, depth: 12, lore: { prologue: 1 }, saved: Date.now() };
+const SAVE = { ver: '1.10.7', seenVer: '1.10.8', hum: 1234, hearts: 2, depth: 12, lore: { prologue: 1 }, saved: Date.now() };
 (async () => {
   const { chromium } = loadPlaywright(), server = await serve(); let browser;
   try {

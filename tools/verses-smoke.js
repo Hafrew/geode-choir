@@ -12,7 +12,7 @@ const { serve } = require('./serve');
         await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
         await page.addInitScript(() => {
           window.requestAnimationFrame = () => 0; window.__geodeSimulation = { fast: false, items: [] };
-          if (!localStorage.getItem('geode-choir-v1')) localStorage.setItem('geode-choir-v1', JSON.stringify({ ver: '1.10.5', seenVer: '1.10.7', hum: 1,
+          if (!localStorage.getItem('geode-choir-v1')) localStorage.setItem('geode-choir-v1', JSON.stringify({ ver: '1.10.5', seenVer: '1.10.8', hum: 1,
             hearts: 2, depth: 4, sea: { unlocked: true, fathoms: 100000 }, lore: { prologue: 1 }, saved: Date.now() }));
         });
         await page.goto(server.url); await page.waitForFunction(() => !!window.__geodeSimulation.api);
@@ -106,7 +106,7 @@ const { serve } = require('./serve');
         const page = await context.newPage();
         await page.addInitScript(old => {
           window.requestAnimationFrame = () => 0; window.__geodeSimulation = { fast: false, items: [] };
-          localStorage.setItem('geode-choir-v1', JSON.stringify({ ...old, saved: Date.now(), seenVer: '1.10.7' }));
+          localStorage.setItem('geode-choir-v1', JSON.stringify({ ...old, saved: Date.now(), seenVer: '1.10.8' }));
         }, old);
         await page.goto(server.url); await page.waitForFunction(() => !!window.__geodeSimulation.api);
         const restored = await page.evaluate(() => { const S = window.__geodeSimulation.api.S; return { hearts: S.hearts, fathoms: S.sea.fathoms, fossils: S.fossils, hornIds: S.horns.map(h => h.id), stages: S.caveAutomation.stages }; });

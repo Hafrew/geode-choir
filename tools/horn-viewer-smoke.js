@@ -16,7 +16,7 @@ const { serve } = require('./serve');
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
           if (!localStorage.getItem('geode-choir-v1')) localStorage.setItem('geode-choir-v1', JSON.stringify({
-            ver: '1.10.7', seenVer: '1.10.7', hum: 1, hornsOn: true, lore: { prologue: 1 }, saved: Date.now(),
+            ver: '1.10.7', seenVer: '1.10.8', hum: 1, hornsOn: true, lore: { prologue: 1 }, saved: Date.now(),
             horns: [{ id: 1, r: 3, name: 'Ancient Ibex Horn', seed: 71,
               lines: [{ stat: 'hum', kind: 'pct', v: 110 }, { stat: 'tide', kind: 'pct', v: 120 }] }], equipped: [1], hornSeq: 1
           }));

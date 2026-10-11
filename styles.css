@@ -607,3 +607,29 @@
 .rbtn:hover .new, .rbtn:focus-visible .new { display: none; }
 #soundBtn[aria-pressed="true"] .ic-off, #soundBtn[aria-pressed="false"] .ic-on { display: none; }
 @media (prefers-reduced-motion: reduce) { .rbtn, .rbtn .lb, #depthChip > :not(b) { transition: none; } }
+
+/* Motion pass: buttons, panels and dialogs. Everything here is skipped under reduced motion. */
+:where(button, .chip, .schip, .tab, .item, .link, .bigbtn, .holdbtn, .worlds button, .hcard, .stat) { transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .22s ease, transform .16s ease, opacity .18s ease; }
+:where(.item, .chip, .schip, .hcard):not(.poor):not(.maxed):hover { transform: translateY(-1px); }
+:where(button, .item, .hcard):not(:disabled):not(.poor):not(.maxed):active { transform: scale(.97); transition-duration: .06s; }
+:where(.bigbtn, .holdbtn):not(.poor):hover { transform: translateY(-1px); }
+.tab { transition: color .18s ease, border-color .25s ease, background-color .18s ease; }
+.tab[aria-selected="true"] { animation: tab-pop .28s ease; }
+.panel:not([hidden]) { animation: rise .28s ease both; }
+.pop:not([hidden]), .modal-box { animation: pop-in .22s cubic-bezier(.2, .8, .3, 1) both; transform-origin: top center; }
+.modal:not([hidden]) { animation: fadein .2s ease both; }
+.scene-card { animation: pop-in .35s cubic-bezier(.2, .8, .3, 1) both; }
+.rbtn svg { transition: transform .35s cubic-bezier(.3, 1.4, .5, 1); }
+#setBtn:hover svg, #setBtn:focus-visible svg { transform: rotate(75deg); }
+#soundBtn:hover svg, #soundBtn:focus-visible svg { transform: scale(1.18); }
+#chronBtn:hover svg, #chronBtn:focus-visible svg { transform: translateY(-2px) rotate(-6deg); }
+.chip .new, .rbtn .new, .tab .new { animation: dot-pulse 2.4s ease-in-out infinite; }
+.worlds button[aria-pressed="true"] { animation: tab-pop .25s ease; }
+@keyframes pop-in { from { opacity: 0; transform: translateY(-6px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes tab-pop { 0% { transform: translateY(2px); opacity: .7; } 100% { transform: none; opacity: 1; } }
+@keyframes dot-pulse { 50% { transform: scale(1.35); opacity: .75; } }
+@media (prefers-reduced-motion: reduce) {
+  :where(button, .chip, .schip, .tab, .item, .link, .bigbtn, .holdbtn, .worlds button, .hcard, .stat) { transition: none; transform: none !important; }
+  .tab[aria-selected="true"], .panel, .pop, .modal, .modal-box, .scene-card, .chip .new, .rbtn .new, .tab .new, .worlds button[aria-pressed="true"] { animation: none !important; }
+  .rbtn svg { transition: none; transform: none !important; }
+}
