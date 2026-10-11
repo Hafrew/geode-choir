@@ -5,7 +5,12 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 ## Unreleased
 
 ### Fixed
+- Hovering the depth chip on a narrow stage no longer flickers between two states. Its details now drop down as a small panel below the chip instead of resizing the bar, so nothing else shifts.
+- The top bar's columns size to their content instead of splitting the space equally, so the left controls and the centre chips no longer collide on narrow stages.
 - The top bar now stays in one flat row on much narrower stages (down to about 36 characters of text width, roughly 580px at default text size). From about 930px and below the Descend/Heartstone/Horn chips show only their ring and value, and the label slides out on hover. Only a phone-width stage still wraps the chips to a second row.
+
+### Changed
+- When the top bar is compact, the Descend (or Sound), Heartstone and Horn chips show an icon, their ring and their value, with the full name and timer in the hover tooltip. The Chord meter shows only its multiplier.
 
 ## 1.10.8: Polish (2026-10-11)
 
