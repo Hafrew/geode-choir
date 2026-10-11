@@ -76,6 +76,10 @@ Use `--hornStart primordial` for a diagnostic run with the rarity upgrade and Pr
 
 The short simulation checks setup and early progression. For balance work, run the longer, multi-seed comparisons described in `PLAN.md`. `finished: false` is expected when a short run stops before the finale; JavaScript errors cause a failing exit status.
 
+## Horn presentation
+
+In **Horns → Inventory**, select a horn and switch its inspector between **2D** and **3D**. The 3D view uses the same seeded shape, rarity material, gilding, and stat gems. Drag with a mouse or touch, or focus the model and use the arrow keys to turn it; **Reset view** or Home restores the initial angle. The choice is remembered on this device. The default and the inventory, worn-slot, collection, and sounding illustrations remain 2D. The viewer draws only on interaction or resize, without an animation loop or external rendering library.
+
 ## Developer toolbar
 
 A testing toolbar (resources, progress, items, time) unlocks from Settings → Access code. Its module is only fetched after a valid code, and any use marks the save. The repository holds only a salted hash of the code in `src/dev-config.js`; run `node tools/make-dev-code.js` to rotate it (the new code is printed once). Because the game is static and single-player this is a convenience lock, not security. To test unlocking: `GEODE_DEV_CODE=<code> node tools/dev-smoke.js`.

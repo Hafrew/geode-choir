@@ -1,3 +1,4 @@
+import { mountHornViewer } from './horn-viewer.js';
 import { CAVE_EVENTS, CAVE_EVENT_SECONDS, queueCaveEvents, chooseCaveEvent, finishCaveEvent, tickCaveEvents } from './cave-variety.js';
 import { createInventoryRevision } from './inventory-revision.js';
 import { CHANGES } from './changes.js';
@@ -2240,17 +2241,25 @@ import { createState } from './state.js';
   }
   const pts = a => a.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
   const hornCache = new Map();
+  function hornArtwork(h) {
+    const rn = rng32(hash32((h.seed || h.id || 1) + 17)), sh = hornShape(famOf(h), rn);
+    const mat = h.gold ? ['#fff6c8', '#ffd54a', '#a8780a'] : HMAT[h.r], flip = rn() < .5;
+    const m = tube(sh.P, sh.w0 * 1.3 * (.9 + rn() * .22), sh.tip * 1.3, sh.tp), tubes = [m];
+    for (const T of sh.tines || []) tubes.push(tube(T, 5, 1, 1.2, 20));
+    const gems = h.lines.map((l, i) => {
+      const center = m.C[Math.min(m.C.length - 1, Math.round((.2 + .17 * i + rn() * .04) * (m.C.length - 1)))];
+      return { center, radius: Math.max(1.3, center[4] * .34), color: STAT_COL[l.stat] || '#ffffff' };
+    });
+    return { rn, sh, mat, flip, m, tubes, gems };
+  }
   // ctx keeps gradient ids unique when one horn is drawn in several places (slot, grid, detail).
   function hornSVG(h, size, ctx) {
     const key = `${ctx}|${h.id}|${h.seed}|${h.r}|${h.gold ? 1 : 0}|${size}|${h.lines.map(l => l.stat).join()}`;
     const hit = hornCache.get(key); if (hit) return hit;
     if (hornCache.size > 600) hornCache.clear();
-    const id = `hg${ctx}${String(h.id).replace(/\W/g, '')}`, rn = rng32(hash32((h.seed || h.id || 1) + 17)), fam = famOf(h), sh = hornShape(fam, rn);
-    const mat = h.gold ? ['#fff6c8', '#ffd54a', '#a8780a'] : HMAT[h.r], flip = rn() < 0.5, glow = h.r >= 3 || h.gold;
-    const m = tube(sh.P, sh.w0 * 1.3 * (0.9 + rn() * 0.22), sh.tip * 1.3, sh.tp), body = tp => `${pts(tp.L)} ${pts(tp.R.slice().reverse())}`;
+    const id = `hg${ctx}${String(h.id).replace(/\W/g, '')}`, { rn, sh, mat, flip, m, tubes, gems } = hornArtwork(h), glow = h.r >= 3 || h.gold;
+    const body = tp => `${pts(tp.L)} ${pts(tp.R.slice().reverse())}`;
     let g = '';
-    const tubes = [m];
-    for (const T of sh.tines || []) tubes.push(tube(T, 5, 1, 1.2, 20));
     for (const T of tubes) g += `<polygon points="${body(T)}" fill="url(#${id}g)" stroke="${mat[2]}" stroke-width=".8" stroke-linejoin="round"/>`;
     // light along one edge, shade along the other
     for (const T of tubes) {
@@ -2268,8 +2277,7 @@ import { createState } from './state.js';
     g += `<polygon points="${pts(m.L.slice(0, bandN + 1))} ${pts(m.R.slice(0, bandN + 1).reverse())}" fill="${h.r >= 2 || h.gold ? RARITY[h.r].col : mat[1]}" fill-opacity="${h.r >= 2 || h.gold ? .85 : .5}" stroke="${mat[2]}" stroke-width=".7"/>`;
     g += `<ellipse cx="${m.C[0][0].toFixed(1)}" cy="${m.C[0][1].toFixed(1)}" rx="${(m.C[0][4] * 0.9).toFixed(1)}" ry="${(m.C[0][4] * 0.34).toFixed(1)}" transform="rotate(${(Math.atan2(m.C[0][3], m.C[0][2]) * 180 / Math.PI).toFixed(0)} ${m.C[0][0].toFixed(1)} ${m.C[0][1].toFixed(1)})" fill="${mat[2]}" fill-opacity=".55"/>`;
     // one gem per stat
-    h.lines.forEach((l, i) => {
-      const c = m.C[Math.min(m.C.length - 1, Math.round((0.2 + 0.17 * i + rn() * 0.04) * (m.C.length - 1)))], r = Math.max(1.3, c[4] * 0.34), col = STAT_COL[l.stat] || '#fff';
+    gems.forEach(({ center: c, radius: r, color: col }) => {
       g += `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" stroke="#fff" stroke-opacity=".7" stroke-width=".5"/><circle cx="${(c[0] - r * .3).toFixed(1)}" cy="${(c[1] - r * .3).toFixed(1)}" r="${(r * .3).toFixed(1)}" fill="#fff" fill-opacity=".75"/>`;
     });
     if (h.r >= 4 || h.gold) for (let k = 0; k < 3; k++) {
@@ -2294,6 +2302,9 @@ import { createState } from './state.js';
   // the Horns tab
   // ---------------------------------------------------------------------
   let hornSub = 'inventory', hornSel = 0, hornFilterR = -1;
+  const HORN_VIEW_KEY = 'geode-choir-horn-view';
+  let hornView = '2d', hornViewer = null;
+  try { if (localStorage.getItem(HORN_VIEW_KEY) === '3d') hornView = '3d'; } catch (_) {}
   const HSUBS = ['upgrades', 'inventory', 'sounding', 'collection'];
   function setHornSub(sub) {
     hornSub = HSUBS.includes(sub) ? sub : 'inventory';
@@ -2314,7 +2325,7 @@ import { createState } from './state.js';
   function renderInventory() {
     if (!S.horns.some(h => h.id === hornSel)) hornSel = (S.equipped[0] || S.horns[0]?.id) || 0;
     const revision = inventoryRevision([S.horns, S.equipped, S.primordialEquipped,
-      S.hornUp, S.hornInventory, S.caveAutomation.rack, shoppingSlots(S), HB, S.numfmt, hornSel, hornFilterR]);
+      S.hornUp, S.hornInventory, S.caveAutomation.rack, shoppingSlots(S), HB, S.numfmt, hornSel, hornFilterR, hornView]);
     if (revision === renderedInventoryRevision) return;
     renderedInventoryRevision = revision;
     const settings = S.hornInventory;
@@ -2345,14 +2356,22 @@ import { createState } from './state.js';
     $('primordialSlotRow').innerHTML = primordialRow;
     // detail of the selected horn
     const sel = S.horns.find(h => h.id === hornSel), det = $('hornDetail');
+    hornViewer?.dispose(); hornViewer = null;
     det.hidden = !sel;
     if (sel) {
       const on = eq.has(sel.id);
       det.style.setProperty('--rc', rcOf(sel));
-      det.innerHTML = `<div class="art">${hornSVG(sel, 124, 'd')}</div>
+      det.innerHTML = `<div class="art"><div class="horn-view-controls" role="group" aria-label="Horn presentation"><button type="button" data-horn-view="2d" aria-pressed="${hornView === '2d'}">2D</button><button type="button" data-horn-view="3d" aria-pressed="${hornView === '3d'}">3D</button></div><div class="horn-view-stage">${hornSVG(sel, 124, 'd')}</div>${hornView === '3d' ? '<small id="hornViewHelp">Drag or use arrow keys to turn</small><button type="button" class="horn-view-reset">Reset view</button>' : ''}</div>
         <div><div class="hn">${sel.name}</div><div class="hr">${sel.gold ? 'Gilded · ' : ''}${RARITY[sel.r].name}${S.caveAutomation.rack.includes(sel.id) ? ' · shopping' : on ? ' · worn' : ''}</div></div>
         <ul>${sel.lines.map(l => `<li style="--gc:${STAT_COL[l.stat] || '#fff'}"><i></i>${lineText(sel, l)}</li>`).join('')}${traitMarkup(sel)}</ul>
         <div class="hb"><button type="button" data-act="eq" data-id="${sel.id}" ${settings.autoEquip ? 'disabled title="Turn off auto-equip to change worn horns manually"' : ''}>${on ? 'Take off' : 'Wear'}</button>${S.caveAutomation.unlocked && shoppingEligible(sel) ? `<button type="button" data-act="shopping" data-id="${sel.id}">${S.caveAutomation.rack.includes(sel.id) ? 'Remove from shopping rack' : 'Slot for shopping'}</button>` : ''}<button type="button" class="sal" data-act="sal" data-id="${sel.id}">Salvage for ${fmt(RARITY[sel.r].ivory)} ivory${sel.gold ? ' (lowers the Sunvein chance)' : ''}</button></div>`;
+      det.classList.toggle('view-3d', hornView === '3d');
+      if (hornView === '3d') {
+        const art = hornArtwork(sel);
+        hornViewer = mountHornViewer(det.querySelector('.horn-view-stage'), { tubes: art.tubes.map(t => t.C), material: art.mat[1],
+          band: sel.r >= 2 || sel.gold ? RARITY[sel.r].col : art.mat[1], gems: art.gems, rings: 3 + sel.lines.length * 2 + sel.r, flip: art.flip }, sel.name);
+        if (!hornViewer) $('hornViewHelp').textContent = '3D unavailable; showing the 2D illustration.';
+      }
     }
     // rarity filter
     const names = ['All', ...visibleRarities(S).map(r => r.name)];
@@ -2540,6 +2559,14 @@ import { createState } from './state.js';
   }
   const salvageArmed = {};
   $('panel-horns').addEventListener('click', e => {
+    const view = e.target.closest('[data-horn-view]');
+    if (view) {
+      hornView = view.dataset.hornView;
+      try { localStorage.setItem(HORN_VIEW_KEY, hornView); } catch (_) {}
+      hornsDirty = true; updateUI();
+      $('hornDetail').querySelector(`[data-horn-view="${hornView}"]`).focus(); return;
+    }
+    if (e.target.closest('.horn-view-reset')) { hornViewer?.reset(); return; }
     const f = e.target.closest('#hornFilter button[data-r]');
     if (f) { hornFilterR = +f.dataset.r; hornsDirty = true; updateUI(); return; }
     const card = e.target.closest('.hcard, .hslot[data-id]');
