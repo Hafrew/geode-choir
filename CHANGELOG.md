@@ -2,7 +2,12 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
-## Unreleased
+## 1.10.8: Polish (2026-10-11)
+
+A small interface release. No balance or progression changes.
+
+### Added
+- A motion pass: buttons, chips, tabs and shop rows ease between states and lift or press on hover and click, tab pages and popovers fade in, dialogs and scenes ease open, the rail icons react on hover, and new-item dots pulse. Reduced-motion turns all of it off.
 
 ### Changed
 - Settings, Sound and Chronicle are now a vertical icon rail under the world switch, and their labels slide out on hover or focus. The depth chip's extra details now slide open the same way. With these gone from the top row, the top bar stays a single flat row on wide stages (from about 1200px wide), with the Descend/Heartstone/Horn chips centred and the Chord meter on the right.

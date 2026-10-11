@@ -27,7 +27,7 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.7';
+  const VERSION = '1.10.8';
   // Release channel shown beside the version; saves and version checks use VERSION alone.
   const CHANNEL = 'beta';
 

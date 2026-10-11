@@ -1,5 +1,10 @@
 // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
 export const CHANGES = [
+  { ver: '1.10.8', date: '2026-10-11', head: 'Polish', items: [
+    'A title screen and main menu with an animated cave. Settings, Sound and Chronicle moved to an icon rail whose labels slide out on hover, and the top bar stays in one flat row on wide windows.',
+    'Look sliders in Settings change brightness, glow and the drawn size of crystals and effects in both worlds. Calm effects are quieter and are now the default for new games.',
+    'Buttons, tabs, panels, popovers and dialogs now animate. Reduced-motion turns the animation off. Rewards and balance are unchanged.',
+  ] },
   { ver: '1.10.7', date: '2026-10-10', head: 'Patient Verses', items: [
     'Choose a dive of one, two or three floors. Each descent earns its normal haul, checks for falls and Sunveins, and waits for its full settling time. Queued dives pause in the Sea and survive reloads.',
     'Every fifth depth brings a short cave event. Keep the normal reward, gather extra fossils with a longer wait, or trade fossils for a fresher floor. Auto takes the safe choice; every saved event pays only once.',
