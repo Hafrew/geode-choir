@@ -116,6 +116,8 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   if (S.world !== 'sea' || !S.sea.unlocked) S.world = 'cave';
   if (!TABS.includes(S.tab)) S.tab = S.world;
   if (!['auto', 'full', 'calm'].includes(S.fx)) S.fx = 'calm';
+  { const k = (v, lo, hi) => Number.isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : 1, l = d.look && typeof d.look === 'object' ? d.look : {};
+    S.look = { bright: k(l.bright, 0.4, 1.5), glow: k(l.glow, 0, 2), size: k(l.size, 0.7, 1.4) }; }
   if (!['dark', 'light', 'system'].includes(S.theme)) S.theme = 'dark';
   if (![0.9, 1, 1.15, 1.3].includes(S.ts)) S.ts = 1;
   if (!['short', 'sci'].includes(S.numfmt)) S.numfmt = 'short';

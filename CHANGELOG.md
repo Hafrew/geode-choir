@@ -4,6 +4,9 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ## Unreleased
 
+### Added
+- Settings → Look: Brightness, Glow and Size sliders (with Reset) for crystals, wonders, bells, echoes and ripples in both worlds. They change only how things are drawn; hit areas, rewards and physics are unchanged, and the settings are saved with your game and kept through new games.
+
 ### Changed
 - Calm effects now draw ripples and echoes fainter, thinner and sparser (fewer overlapping rings in the Sea, fewer streaks in the cave) and keep fewer floating numbers on screen. This is visual only; rewards and ripple physics are unchanged.
 - New games start in Calm. Existing saves keep the effects setting they already have, and the setting buttons now list Calm first.
