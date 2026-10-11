@@ -17,13 +17,14 @@
   <main class="stage" id="stage">
     <canvas id="cv" aria-label="The cave. Click or tap to shout; drag crystals to move or fuse them."></canvas>
     <div class="veil" id="veil"></div>
+    <div class="dock">
     <div class="hud">
       <div class="hud-left">
         <div class="worlds" id="worlds" hidden>
           <button type="button" id="wCave" aria-pressed="true">Cave</button>
           <button type="button" id="wSea" aria-pressed="false">Sea</button>
         </div>
-        <div class="chip" id="depthChip"><b>Depth 0</b><span>Major pentatonic</span></div>
+        <div class="chip" id="depthChip" tabindex="0" role="button" aria-expanded="false" title="Show details"><b>Depth 0</b><span>Major pentatonic</span></div>
       </div>
       <div class="hud-right">
         <div class="chip" id="chord" hidden><span>Chord</span><span class="dots"></span><span class="mono" id="chordMult">×1</span></div>
@@ -62,6 +63,11 @@
         <button class="holdbtn poor" id="heartBtn" type="button"><i id="heartFill"></i><span id="heartLabel">Hold to kindle</span></button>
       </section>
     </div>
+    </div>
+    <div class="brand">
+      <h1>Geode Choir <button class="verlink" id="verChip" type="button" title="Version history"></button></h1>
+      <p class="tagline" id="tagline">A cave that pays you in echoes.</p>
+    </div>
     <div class="hint" id="hint">Click the dark to shout.</div>
     <div class="whisper" id="whisper" aria-live="polite"></div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -81,8 +87,6 @@
 
   <aside class="ledger">
     <header>
-      <h1>Geode Choir <button class="verlink" id="verChip" type="button" title="Version history"></button></h1>
-      <p class="tagline" id="tagline">A cave that pays you in echoes.</p>
       <div class="purse" id="purse" data-tip="hum" tabindex="0"><span id="humVal">0</span><small id="humUnit">hum</small></div>
       <div class="rates" data-tip="hum" tabindex="0"><b id="rateVal">0</b> <span id="rateUnit">hum/s</span> &nbsp;·&nbsp; <b id="echoVal">0</b> <span id="echoUnit">echoes ringing</span></div>
       <div class="pills">
@@ -385,6 +389,11 @@
         <p id="verNote"></p>
       </div>
       <div class="set-row">
+        <b>Main menu</b>
+        <button class="link" id="menuOpenBtn" type="button">Open main menu</button>
+        <p>Return to the title screen. Your cave keeps running.</p>
+      </div>
+      <div class="set-row">
         <b>Forget everything</b>
         <button class="link" id="resetBtn" type="button">Forget everything</button>
         <p>Wipes all progress, including horns, the Chronicle and feats. You'll be asked twice. A backup of your save is kept.</p>
@@ -453,6 +462,38 @@
       <button class="link" id="newsClose" type="button">Close</button>
     </div>
     <div class="chron-body" id="newsBody"></div>
+  </div>
+</div>
+
+<div class="menu" id="menu" hidden role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+  <div class="menu-glow" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="menu-rock left" aria-hidden="true"></div><div class="menu-rock right" aria-hidden="true"></div>
+  <div class="menu-motes" aria-hidden="true"><i style="--x:45%;--s:2px;--d:15s;--l:-20s;--c:#8ff2e6"></i><i style="--x:13%;--s:4px;--d:10s;--l:-11s;--c:#ffd98a"></i><i style="--x:11%;--s:4px;--d:12s;--l:-1s;--c:#8ff2e6"></i><i style="--x:59%;--s:3px;--d:10s;--l:-7s;--c:#8ff2e6"></i><i style="--x:74%;--s:3px;--d:9s;--l:-18s;--c:#8ff2e6"></i><i style="--x:32%;--s:4px;--d:9s;--l:-18s;--c:#ffd98a"></i><i style="--x:54%;--s:2px;--d:12s;--l:-1s;--c:#ffd98a"></i><i style="--x:21%;--s:3px;--d:15s;--l:-4s;--c:#ffd98a"></i><i style="--x:19%;--s:4px;--d:13s;--l:-17s;--c:#ffd98a"></i><i style="--x:27%;--s:2px;--d:18s;--l:-18s;--c:#ffd98a"></i><i style="--x:28%;--s:3px;--d:10s;--l:-17s;--c:#ffd98a"></i><i style="--x:12%;--s:4px;--d:9s;--l:-19s;--c:#8ff2e6"></i><i style="--x:67%;--s:4px;--d:15s;--l:-10s;--c:#b58cff"></i><i style="--x:78%;--s:3px;--d:14s;--l:-9s;--c:#8ff2e6"></i><i style="--x:27%;--s:2px;--d:10s;--l:-18s;--c:#b58cff"></i><i style="--x:71%;--s:3px;--d:14s;--l:-14s;--c:#b58cff"></i><i style="--x:81%;--s:2px;--d:10s;--l:-16s;--c:#b58cff"></i><i style="--x:25%;--s:3px;--d:11s;--l:-15s;--c:#b58cff"></i><i style="--x:9%;--s:2px;--d:17s;--l:-18s;--c:#b58cff"></i><i style="--x:47%;--s:3px;--d:18s;--l:-15s;--c:#ffd98a"></i><i style="--x:62%;--s:2px;--d:10s;--l:-8s;--c:#b58cff"></i><i style="--x:93%;--s:2px;--d:9s;--l:-9s;--c:#ffd98a"></i></div>
+  <div class="menu-card">
+    <div class="menu-title" id="menuTitle">Geode Choir</div>
+    <svg class="menu-emblem" viewBox="0 0 320 250" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="mgT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8fff2"/><stop offset="1" stop-color="#3fbf9f"/></linearGradient>
+        <linearGradient id="mgP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dcc8ff"/><stop offset="1" stop-color="#8f5be0"/></linearGradient>
+      </defs>
+      <g class="m-ripples"><ellipse cx="160" cy="205" rx="40" ry="9"/><ellipse cx="160" cy="205" rx="40" ry="9"/><ellipse cx="160" cy="205" rx="40" ry="9"/></g>
+      <g class="m-orbit a"><circle cx="160" cy="150" r="112" pathLength="100" stroke-dasharray="46 54"/><circle class="dot" cx="160" cy="38" r="4.5"/><circle class="dot" cx="272" cy="150" r="3.5"/></g>
+      <g class="m-orbit b"><circle cx="160" cy="150" r="90" pathLength="100" stroke-dasharray="30 70"/><circle class="dot" cx="70" cy="150" r="3"/></g>
+      <g class="m-rocks"><polygon points="70,222 100,196 118,212 140,190 160,214 182,188 204,212 224,194 252,222"/></g>
+      <g class="m-gem side l"><polygon class="f1" points="96,176 84,140 100,104 118,140 118,170"/><polygon class="f2" points="100,104 118,140 118,170 108,176 100,150"/><polygon class="f3" points="84,140 100,104 100,150 96,176"/></g>
+      <g class="m-gem side r"><polygon class="f1" points="224,176 202,170 202,140 220,104 236,140"/><polygon class="f2" points="220,104 236,140 224,176 220,150"/><polygon class="f3" points="202,140 220,104 220,150 202,170"/></g>
+      <g class="m-gem main"><polygon class="f1" points="160,36 188,64 188,148 160,186 132,148 132,64"/><polygon class="f2" points="160,36 188,64 188,148 160,186"/><polygon class="f3" points="160,36 132,64 132,148 160,186 160,100"/><polygon class="f4" points="160,36 188,64 160,100"/></g>
+      <g class="m-tri"><line x1="160" y1="192" x2="160" y2="204"/><polygon points="160,206 175,232 145,232"/></g>
+    </svg>
+    <p class="menu-sub" id="menuSub"></p>
+    <div class="menu-list">
+      <button type="button" class="menu-primary" id="menuContinue">Continue</button>
+      <button type="button" id="menuNew">New game</button>
+      <button type="button" id="menuSettings">Settings</button>
+      <button type="button" id="menuNews">What's new</button>
+    </div>
+    <label class="menu-skip" id="menuSkipRow"><input type="checkbox" id="menuSkip"> Skip this screen when I come back</label>
+    <small class="menu-ver" id="menuVer"></small>
   </div>
 </div>
 
