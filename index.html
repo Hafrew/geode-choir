@@ -17,6 +17,7 @@
   <main class="stage" id="stage">
     <canvas id="cv" aria-label="The cave. Click or tap to shout; drag crystals to move or fuse them."></canvas>
     <div class="veil" id="veil"></div>
+    <div class="dock">
     <div class="hud">
       <div class="hud-left">
         <div class="worlds" id="worlds" hidden>
@@ -61,6 +62,7 @@
         <p class="note" id="heartText"></p>
         <button class="holdbtn poor" id="heartBtn" type="button"><i id="heartFill"></i><span id="heartLabel">Hold to kindle</span></button>
       </section>
+    </div>
     </div>
     <div class="hint" id="hint">Click the dark to shout.</div>
     <div class="whisper" id="whisper" aria-live="polite"></div>
@@ -385,6 +387,11 @@
         <p id="verNote"></p>
       </div>
       <div class="set-row">
+        <b>Main menu</b>
+        <button class="link" id="menuOpenBtn" type="button">Open main menu</button>
+        <p>Return to the title screen. Your cave keeps running.</p>
+      </div>
+      <div class="set-row">
         <b>Forget everything</b>
         <button class="link" id="resetBtn" type="button">Forget everything</button>
         <p>Wipes all progress, including horns, the Chronicle and feats. You'll be asked twice. A backup of your save is kept.</p>
@@ -453,6 +460,23 @@
       <button class="link" id="newsClose" type="button">Close</button>
     </div>
     <div class="chron-body" id="newsBody"></div>
+  </div>
+</div>
+
+<div class="menu" id="menu" hidden role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+  <div class="menu-orbs" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="menu-card">
+    <p class="menu-eyebrow">A cave that pays you in echoes</p>
+    <div class="menu-title" id="menuTitle">Geode Choir</div>
+    <p class="menu-sub" id="menuSub"></p>
+    <div class="menu-list">
+      <button type="button" class="menu-primary" id="menuContinue">Continue</button>
+      <button type="button" id="menuNew">New game</button>
+      <button type="button" id="menuSettings">Settings</button>
+      <button type="button" id="menuNews">What's new</button>
+    </div>
+    <label class="menu-skip" id="menuSkipRow"><input type="checkbox" id="menuSkip"> Skip this screen when I come back</label>
+    <small class="menu-ver" id="menuVer"></small>
   </div>
 </div>
 

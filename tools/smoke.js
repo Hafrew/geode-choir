@@ -33,6 +33,8 @@ const legacyHorn = { id: 1, r: 0, name: 'Plain Ram Horn', lines: [{ stat: 'hum',
           assert.equal(response.status(), 200);
           assert.equal(await page.title(), 'Geode Choir (beta)');
           await page.locator('#cv').waitFor({ state: 'visible' });
+          // Real players meet the title screen first; the cave starts when they continue.
+          await page.locator('#menuContinue').click();
           // Returning saves show the release dialog after the initial scene settles.
           await page.waitForTimeout(1000);
           assert.equal(await page.evaluate(() => typeof window.__geodeSimulation), 'undefined');
@@ -63,6 +65,7 @@ const legacyHorn = { id: 1, r: 0, name: 'Plain Ram Horn', lines: [{ stat: 'hum',
             assert.equal(saved.gilt, 0);
           }
           await page.reload();
+          await page.locator('#menuContinue').click();
           await page.locator('#cv').waitFor({ state: 'visible' });
           await page.waitForTimeout(1000);
           // Trigger a fresh serialization after reload, rather than reading the old stored save.

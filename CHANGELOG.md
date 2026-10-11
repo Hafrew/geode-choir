@@ -4,6 +4,12 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ## Unreleased
 
+### Added
+- A title screen and main menu: Continue/Begin, New game (asks twice), Settings and What's new, with your depth, Heartstones and hum shown for a saved cave. "Skip this screen when I come back" is remembered per device, and Settings → Main menu reopens it.
+
+### Fixed
+- The top bar no longer overlaps itself: the world switch, depth chip, Descend/Heartstone/Horn chips and the Chronicle/Sound/Settings buttons now flow in one stack, so they stay apart at any window width, side panel width or text size, and the Descend and Heartstone panels sit below them. Narrow stages drop the scale name and tighten the chips.
+
 ### Changed
 - Calm effects now draw ripples and echoes fainter, thinner and sparser (fewer overlapping rings in the Sea, fewer streaks in the cave) and keep fewer floating numbers on screen. This is visual only; rewards and ripple physics are unchanged.
 - New games start in Calm. Existing saves keep the effects setting they already have, and the setting buttons now list Calm first.
