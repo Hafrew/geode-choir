@@ -1545,7 +1545,7 @@ import { createState } from './state.js';
     S.muted = m;
     if (master) master.gain.value = m ? 0 : 0.55;
     const b = $('soundBtn');
-    b.textContent = m ? 'Sound off' : 'Sound on';
+    $('soundLb').textContent = m ? 'Sound off' : 'Sound on';
     b.setAttribute('aria-pressed', String(!m));
     syncSeg('snd', m ? 'off' : 'on');
   }

@@ -4,6 +4,9 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ## Unreleased
 
+### Changed
+- Settings, Sound and Chronicle are now a vertical icon rail under the world switch, and their labels slide out on hover or focus. The depth chip's extra details now slide open the same way. With these gone from the top row, the top bar stays a single flat row on wide stages (from about 1200px wide), with the Descend/Heartstone/Horn chips centred and the Chord meter on the right.
+
 ### Added
 - Settings → Look: Brightness, Glow and Size sliders (with Reset) for crystals, wonders, bells, echoes and ripples in both worlds. They change only how things are drawn; hit areas, rewards and physics are unchanged, and the settings are saved with your game and kept through new games.
 - A title screen and main menu with an animated cave backdrop (drifting glows, sway, rising motes), a glowing crystal emblem with orbiting rings and rippling water, and a glowing title; it respects reduced-motion. Options: Continue/Begin, New game (asks twice), Settings and What's new, with your depth, Heartstones and hum shown for a saved cave. "Skip this screen when I come back" is remembered per device, and Settings → Main menu reopens it.
