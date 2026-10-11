@@ -39,3 +39,10 @@ test('line values are bounded', () => {
   const S = load({ horns: [horn({ lines: [{ stat: 'hum', kind: 'pct', v: 1e300 }] })] });
   assert.ok(S.horns[0].lines[0].v <= 1e4);
 });
+
+test('look sliders default, round-trip and clamp on load', () => {
+  assert.deepEqual(load({}).look, { bright: 1, glow: 1, size: 1 });
+  assert.deepEqual(load({ look: { bright: .6, glow: 0, size: 1.2 } }).look, { bright: .6, glow: 0, size: 1.2 });
+  assert.deepEqual(load({ look: { bright: 99, glow: -4, size: 'x' } }).look, { bright: 1.5, glow: 0, size: 1 });
+  assert.deepEqual(load({ look: 'bad' }).look, { bright: 1, glow: 1, size: 1 });
+});

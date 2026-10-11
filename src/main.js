@@ -1098,7 +1098,7 @@ import { createState } from './state.js';
   }
 
   function drawWonder(o, alpha, tint) {
-    const r = o.r;
+    const r = o.r * S.look.size;
     ctx.save(); ctx.translate(o.px, o.py); ctx.globalAlpha = alpha;
     if (o.k === 'prism') {
       const spin = lite ? 0 : T * 0.3;
@@ -1167,8 +1167,8 @@ import { createState } from './state.js';
           ctx.beginPath(); ctx.arc(w.x + sway * k, y, 1.2 * SC, 0, Math.PI * 2); ctx.fill();
         }
       }
-      const rr = 14 * SC * (1 + w.glow);
-      ctx.globalAlpha = Math.min(1, 0.5 + w.glow * 0.5);
+      const rr = 14 * SC * (1 + w.glow) * Math.max(0.2, S.look.glow);
+      ctx.globalAlpha = Math.min(1, (0.5 + w.glow * 0.5) * S.look.glow);
       ctx.drawImage(glowSprite('#7fb8ff'), w.x + sway - rr, w.y1 - rr, rr * 2, rr * 2);
       ctx.globalAlpha = 1;
     }
@@ -1205,7 +1205,9 @@ import { createState } from './state.js';
   const buckets = [[], [], [], []];
   const BUCKET_A = [0.2, 0.38, 0.62, 0.92];
   // Calm mode is purely visual: ripples and echoes are drawn fainter, thinner and sparser. Rewards and physics never read these.
-  const calmDim = () => S.fx === 'calm' ? 0.5 : 1;
+  // Look sliders (Settings): visual only. Brightness scales effects and gems, glow scales halos, size scales drawn objects (hit areas never change).
+  const calmDim = () => (S.fx === 'calm' ? 0.5 : 1) * S.look.bright;
+  const lookSize = () => S.look.size;
   const calmEvery = (n, keep) => S.fx === 'calm' && n > keep ? Math.ceil(n / keep) : 1;
   function drawCave() {
     if (simulation?.fast) return;
@@ -1216,8 +1218,8 @@ import { createState } from './state.js';
     ctx.globalCompositeOperation = ADD();
     for (const c of S.crystals) {
       if (lite && c.ring < 0.3) continue;
-      const rr = c.r * (2.4 + 2.2 * c.ring);
-      ctx.globalAlpha = Math.min(1, 0.14 + 0.5 * c.ring);
+      const rr = c.r * (2.4 + 2.2 * c.ring) * S.look.size * Math.max(0.2, S.look.glow);
+      ctx.globalAlpha = Math.min(1, (0.14 + 0.5 * c.ring) * S.look.glow);
       ctx.drawImage(glowSprite(TIERS[c.t].glow), c.px - rr, c.py - rr, rr * 2, rr * 2);
     }
     ctx.globalAlpha = 1;
@@ -1271,7 +1273,7 @@ import { createState } from './state.js';
         if (!tw && !validSpot(c.px, c.py, c.r, c)) tint = '#ff8a7a';
         if (tw) { ctx.strokeStyle = '#ffcf86'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(tw.px, tw.py, tw.r * 1.9, 0, Math.PI * 2); ctx.stroke(); }
       }
-      drawGem(c.px, c.py, c.r * (lifted ? 1.12 : 1), TIERS[c.t].color, 1, tint, c.ring);
+      drawGem(c.px, c.py, c.r * (lifted ? 1.12 : 1) * S.look.size, TIERS[c.t].color, Math.min(1, S.look.bright), tint, c.ring);
     }
 
     ctx.strokeStyle = LT ? `hsla(${hue}, 70%, 32%, .85)` : `hsla(${hue}, 70%, 85%, .85)`; ctx.lineWidth = 1.6;
@@ -1308,7 +1310,7 @@ import { createState } from './state.js';
     }
   }
   function drawOyster(o) {
-    const r = o.r, f = Math.min(1, (o.wash || 0) / SK.open), open = Math.max(o.open || 0, f * 0.25);
+    const r = o.r * S.look.size, f = Math.min(1, (o.wash || 0) / SK.open), open = Math.max(o.open || 0, f * 0.25);
     ctx.save(); ctx.translate(o.px, o.py);
     ctx.fillStyle = '#4a4655';
     ctx.beginPath(); ctx.ellipse(0, 2, r * 1.15, r * 0.6, 0, 0, Math.PI); ctx.fill();
@@ -1324,7 +1326,7 @@ import { createState } from './state.js';
     ctx.restore();
   }
   function drawPobj(o, tint) {
-    const r = o.r;
+    const r = o.r * S.look.size;
     ctx.save(); ctx.translate(o.px, o.py);
     if (o.pk === 'breakwater') {
       ctx.fillStyle = tint || '#39414a';
@@ -1411,7 +1413,7 @@ import { createState } from './state.js';
         if (tw) { ctx.strokeStyle = '#ffcf86'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(tw.px, tw.py, tw.r * 1.9, 0, Math.PI * 2); ctx.stroke(); }
       }
       const swing = lite ? 0 : Math.sin(T * 14 + b.px) * 0.35 * (b.ring || 0);
-      drawBell(b.px, b.py, b.r * (lifted ? 1.12 : 1), BELLS[b.bt].color, swing, b.ring || 0, lite ? 0 : (b.flash || 0), tint);
+      drawBell(b.px, b.py, b.r * (lifted ? 1.12 : 1) * S.look.size, BELLS[b.bt].color, swing, b.ring || 0, lite ? 0 : (b.flash || 0), tint);
     }
     for (const j of jumps) {
       const u = j.t / j.dur, x = j.ax + (j.bx - j.ax) * u, y = j.ay + (j.by - j.ay) * u - Math.sin(u * Math.PI) * 34 * SC;
@@ -1670,9 +1672,16 @@ import { createState } from './state.js';
   for (const b of segButtons('ts')) b.addEventListener('click', () => { S.ts = +b.dataset.tsOpt; applyTs(); save(); });
   for (const b of segButtons('theme')) b.addEventListener('click', () => { S.theme = b.dataset.themeOpt; applyTheme(); save(); });
   for (const b of segButtons('fx')) b.addEventListener('click', () => { setFx(b.dataset.fxOpt); save(); });
+  const LOOK_KEYS = ['bright', 'glow', 'size'];
+  function syncLook() {
+    for (const k of LOOK_KEYS) { const el = $('look-' + k); if (el && document.activeElement !== el) el.value = Math.round(S.look[k] * 100); setT('lookVal-' + k, Math.round(S.look[k] * 100) + '%'); }
+  }
+  for (const k of LOOK_KEYS) $('look-' + k).addEventListener('input', e => { S.look[k] = +e.target.value / 100; setT('lookVal-' + k, e.target.value + '%'); });
+  for (const k of LOOK_KEYS) $('look-' + k).addEventListener('change', () => save());
+  $('lookReset').addEventListener('click', () => { S.look = { bright: 1, glow: 1, size: 1 }; syncLook(); save(); });
   for (const b of segButtons('snd')) b.addEventListener('click', () => { initAudio(); setMuted(b.dataset.sndOpt === 'off'); save(); });
   let setOpen = false;
-  function openSettings() { setOpen = true; $('settings').hidden = false; saveMsg(''); syncNum(); syncBackupBtn(); syncSeg('theme', S.theme); syncSeg('ts', String(S.ts)); syncSeg('fx', S.fx); syncSeg('snd', S.muted ? 'off' : 'on'); $('setClose').focus(); }
+  function openSettings() { setOpen = true; $('settings').hidden = false; saveMsg(''); syncNum(); syncBackupBtn(); syncSeg('theme', S.theme); syncSeg('ts', String(S.ts)); syncSeg('fx', S.fx); syncLook(); syncSeg('snd', S.muted ? 'off' : 'on'); $('setClose').focus(); }
   function closeSettings() { setOpen = false; $('settings').hidden = true; $('setBtn').focus(); }
   $('setBtn').addEventListener('click', () => { initAudio(); setOpen ? closeSettings() : openSettings(); });
   $('setClose').addEventListener('click', closeSettings);
@@ -2716,9 +2725,9 @@ import { createState } from './state.js';
     forgetEverything();
   });
   function forgetEverything() {
-    const muted = S.muted, fx = S.fx, theme = S.theme, numfmt = S.numfmt, ts = S.ts;
+    const muted = S.muted, fx = S.fx, look = S.look, theme = S.theme, numfmt = S.numfmt, ts = S.ts;
     save(); backupNow();
-    S = fresh(); S.muted = muted; S.fx = fx; S.theme = theme; S.ts = ts; S.numfmt = numfmt; S.lore.prologue = 1;
+    S = fresh(); S.muted = muted; S.fx = fx; S.look = look; S.theme = theme; S.ts = ts; S.numfmt = numfmt; S.lore.prologue = 1;
     try { localStorage.removeItem(KEY); } catch (_) {}
     refreshAll();
     afterStateChange();
