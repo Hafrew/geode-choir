@@ -5,6 +5,10 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 ## Unreleased
 
 ### Changed
+- Calm effects now draw ripples and echoes fainter, thinner and sparser (fewer overlapping rings in the Sea, fewer streaks in the cave) and keep fewer floating numbers on screen. This is visual only; rewards and ripple physics are unchanged.
+- New games start in Calm. Existing saves keep the effects setting they already have, and the setting buttons now list Calm first.
+
+### Changed
 - Cave event cards and the shopping-horn rack get their own card and chip layout (spacing, wrapping, left-aligned choices) so they stay tidy in the narrow Descend panel.
 
 ### Added

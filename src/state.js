@@ -39,7 +39,7 @@ const createState = version => ({
   shells: freshShells(),
   pearls: freshPearls(),
   heartSeaLegacy: null,
-  sea: freshSea(), seen: {}, muted: false, fx: 'auto', theme: 'dark', ts: 1, saved: Date.now(), shouts: 0, tab: 'cave',
+  sea: freshSea(), seen: {}, muted: false, fx: 'calm', theme: 'dark', ts: 1, saved: Date.now(), shouts: 0, tab: 'cave',
   lore: {}, feats: {}, stats: freshStats(),
   ver: version, seenVer: version, refund: null, numfmt: 'short', finale: 0, omen: 'steady', rubble: 0, cool: 0, quests: {},
 });
