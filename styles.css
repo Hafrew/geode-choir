@@ -77,7 +77,7 @@
   .hud-left, .hud-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; align-self: start; }
   .hud-left { grid-column: 1; grid-row: 1; }
   .hud-right { grid-column: 3; grid-row: 1; justify-content: flex-end; }
-  @container (min-width: 1080px) { .dock { grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; } .pop { grid-row: 2 !important; } }
+  @container (min-width: 1200px) { .dock { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; } .pop { grid-row: 2 !important; grid-column: 2 !important; } .rail { grid-row: 2 !important; } }
   .chip {
     pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 11px; background: var(--glass); border: 1px solid var(--line); border-radius: 999px;
@@ -585,8 +585,8 @@
 
 /* Compact top chips: details and timers appear on hover, focus or click */
 #depthChip { cursor: pointer; }
-#depthChip > :not(b) { display: none; }
-#depthChip:hover > :not(b), #depthChip:focus-visible > :not(b), #depthChip.open > :not(b) { display: inline; }
+#depthChip > :not(b) { max-width: 0; margin-left: -8px; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width .3s ease, margin-left .3s ease, opacity .22s ease; }
+#depthChip:hover > :not(b), #depthChip:focus-visible > :not(b), #depthChip.open > :not(b) { max-width: 14rem; margin-left: 0; opacity: 1; }
 #depthChip:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
 .schip[data-timer] b { display: none; }
 .schip[data-timer]:hover b, .schip[data-timer]:focus-visible b { display: inline; }
@@ -595,3 +595,15 @@
 .brand .tagline { color: var(--muted); }
 .brand .verlink { pointer-events: auto; font-size: 0.6875rem; vertical-align: baseline; }
 @media (max-width: 820px) { .brand h1 { font-size: 0.875rem; } }
+
+/* Icon rail: Settings, Sound and Chronicle, labels slide out on hover or focus */
+.rail { grid-column: 1; grid-row: 3; align-self: start; justify-self: start; display: flex; flex-direction: column; gap: 6px; width: 34px; contain: inline-size; }
+.rbtn { position: relative; box-sizing: border-box; width: fit-content; height: 34px; padding: 0 9px; gap: 0; justify-content: flex-start; overflow: hidden; white-space: nowrap; transition: padding .28s ease, color .15s, border-color .15s, background .15s; }
+.rbtn svg { flex: none; }
+.rbtn .lb { max-width: 0; margin-left: 0; opacity: 0; overflow: hidden; transition: max-width .28s ease, margin-left .28s ease, opacity .2s ease; }
+.rbtn:hover, .rbtn:focus-visible { padding-right: 14px; color: var(--text); }
+.rbtn:hover .lb, .rbtn:focus-visible .lb { max-width: 8rem; margin-left: 8px; opacity: 1; }
+.rbtn .new { position: absolute; top: 5px; right: 5px; }
+.rbtn:hover .new, .rbtn:focus-visible .new { display: none; }
+#soundBtn[aria-pressed="true"] .ic-off, #soundBtn[aria-pressed="false"] .ic-on { display: none; }
+@media (prefers-reduced-motion: reduce) { .rbtn, .rbtn .lb, #depthChip > :not(b) { transition: none; } }
