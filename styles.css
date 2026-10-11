@@ -77,7 +77,8 @@
   .hud-left, .hud-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; align-self: start; }
   .hud-left { grid-column: 1; grid-row: 1; }
   .hud-right { grid-column: 3; grid-row: 1; justify-content: flex-end; }
-  @container (min-width: 1200px) { .dock { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; } .pop { grid-row: 2 !important; grid-column: 2 !important; } .rail { grid-row: 2 !important; } }
+  @container (min-width: 36rem) { .dock { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; flex-wrap: nowrap; } .pop { grid-row: 2 !important; grid-column: 1 / -1 !important; } .rail { grid-row: 2 !important; } }
+  @container (min-width: 36rem) and (max-width: 58rem) { .schip { padding: 6px 9px; } .schip > span { max-width: 0; margin-left: -8px; opacity: 0; overflow: hidden; transition: max-width .28s ease, margin-left .28s ease, opacity .2s ease; } .schip:hover > span, .schip:focus-visible > span { max-width: 8rem; margin-left: 0; opacity: 1; } #chord .dots { display: none; } }
   .chip {
     pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 11px; background: var(--glass); border: 1px solid var(--line); border-radius: 999px;

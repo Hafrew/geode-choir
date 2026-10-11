@@ -2,6 +2,11 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## Unreleased
+
+### Fixed
+- The top bar now stays in one flat row on much narrower stages (down to about 36 characters of text width, roughly 580px at default text size). From about 930px and below the Descend/Heartstone/Horn chips show only their ring and value, and the label slides out on hover. Only a phone-width stage still wraps the chips to a second row.
+
 ## 1.10.8: Polish (2026-10-11)
 
 A small interface release. No balance or progression changes.
