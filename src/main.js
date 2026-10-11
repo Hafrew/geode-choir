@@ -3308,6 +3308,7 @@ import { createState } from './state.js';
   function chip(id, label, val, frac, ready) {
     const e = $(id);
     setT(id + 'L', label); setT(id + 'V', val);
+    if (e._ti !== label + val) { e._ti = label + val; e.title = `${label} ${val}`; }
     const p = Math.round(Math.max(0, Math.min(1, frac || 0)) * 100);
     if (e._p !== p) { e._p = p; e.style.setProperty('--p', p); }
     e.classList.toggle('ready', !!ready);
@@ -3426,8 +3427,8 @@ import { createState } from './state.js';
     setT('crystalCount', `${S.crystals.length} / ${maxCrystals()}`);
     setT('bellCount', `${q.bells.length} / ${bellCap()}`);
     setH('depthChip', sea
-      ? `<b>Sounding ${fmt(q.soundings)}</b><span>${MODES[(q.soundings + 1) % MODES.length].name}</span>${SK.tm > 1.001 ? `<span class="mono">×${fmt(SK.tm)}</span>` : ''}`
-      : `<b>Depth ${fmt(S.depth)}</b><span>${MODES[S.depth % MODES.length].name}</span>${K.dm > 1.001 ? `<span class="mono">×${fmt(K.dm)}</span>` : ''}${onSun() ? '<span class="ftag gold">Sunvein</span>' : S.floor !== 'still' ? `<span class="ftag">${FLOORS[S.floor].name}</span>` : ''}`);
+      ? `<b>Sounding ${fmt(q.soundings)}</b><span class="dx"><span>${MODES[(q.soundings + 1) % MODES.length].name}</span>${SK.tm > 1.001 ? `<span class="mono">×${fmt(SK.tm)}</span>` : ''}</span>`
+      : `<b>Depth ${fmt(S.depth)}</b><span class="dx"><span>${MODES[S.depth % MODES.length].name}</span>${K.dm > 1.001 ? `<span class="mono">×${fmt(K.dm)}</span>` : ''}${onSun() ? '<span class="ftag gold">Sunvein</span>' : S.floor !== 'still' ? `<span class="ftag">${FLOORS[S.floor].name}</span>` : ''}</span>`);
     { const ct = sea ? '' : floorBlurb().replace(/<[^>]*>/g, ''); const dc = $('depthChip'); if (dc.title !== ct) dc.title = ct; }
     setT('lifetime', q.unlocked ? `${fmt(S.total)} hum · ${fmt(q.total)} tide, all told` : `${fmt(S.total)} hum sung, all told`);
     setHid('worlds', !q.unlocked);

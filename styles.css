@@ -77,8 +77,8 @@
   .hud-left, .hud-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; align-self: start; }
   .hud-left { grid-column: 1; grid-row: 1; }
   .hud-right { grid-column: 3; grid-row: 1; justify-content: flex-end; }
-  @container (min-width: 36rem) { .dock { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; flex-wrap: nowrap; } .pop { grid-row: 2 !important; grid-column: 1 / -1 !important; } .rail { grid-row: 2 !important; } }
-  @container (min-width: 36rem) and (max-width: 58rem) { .schip { padding: 6px 9px; } .schip > span { max-width: 0; margin-left: -8px; opacity: 0; overflow: hidden; transition: max-width .28s ease, margin-left .28s ease, opacity .2s ease; } .schip:hover > span, .schip:focus-visible > span { max-width: 8rem; margin-left: 0; opacity: 1; } #chord .dots { display: none; } }
+  @container (min-width: 36rem) { .dock { grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; flex-wrap: nowrap; } .pop { grid-row: 2 !important; grid-column: 1 / -1 !important; } .rail { grid-row: 2 !important; } }
+  @container (min-width: 36rem) and (max-width: 58rem) { .schip { padding: 6px 9px; } .schip > span { display: none; } .schip svg.ic-one, .schip:not(.sea) svg.ic-desc, .schip.sea svg.ic-sea { display: block; } #chord .dots, #chord > span:first-child { display: none; } }
   .chip {
     pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 11px; background: var(--glass); border: 1px solid var(--line); border-radius: 999px;
@@ -89,7 +89,7 @@
   button.chip { cursor: pointer; font: inherit; font-size: 0.75rem; }
   button.chip:hover { color: var(--text); border-color: var(--line-2); }
   button.chip:focus-visible, .worlds button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
-  @container (max-width: 560px) { .chip, .schip { padding: 4px 9px; } #depthChip span, #chord .dots { display: none; } .hud, .strip, .dock { gap: 6px; } .hud-left, .hud-right { gap: 6px; } }
+  @container (max-width: 560px) { .chip, .schip { padding: 4px 9px; } #chord .dots { display: none; } .hud, .strip, .dock { gap: 6px; } .hud-left, .hud-right { gap: 6px; } }
   .strip { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; pointer-events: none; }
   .schip {
     pointer-events: auto; --c: var(--fossil); --p: 0; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
@@ -586,8 +586,11 @@
 
 /* Compact top chips: details and timers appear on hover, focus or click */
 #depthChip { cursor: pointer; }
-#depthChip > :not(b) { max-width: 0; margin-left: -8px; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width .3s ease, margin-left .3s ease, opacity .22s ease; }
-#depthChip:hover > :not(b), #depthChip:focus-visible > :not(b), #depthChip.open > :not(b) { max-width: 14rem; margin-left: 0; opacity: 1; }
+#depthChip { position: relative; z-index: 3; }
+#depthChip .dx { position: absolute; left: 0; top: calc(100% + 6px); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; box-sizing: border-box; min-width: 100%; max-height: 0; padding: 0 12px; opacity: 0; overflow: hidden; white-space: nowrap; pointer-events: none; transform: translateY(-4px); background: var(--slab-2); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 10px 26px var(--shadow); transition: max-height .3s ease, padding .3s ease, opacity .22s ease, transform .3s ease; }
+#depthChip:hover .dx, #depthChip:focus-visible .dx, #depthChip.open .dx { max-height: 8rem; padding: 8px 12px; opacity: 1; transform: none; pointer-events: auto; }
+#depthChip .dx:empty { display: none; }
+#depthChip .dx::before { content: ""; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
 #depthChip:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
 .schip[data-timer] b { display: none; }
 .schip[data-timer]:hover b, .schip[data-timer]:focus-visible b { display: inline; }
@@ -607,7 +610,7 @@
 .rbtn .new { position: absolute; top: 5px; right: 5px; }
 .rbtn:hover .new, .rbtn:focus-visible .new { display: none; }
 #soundBtn[aria-pressed="true"] .ic-off, #soundBtn[aria-pressed="false"] .ic-on { display: none; }
-@media (prefers-reduced-motion: reduce) { .rbtn, .rbtn .lb, #depthChip > :not(b) { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .rbtn, .rbtn .lb, #depthChip, #depthChip .dx { transition: none; } }
 
 /* Motion pass: buttons, panels and dialogs. Everything here is skipped under reduced motion. */
 :where(button, .chip, .schip, .tab, .item, .link, .bigbtn, .holdbtn, .worlds button, .hcard, .stat) { transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .22s ease, transform .16s ease, opacity .18s ease; }
@@ -634,3 +637,8 @@
   .tab[aria-selected="true"], .panel, .pop, .modal, .modal-box, .scene-card, .chip .new, .rbtn .new, .tab .new, .worlds button[aria-pressed="true"] { animation: none !important; }
   .rbtn svg { transition: none; transform: none !important; }
 }
+
+.schip .ic { display: none; flex: none; }
+.hud-left { flex-wrap: wrap; }
+@container (min-width: 36rem) { .hud-left { flex-wrap: nowrap; } }
+.hud-left > *, .strip > * { flex: none; white-space: nowrap; }
