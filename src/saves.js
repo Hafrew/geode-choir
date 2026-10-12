@@ -4,6 +4,7 @@ import { createState, freshStats, freshSea } from './state.js';
 import { normalizeCaveAutomation, normalizeShoppingRack } from './automation.js';
 import { normalizeShells, shellDiscounts } from './seashells.js';
 import { normalizePearls } from './pearls.js';
+import { normalizeChorus } from './chorus.js';
 import { RARITY, HSTATS, hash32, famOf, recordCollection, normalizeHornState, sanitizeHorns } from './horns.js';
 import { KNEE, SUN_GUARANTEE } from './progression.js';
 const cmpVer = (a, b) => {
@@ -122,6 +123,7 @@ function restoreState(data, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, G
   if (![0.9, 1, 1.15, 1.3].includes(S.ts)) S.ts = 1;
   if (!['short', 'sci'].includes(S.numfmt)) S.numfmt = 'short';
   S.finale = Math.max(0, +d.finale || 0);
+  normalizeChorus(S, now);
   if (!OMENS[S.omen]) S.omen = 'steady';
   S.rubble = d.rubble ? 1 : 0;
   normalizeCaveVariety(S);

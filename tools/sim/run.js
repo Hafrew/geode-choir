@@ -1,4 +1,6 @@
 // Usage: node run.js [--policy smart|naive] [--clicks 3] [--sea 0.25] [--k 2] [--hours 40] [--seed 1] [--out file.json]
+//   [--expedition 0] stops at finale readiness instead of paying the offering and completing the Last Chorus with Auto assistance.
+//   [--save file.json] starts from an exported save (for example one written by make-saves.js) instead of a new game.
 const fs = require('fs');
 const path = require('path');
 const { serve } = require('../serve');
@@ -9,7 +11,7 @@ const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i > 0 ?
 const cfg = {
   dive: Math.min(3, Math.max(1, +arg('dive', 1))), shopping: arg('shopping', '0') === '1',
   shells: arg('shells', '1') !== '0', finaleReserve: Math.max(0, +arg('finaleReserve', 0)),
-  extraFathomReserve: Math.max(0, +arg('reserveFathoms', 0)), patientChoir: arg('patientChoir', '0') === '1',
+  extraFathomReserve: Math.max(0, +arg('reserveFathoms', 0)), patientChoir: arg('patientChoir', '0') === '1', expedition: arg('expedition', '1') !== '0',
   policy: arg('policy', 'smart'), clicks: +arg('clicks', 3), seaShare: +arg('sea', 0.25), k: +arg('k', 2),
   hornStart: arg('hornStart', 'base'), hornUpgrades: arg('hornUpgrades', '1') !== '0', maxSoundings: +arg('maxSoundings', 0), autobuy: arg('autobuy', '0') === '1',
   stepMs: +arg('step', 50), actionGap: +arg('gap', 0), noBuy: arg('noBuy', '0') === '1', noFuse: arg('noFuse', '0') === '1', noDescend: arg('noDescend', '0') === '1',
@@ -25,6 +27,9 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
     const pg = await (await browser.newContext({ viewport: { width: 1100, height: 800 } })).newPage();
     await pg.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
     const errs = []; pg.on('pageerror', e => errs.push(String(e)));
+    let save = arg('save', null) ? fs.readFileSync(arg('save', null), 'utf8').trim() : null;
+    if (save?.startsWith('GC1:')) save = Buffer.from(save.slice(4), 'base64').toString('utf8');
+    if (save) await pg.addInitScript(save => { if (!sessionStorage.getItem('sim-loaded')) { localStorage.setItem('geode-choir-v1', save); sessionStorage.setItem('sim-loaded', '1'); } }, save);
     await pg.addInitScript(seed => {
       let a = seed >>> 0;                                   // seeded Math.random for repeatable runs
       Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -41,7 +46,7 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
     const CH = 120;
     while (t < maxHours * 3600 && status !== 'done') {
       status = await pg.evaluate(s => window.__bot.run(s), CH);
-      if (status === 'kindle') {
+      if (status === 'kindle' || status === 'cinematic') {
         for (let i = 0; i < 80; i++) {                       // let the kindling cinematic's timers play out
           await pg.waitForTimeout(100);
           const open = await pg.evaluate(() => { const s = window.__geodeSimulation.api; if (s.sceneOpen) s.endScene(); return s.cinematic; });
@@ -66,7 +71,7 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
     }
     const out = await pg.evaluate(() => {
       const b = window.__bot, S = window.__geodeSimulation.api.S;
-      return { marks: b.marks, log: b.log, buys: b.buys, descents: b.descents, soundings: b.soundings, soundingLog: b.soundingLog, shellLog: b.shellLog, timerWaitSeaSec: b.timerWaitSeaSec, tideWaitSeaSec: b.tideWaitSeaSec, gameSeconds: b.t,
+      return { marks: b.marks, finale: b.finale || null, chorus: { step: S.chorus.step, results: S.chorus.results, done: !!S.chorus.done }, log: b.log, buys: b.buys, descents: b.descents, soundings: b.soundings, soundingLog: b.soundingLog, shellLog: b.shellLog, timerWaitSeaSec: b.timerWaitSeaSec, tideWaitSeaSec: b.tideWaitSeaSec, gameSeconds: b.t,
         final: { depth: S.depth, pearlOpens: S.pearls.opens, pearlItems: S.pearls.items.length, sunveins: S.stats.sunveins, giltLife: S.stats.giltLife, hearts: S.hearts, soundings: S.sea.soundings, feats: Object.keys(S.feats).length, fathoms: S.sea.fathoms, fathomsEarned: S.sea.fathomsTotal, shells: S.shells, seaCool: S.sea.cool || 0, ceilingLevel: S.sea.choir.open, patientChoirOwned: S.caveAutomation.unlocked, automationStages: S.caveAutomation.stages, eventsCompleted: S.caveVariety?.completed, actualDescents: S.stats.descents, shoppingRack: S.caveAutomation.rack, deep: S.sea.deep, world: S.world, hornUp: S.hornUp, ivory: S.ivory, hornsFound: S.stats.hornsFound, ivoryLifetime: S.stats.ivoryLife, rarityLevel: S.hornUp.rarity || 0, primordialUnlocked: !!S.hornUp.firstVoice, primordialHeld: S.horns.filter(h => h.r === 5).length } };
     });
     out.cfg = cfg; out.seed = seed; out.wallSeconds = (Date.now() - wall0) / 1000; out.errors = errs.slice(0, 5); out.finished = status === 'done';
@@ -75,6 +80,7 @@ const maxHours = +arg('hours', 40), seed = +arg('seed', 1);
     const h = s => s == null ? '-' : (s / 3600).toFixed(2) + 'h';
     console.log(JSON.stringify(cfg), 'seed', seed, out.finished ? 'FINISHED' : 'not finished', `game ${h(out.gameSeconds)} wall ${out.wallSeconds.toFixed(0)}s`);
     console.log(Object.entries(out.marks).map(([k, v]) => `${k}=${h(v)}`).join('  '));
+    if (out.finale) console.log('finale', JSON.stringify(out.finale));
     console.log('final', JSON.stringify(out.final), 'errors', out.errors.length);
     if (errs.length) process.exitCode = 1;
   } finally {

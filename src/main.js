@@ -6,6 +6,8 @@ import { createSaveStore } from './save-store.js';
 import { advanceOfflineHorns, ACTIVE_HORN_QUEUE_CAP } from './offline-horns.js';
 import { createShellUI } from './shell-ui.js';
 import { createPearlUI } from './pearl-ui.js';
+import { createChorusUI } from './chorus-ui.js';
+import { CHORUS_CHAPTERS, CHORUS_TOTAL, chorusActive, chorusStep, payChorus, setUnderway, chorusHarmony, chorusEnding, ASSIST_WAIT } from './chorus.js';
 import { PEARL_RARITY, PEARL_SLOTS, tickPearls, openOyster, applyPearls, bestPearls, equipPearl as equipPearlItem, grindPearl as grindPearlItem } from './pearls.js';
 import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscoveryCost, shellDiscoveryChance } from './seashells.js';
 import { AUTOMATION_STAGES, automationStage, categoryUnlocked, shoppingSlots, shoppingEligible, shoppingInterval, slotShoppingHorn, buyAutomationStage, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
@@ -27,7 +29,7 @@ import { createState } from './state.js';
   const cv = $('cv'), ctx = cv.getContext('2d');
   const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
   const KEY = 'geode-choir-v1';
-  const VERSION = '1.10.8';
+  const VERSION = '1.11.0';
   // Release channel shown beside the version; saves and version checks use VERSION alone.
   const CHANNEL = 'beta';
 
@@ -1910,6 +1912,15 @@ import { createState } from './state.js';
     active: () => S.tab === 'deep' && !document.hidden && !cinematic && !sceneOpen && !awayOpen && !newsOpen,
     changed: () => { save(); updateUI(); },
   });
+  // The Last Chorus clock runs in either world and any tab, but only while nothing else holds the screen.
+  const chorusUI = createChorusUI({ state: () => S,
+    active: () => !document.hidden && !cinematic && !sceneOpen && !awayOpen && !newsOpen && !menuOpen && !creditsOpen,
+    draw: () => !simulation?.fast,
+    changed: event => { if (event === 'complete') completeChorus(); save(); updateUI(); },
+    sound: (kind, arg) => chorusSound(kind, arg),
+    goWorld: w => { setWorld(w); updateUI(); },
+    horns: () => S.equipped.map(id => S.horns.find(h => h.id === id)).filter(Boolean).map(h => h.name),
+  });
 
   // An oyster has washed open: it pays pearl dust, and reveals a pearl when one has formed.
   function oysterOpened(o) {
@@ -2988,6 +2999,7 @@ import { createState } from './state.js';
       ['The Answer', 'You pour the offering into the water and shout once, the way you did on the first day, into a dark you no longer remember being small.'],
       ['Below the Tower', 'The sea lets go of the line. Beneath the bell tower the air fills with voices: not ghosts, not echoes, but a choir, every singer of Hollowmere, mid-breath, holding the note they were singing when the mountain closed.'],
       ['What They Were Waiting For', `They had not been lost. They had been holding the note, all of them, until someone sang the next one. It took ${fmt(S.shouts)} ${S.shouts === 1 ? 'shout' : 'shouts'}, ${fmt(S.sea.soundings)} soundings, ${fmt(S.hearts)} Heartstones and ${Object.keys(S.feats).length} feats. It took exactly as long as it took.`],
+      ...endingCard(),
       ['The Song Closes', 'Hum from the cave above and tide from the sea below meet at the tower, and the interval resolves. The mountain is warm. The water is bright. Somewhere, a door that was never locked swings open.'],
       ['Hollowmere', 'The town does not come back. It does not need to. It sings, and you are in the choir, third bench from the left, where your name was cut before you arrived. The song is complete. It will keep going anyway.'],
     ] },
@@ -3033,7 +3045,7 @@ import { createState } from './state.js';
     { id: 'dream', name: 'Dreamer', desc: 'Come back after an hour away to find the world still singing.', check: () => S.stats.longAway >= 1 },
   ];
 
-  // ---------- the Undersong ----------
+  // ---------- the Undersong and the Last Chorus ----------
   const SONG_COST = SONG_FATHOMS;
   const songReqs = () => [
     { label: 'Sound the depths', have: S.sea.soundings, need: FINALE_SOUNDINGS },
@@ -3041,54 +3053,93 @@ import { createState } from './state.js';
     { label: 'Earn feats', have: Object.keys(S.feats).length, need: 20 },
   ];
   const songReady = () => songReqs().every(r => r.have >= r.need);
-  const songOn = () => S.finale > 0 || S.sea.soundings >= 3;
+  const songOn = () => S.finale > 0 || S.chorus.paid > 0 || S.sea.soundings >= 3;
+  const ENDINGS = {
+    Radiant: ['A Radiant Ending', 'Every line you sang landed true. The choir does not just remember the song; it finds a harmony Hollowmere never managed, and the whole mountain rings with it.'],
+    Full: ['A Full Ending', 'Most of your lines landed, and the ones that wavered were carried by the voices around you. That is what a choir is for.'],
+    Quiet: ['A Quiet Ending', 'The choir carried you more than you carried it. It does not mind. A song sung quietly is still sung all the way through.'],
+  };
+  const endingCard = () => { const e = chorusEnding(chorusHarmony(S)); return e ? [ENDINGS[e]] : []; };
   const AFTER_SCENE = { finale: () => openCredits() };
   let creditsOpen = false;
   function openCredits() {
     creditsOpen = true;
     $('creditsSub').textContent = `Geode Choir ${VERSION} (${CHANNEL})`;
     $('creditsText').textContent = 'Thank you for listening. The caves are still singing, and so is the sea. Keep going for as long as you like: nothing here ends, it only gets deeper.';
+    const harmony = chorusHarmony(S);
     $('creditsRows').innerHTML = [
       ['Time played', fmtDur(S.stats.playSec || 0)], ['Shouts and stones', fmt(S.shouts + S.sea.throws)],
       ['Hum sung', fmt(S.total)], ['Tide rung', fmt(S.sea.total)], ['Deepest cave', S.stats.maxDepth], ['Soundings', S.sea.soundings],
       ['Heartstones', fmt(S.hearts)], ['Feats', `${Object.keys(S.feats).length} / ${FEATS.length}`],
+      ...(harmony == null ? [] : [['Harmony', `${Math.round(harmony * 100)}%`], ['Ending', chorusEnding(harmony)]]),
     ].map(r => `<div class="stat"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
     $('credits').hidden = false; $('creditsClose').focus();
   }
   function closeCredits() { creditsOpen = false; $('credits').hidden = true; }
   $('creditsClose').addEventListener('click', closeCredits);
   $('credits').addEventListener('click', e => { if (e.target === $('credits')) closeCredits(); });
+  // Pays the offering once and sets out on the Last Chorus. The finale itself completes at the end of the expedition.
   function answerSong() {
-    if (S.finale || cinematic || sceneOpen || !songReady()) return;
-    if (!spend('fathom', SONG_COST)) return;
-    S.finale = Date.now();
+    if (S.chorus.paid || S.finale || cinematic || sceneOpen || !songReady()) return false;
+    if (!payChorus(S, songReady())) return false;
     cinematic = true;
     $('veil').classList.add('on');
     if (audible()) { chordSound(); setTimeout(waterSound, 600); }
-    whisper('You answer. The line goes still, and then the whole sea listens.');
+    whisper('You pour the offering into the water. Far below, a single voice begins to hum.');
     save();
-    setTimeout(() => { $('veil').classList.remove('on'); cinematic = false; checkStory(); updateUI(); }, 1600);
+    setTimeout(() => { $('veil').classList.remove('on'); cinematic = false; updateUI(); }, 1600);
+    return true;
+  }
+  function completeChorus() {
+    const harmony = chorusHarmony(S);
+    chorusSound('complete', harmony);
+    whisper(`The Last Chorus is sung. Harmony ${Math.round(harmony * 100)}%: ${chorusEnding(harmony).toLowerCase()}.`);
+    save();
+    checkStory();
+  }
+  // Musical cues for the expedition. Every cue also has a visual or text form on the card.
+  const PENTA = [196, 220, 261.63, 293.66, 329.63, 392, 440, 523.25];
+  function chorusSound(kind, arg) {
+    if (!audible()) return;
+    const worn = Math.min(3, S.equipped.length);
+    if (kind === 'open') { tone(261.63, 0.05, 2.2, 2); tone(392, 0.03, 2.4, 1.5); }
+    else if (kind === 'clue') arg.forEach((n, i) => setTimeout(() => { if (audible()) tone([196, 261.63, 329.63][n], 0.07, 1.1, 2); }, 380 * i));
+    else if (kind === 'hit') tone(261.63 * (1 + 0.5 * arg), 0.04 + 0.04 * arg, 1.8, 1.5 + 0.25 * worn, 0.15 + 0.05 * worn);
+    else if (kind === 'miss') tone(130.81, 0.04, 1.2, 1.5);
+    else if (kind === 'resolve') { tone(329.63, 0.05, 2.4, 2); if (arg >= 0.5) tone(392, 0.04, 2.4, 2); }
+    else if (kind === 'complete') {
+      // Better harmony brings in more voices.
+      const layers = 2 + Math.round(4 * (arg || 0));
+      for (let i = 0; i < layers + 2; i++) setTimeout(() => { if (audible()) tone(PENTA[i % PENTA.length], 0.05, 4.5, 2, 0.25); }, 140 * i);
+    }
   }
   function updateSong() {
     const on = songOn();
     setHid('songSec', !on);
     if (!on) return;
-    const done = S.finale > 0, ready = songReady(), afford = S.sea.fathoms >= SONG_COST;
-    setT('songNote', done ? 'The Song is complete. The choir under the tower keeps singing, and so do you.'
-      : ready ? `Everything is in place. Answering costs ${fmt(SONG_COST)} fathoms, an offering poured into the water.`
+    const C = S.chorus, done = S.finale > 0, going = chorusActive(S), ready = songReady(), afford = S.sea.fathoms >= SONG_COST;
+    const harmony = chorusHarmony(S), st = chorusStep(S);
+    setT('songNote', done ? `The Song is complete.${harmony == null ? '' : ` Your Last Chorus rang with ${Math.round(harmony * 100)}% harmony: ${chorusEnding(harmony).toLowerCase()}.`} The choir under the tower keeps singing, and so do you.`
+      : going ? `The Last Chorus is ${C.underway ? 'underway' : 'paused'}: chapter ${st.chapter + 1} of ${CHORUS_CHAPTERS.length}, ${CHORUS_CHAPTERS[st.chapter].name}, ${C.step} of ${CHORUS_TOTAL} encounters sung${harmony == null ? '' : `, harmony ${Math.round(harmony * 100)}%`}. Its clock only runs while you are in it and the game is in view; leaving pauses it and the cave and sea carry on as usual.`
+      : ready ? `Everything is in place. The offering is ${fmt(SONG_COST)} fathoms, poured into the water once. Then the Last Chorus begins: about half an hour of short encounters between your usual play, in five chapters. You can leave and come back at any time, and Auto can carry any encounter.`
       : 'Something under the tower is waiting for an answer. It wants proof that you have heard the whole mountain and the whole sea.');
-    setH('songReqs', done ? '' : songReqs().map(r => `<div class="stat${r.have >= r.need ? ' done' : ''}"><span>${r.label}</span><b>${r.have >= r.need ? '✓' : `${fmt(r.have)} / ${fmt(r.need)}`}</b></div>`).join(''));
+    setH('songReqs', done || going ? '' : songReqs().map(r => `<div class="stat${r.have >= r.need ? ' done' : ''}"><span>${r.label}</span><b>${r.have >= r.need ? '✓' : `${fmt(r.have)} / ${fmt(r.need)}`}</b></div>`).join(''));
+    setHid('songAssistRow', !going);
+    setT('songAssistText', `Auto assistance: the choir carries each encounter you leave for ${ASSIST_WAIT} seconds, at an average result.`);
+    $('songAssist').checked = !!C.assist;
     const btn = $('songBtn');
-    setT('songBtn', done ? 'Hear it again' : `Answer the Undersong · ${fmt(SONG_COST)} fathoms`);
-    btn.classList.toggle('poor', !done && !(ready && afford));
+    setT('songBtn', done ? 'Hear it again' : going ? (C.underway ? 'Leave the Last Chorus' : 'Resume the Last Chorus') : `Begin the Last Chorus · ${fmt(SONG_COST)} fathoms`);
+    btn.classList.toggle('poor', !done && !going && !(ready && afford));
   }
   $('songBtn').addEventListener('click', () => {
     initAudio();
     if (S.finale) { if (!sceneOpen && !cinematic) playScene('finale', AFTER_SCENE.finale); return; }
+    if (chorusActive(S)) { setUnderway(S, !S.chorus.underway); save(); updateUI(); return; }
     if (!songReady()) { whisper('Not yet. The tower wants more than this.'); return; }
     if (S.sea.fathoms < SONG_COST) { whisper(`You need ${fmt(SONG_COST)} fathoms to make the offering.`); return; }
     answerSong();
   });
+  $('songAssist').addEventListener('change', e => { S.chorus.assist = e.target.checked; save(); updateUI(); });
 
   function checkQuests(silent) {
     let any = false;
@@ -3252,7 +3303,8 @@ import { createState } from './state.js';
       ['Shards shed', fmt(st.shards)], ['Crossings rung', fmt(st.crossings)], ['Pearl dust gathered', fmt(st.pearls)],
       ['Horns found', fmt(st.hornsFound)], ['Horns held', S.horns.length],
       ...visibleRarities(S).map((r, i) => [`${r.name} horns held`, held[i]]),
-      ['The Song', S.finale ? new Date(S.finale).toLocaleDateString() : 'Unsung'],
+      ['The Song', S.finale ? new Date(S.finale).toLocaleDateString() : chorusActive(S) ? `Underway, ${S.chorus.step} of ${CHORUS_TOTAL}` : 'Unsung'],
+      ...(chorusHarmony(S) == null ? [] : [['Harmony', `${Math.round(chorusHarmony(S) * 100)}% · ${chorusEnding(chorusHarmony(S))}`]]),
       ['Feats', `${got} / ${FEATS.length}`], ['Pages', `${pages} / ${LORE.length}`],
     ];
     $('statGrid').innerHTML = rows.map(r => `<div class="stat"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
@@ -3490,6 +3542,7 @@ import { createState } from './state.js';
     renderCaveAutomation();
     shellUI.render();
     pearlUI.render();
+    chorusUI.render();
 
     // horns
     setT('hornSlots', `${S.equipped.length} / ${hornSlots()}`);
@@ -3710,6 +3763,7 @@ import { createState } from './state.js';
     advanceSeaTimer(S, dt, tickRate());
     tickPearls(S, dt);
     shellUI.tick(dt);
+    chorusUI.tick(dt);
     if (tickCaveEvents(S, dt, S.world === 'cave' && !cinematic && !sceneOpen && !awayOpen && !newsOpen,
       autoCaveEvents())) {
       save();
@@ -3842,7 +3896,7 @@ import { createState } from './state.js';
     get S() { return S; }, set S(v) { S = v; },
     frame, tap, randomInside, runAutomation, binRect, drawBins, get drag() { return drag; }, fuse, endScene, setWorld, refreshAll, syncVoices, afterStateChange, save,
     descend, startDive, shoppingInterval: () => shoppingInterval(S), slotShoppingHorn: id => slotShoppingHorn(S, id), buyAutomationStage: index => buyAutomationStage(S, index),
-    sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, FINALE_HEARTS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST,
+    sound, canSound, seaLock, tickRate, grantAway, heartSea, FINALE_SOUNDINGS, FINALE_HEARTS, kindle, floorMod, sunChance, onSun, goldHorns, canKindle, answerSong, songReady, songReqs, SONG_COST, chorusTick: dt => chorusUI.tick(dt), get creditsOpen() { return creditsOpen; }, closeCredits,
     shellTick: dt => shellUI.tick(dt),
     oysterOpened, bestPearls: () => bestPearls(S), equipPearl: id => equipPearlItem(S, id), grindPearl: id => grindPearlItem(S, id),
     finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),

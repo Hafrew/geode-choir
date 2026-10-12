@@ -41,7 +41,7 @@ module.exports = function installBot(cfg) {
   // Human pacing: with cfg.actionGap > 0 the bot gets one shop/fuse/descend action per gap seconds (small bursts allowed).
   const canAct = () => { if (!cfg.actionGap) return true; if (bot.budget >= 1) { bot.budget -= 1; return true; } return false; };
   const unitOf = it => typeof it.unit === 'function' ? it.unit() : it.unit;
-  const fathomReserve = S => ((S.sea.soundings >= 3 && !S.finale) ? finaleBudget : 0)
+  const fathomReserve = S => ((S.sea.soundings >= 3 && !S.finale && !S.chorus?.paid) ? finaleBudget : 0)
     + (cfg.extraFathomReserve || 0) + (cfg.patientChoir && S.hearts >= 2 && !S.caveAutomation.unlocked ? 100000 : 0);
 
   function buyLoop(S) {
@@ -169,7 +169,27 @@ module.exports = function installBot(cfg) {
         }
       }
     }
-    if (S.finale === 0 && sim.songReady() && S.sea.fathoms >= finaleBudget) { mark('finaleReady', S); bot.done = !cfg.patientChoir || S.caveAutomation.unlocked; }
+    // Three separate marks: requirements met (eligibility), offering paid (entry), and the Last Chorus sung (completion).
+    if (S.finale === 0 && sim.songReady()) mark('finaleEligible', S);
+    if (S.finale === 0 && !S.chorus?.paid && sim.songReady() && S.sea.fathoms >= finaleBudget) {
+      mark('finaleReady', S);
+      const settled = !cfg.patientChoir || S.caveAutomation.unlocked;
+      if (cfg.expedition === false) bot.done = settled;
+      else if (settled) {
+        const held = S.sea.fathoms, earned = S.sea.fathomsTotal;
+        if (sim.answerSong()) {
+          mark('finaleEntry', S);
+          bot.finale = { heldAtEntry: held, earnedAtEntry: earned, afterEntry: S.sea.fathoms };
+          S.chorus.assist = true;                   // average Auto quality, as the bot does for horns and shells
+          bot.pauseNow = true;
+        }
+      }
+    }
+    if (S.chorus?.done && !S.chorus.legacy) {
+      mark('finaleComplete', S);
+      bot.finale = { ...bot.finale, harmony: S.chorus.results.reduce((a, b) => a + b, 0) / S.chorus.results.length, heldAtCompletion: S.sea.fathoms };
+      bot.done = true;
+    }
   }
   function marks(S) {
     for (let i = 1; i <= (S.caveAutomation.stages || 0); i++) mark('verse' + i, S);
@@ -253,7 +273,11 @@ module.exports = function installBot(cfg) {
         while (bot.tapAcc >= 1) { bot.tapAcc -= 1; const q = sim.randomInside(); sim.tap(q.x, q.y, null); }
       }
       sim.frame(bot.now);
-      if (bot.frames % decideEvery === 0) { decide(); if (bot.kindleNow) { bot.kindleNow = false; sim.kindle(); return 'kindle'; } }
+      if (bot.frames % decideEvery === 0) {
+        decide();
+        if (bot.kindleNow) { bot.kindleNow = false; sim.kindle(); return 'kindle'; }
+        if (bot.pauseNow) { bot.pauseNow = false; return 'cinematic'; }
+      }
     }
     return bot.done ? 'done' : 'ok';
   };

@@ -2,7 +2,7 @@
 
 This replaces the earlier phase-only roadmap and conflicting Sea drafts. It combines the original phases with the added horn, Sea, seashell, and finale passes. Future versions are proposed release slots, not implemented features. A documentation change does not bump the runtime version.
 
-Current source version: **1.10.7 beta** (combined variety and staged automation release). Everything through 1.10.5, save-import sanitization (#37), and offline horns/module extraction (#38) is merged. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.535 hours**, exactly matching 1.10.5 across seeds 1–5 (see [Patient Verses validation](tools/sim/patient-verses.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
+Current source version: **1.11.0 beta** (The Last Chorus). Everything through 1.10.8 (Polish) is merged; 1.11.0 is implemented on its branch. The game is labelled **beta** in the version chip, credits, and page title until the 1.11.0 finale lands and the beta hardening is done; the label is presentation only, and saves and version checks use the plain version number. Natural simulations finish in a mean **6.535 hours**, exactly matching 1.10.5 across seeds 1–5 (see [Patient Verses validation](tools/sim/patient-verses.md)); a real save suggests humans can be faster than the bot. Implementation status does not imply deployment. Check merge/deployment status before starting each release.
 
 ## Principles
 
@@ -41,7 +41,8 @@ Current source version: **1.10.7 beta** (combined variety and staged automation 
 | **1.10.5** | Beta hardening: safe save import, save-failure warning, inventory render cost, test command and CI, number-format audit | Delivered (#39); no balance changes |
 | **1.10.6** | Variety pass, part 2: batched descents and cave events | Combined into 1.10.7; no separate release |
 | **1.10.7** | Cave dives, milestone events, shopping horn rack and staged Patient Choir | Implemented together; see release validation below |
-| **1.11.0** | The Last Chorus finale expedition and entry-price tuning | After 1.10.7, using the measured economy |
+| 1.10.8 | Polish: title screen, icon rail, Look sliders, motion pass, top-bar fixes | Delivered; no balance changes |
+| **1.11.0** | The Last Chorus finale expedition | Implemented; entry price kept at 50,000 pending tuning (see 1.11.0 below) |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -210,6 +211,16 @@ Replace immediate first-time finale completion with a **roughly 30-minute intera
 - Track entry-paid, chapter/encounter progress, harmony, and completed state separately from ordinary progression resets. Payment and completion rewards occur once, including across reloads. Old completed finales remain completed; replay is cosmetic and pays nothing again.
 - No game pause should be required to maintain progress: leaving the expedition pauses it while ordinary gameplay remains available. Confirm reset/re-entry UI during implementation.
 
+### Delivered in 1.11.0
+
+- **Rules** live in `src/chorus.js` (no DOM, audio, storage or imports); the stage card is `src/chorus-ui.js`. State is `S.chorus = { paid, underway, step, clock, open, results, assist, done, legacy }`, kept by Heartstone resets and normalized on load. `S.finale` is set only at completion.
+- **Shape:** five chapters × four encounters. Gaps (active seconds before each opens) are 15/85/80/90 in chapter I and 70/85/80/90 after: 1,570 s of waiting, about 26 minutes, plus play time. Encounter kinds: `clue` (shown 3 s as bars, words and notes, then pick one of three; 100/50/25% by tries), `phrase` (three timed notes on the shell-style needle), `route` (steady 60% / timing / listening), `pulse` (two pulses with 1.5 s and 2.5 s periods; aligned every 3.75 s). Chapter I alternates Sea/Cave, chapter III is from the Sea, chapter IV alternates Cave/Sea; Auto works anywhere.
+- **Auto:** Finish with Auto gives 50% (unplayed notes count as 50%). Auto assistance resolves any encounter left open 25 active seconds, so an assisted expedition takes 2,070 s (34.5 min) against roughly 28–30 min of active play.
+- **Harmony** is the mean result. Endings: Quiet below 55%, Full from 55%, Radiant from 80%; the final chord gains voices with harmony. Credits and the Chronicle show both.
+- **Clock:** advances only when underway, the page is visible, and no cutscene, kindling, away report, What's-new, menu or credits is open. Faster Tick and offline time never apply. Open encounters keep elapsed time, notes and wrong answers across reloads; a malformed one reopens fresh immediately.
+- **Entry price stays 50,000 fathoms.** The proposed 100,000 is still unadopted; the simulation results below show both are small against mid-run Sea income, so the price is not a pacing lever.
+- **Still open:** harmony thresholds and the 25 s assist wait need real-player tuning; the clue is short-term memory (free replay) rather than a hard puzzle; whether to drop the beta label now that the finale has landed.
+
 Measure **eligibility**, **entry**, and **expedition completion** separately. Current simulation “finished” means readiness, not paid completion; extend it to exercise actual payment and every chapter. Record held/lifetime fathoms and post-payment balance. Compare active/assisted completion, interruptions/reloads, disabled sound, and mobile controls.
 
 ## 1.12.0 — Descent minigame and Risky Descent (original Phase 5)
@@ -290,7 +301,7 @@ Extraction never blocks a feature release, and the canvas/audio rewrite stays ou
 | Listening puzzles require sound | Visual/text clues and average-quality assistance |
 | Normal horn/Sea actions overlap quest phrases and could pay twice | Quest performance has separate state; no implicit normal reward calls |
 | New finale invalidates old completion or charges twice | Preserve completed saves; persisted once-only payment, cosmetic replay |
-| Current simulator finishes at eligibility | Add paid expedition completion; report all three time marks |
+| Current simulator finishes at eligibility | Done in 1.11.0: the bot pays and completes with Auto assistance and reports eligibility, entry and completion marks |
 | Optional Sea bonus might erase fathom nerf | Separate bounded-income validation; chance/multiplier unconfirmed |
 | Offline report implies offline horn gains/shop automation | Report implemented accounting only; horn arrivals handled separately by the capped unnumbered pass |
 | Freshness reward starts from an already fresh floor | Bounded extension/offset, no negative age or over-cap freshness |
@@ -313,8 +324,8 @@ For each gameplay slice, run relevant existing rule/browser suites plus targeted
 
 Natural progression comparisons use seeds 1–5 with real currency generation, purchases, discovery, and average Auto; diagnostic best-item fixtures must be labelled separately. Compare several Cave/Sea shares and Patient Choir reserves. Record timer/tide stalls, Heartstone timing, actual sounds, shell outcomes/upgrades, Plumb Line, total/held fathoms, and final entry budgets. Extend horizons only when necessary and distinguish slow completion from an unreachable prerequisite.
 
-Simulator tools: `tools/sim/run.js` (finale runs; `--stopAtSunvein 1` for a Sunvein sanity check; the final output includes Sunvein and gilt counts) and `tools/sim/make-saves.js` (writes importable Heartstone 1–4 saves to `tools/saves/` for manual testing). Run long sims on an otherwise idle machine; browser suites time out when CPU is shared.
+Simulator tools: `tools/sim/run.js` (finale runs through paid Last Chorus completion; `--expedition 0` stops at readiness; `--save` starts from an exported save; `--stopAtSunvein 1` for a Sunvein sanity check; the final output includes Sunvein and gilt counts) and `tools/sim/make-saves.js` (writes importable Heartstone 1–4 saves to `tools/saves/` for manual testing). Run long sims on an otherwise idle machine; browser suites time out when CPU is shared.
 
-Existing reports: [The Longer Road](tools/sim/longer-road.md), [horn first pass](tools/sim/horn-first-pass.md), [ivory income](tools/sim/ivory-income.md), [QOL](tools/sim/qol.md), [Sea foundations](tools/sim/sea-foundations.md), [Sea pacing](tools/sim/sea-pacing.md). Natural shell results are recorded in [playable shell validation](tools/sim/playable-seashells.md); the expedition remains unimplemented. The earlier no-shell readiness results do not validate expedition duration.
+Existing reports: [The Longer Road](tools/sim/longer-road.md), [horn first pass](tools/sim/horn-first-pass.md), [ivory income](tools/sim/ivory-income.md), [QOL](tools/sim/qol.md), [Sea foundations](tools/sim/sea-foundations.md), [Sea pacing](tools/sim/sea-pacing.md). Natural shell results are recorded in [playable shell validation](tools/sim/playable-seashells.md). Expedition results are in [The Last Chorus](tools/sim/last-chorus.md). The earlier no-shell readiness results do not validate expedition duration.
 
 Deliver reviewable PRs in release order, keeping the existing stacked branch dependencies until merged. Planning edits do not claim gameplay implementation. Update this roadmap's status as each release actually lands.

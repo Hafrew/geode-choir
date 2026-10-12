@@ -16,7 +16,7 @@ const KEY = 'geode-choir-v1';
           window.requestAnimationFrame = () => 0;
           window.__geodeSimulation = { fast: false, items: [] };
           if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({
-            ver: '1.9.8', seenVer: '1.10.8', hum: 1, hearts: 1, world: 'sea', tab: 'sea',
+            ver: '1.9.8', seenVer: '1.11.0', hum: 1, hearts: 1, world: 'sea', tab: 'sea',
             strata: { tick: 2 }, lore: { prologue: 1, sea1: 1 }, saved: Date.now(),
             sea: { unlocked: true, soundings: 0, run: 50000, tide: 50000, cool: 60, coolTotal: 600 },
           }));
@@ -78,9 +78,10 @@ const KEY = 'geode-choir-v1';
           S.sea.soundings = 36;
           const ready = api.songReady(); api.answerSong();
           const paid = S.sea.fathoms; api.answerSong();
-          return { blocked, held, ready, paid, done: S.finale > 0, repeat: S.sea.fathoms };
+          // Paying begins the Last Chorus; the finale completes at the end of the expedition.
+          return { blocked, held, ready, paid, entered: S.chorus.paid > 0, done: S.finale > 0, repeat: S.sea.fathoms };
         });
-        assert.deepEqual(finale, { blocked: false, held: 50000, ready: true, paid: 0, done: true, repeat: 0 });
+        assert.deepEqual(finale, { blocked: false, held: 50000, ready: true, paid: 0, entered: true, done: false, repeat: 0 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
         assert.deepEqual(errors, []);
         console.log(`PASS ${width}px: live countdown, locked actions, offline/cave ticking, reload, once-only rewards, legacy Ceiling/cap and finale payment`);
