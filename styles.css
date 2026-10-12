@@ -78,7 +78,7 @@
   .hud-left { grid-column: 1; grid-row: 1; }
   .hud-right { grid-column: 3; grid-row: 1; justify-content: flex-end; }
   @container (min-width: 38rem) { .dock { grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; flex-wrap: nowrap !important; } .pop { grid-row: 2 !important; grid-column: 1 / -1 !important; } .rail { grid-row: 2 !important; } }
-  @container (min-width: 38rem) and (max-width: 58rem) { .schip { padding: 6px 9px; } .schip > span { display: none; } .schip svg.ic-one, .schip:not(.sea) svg.ic-desc, .schip.sea svg.ic-sea { display: block; } #chord .dots, #chord > span:first-child { display: none; } }
+  @container (max-width: 58rem) { .schip { padding: 6px 9px; } .schip > span { display: none; } .schip svg.ic-one, .schip:not(.sea) svg.ic-desc, .schip.sea svg.ic-sea { display: block; } .hud-right #chord .dots, .hud-right #chord > span:first-child { display: none; } }
   .chip {
     pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 11px; background: var(--glass); border: 1px solid var(--line); border-radius: 999px;

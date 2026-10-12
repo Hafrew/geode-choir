@@ -14,6 +14,11 @@ const SAVE = { ver: '1.10.8', seenVer: '1.11.0', hum: 1e6, hearts: 3, depth: 60,
       await page.goto(server.url); await page.waitForFunction(() => !!window.__geodeSimulation?.api, null, { polling: 100 });
       if (await page.locator('#mnote').isVisible()) await page.locator('#mnoteBtn').click();
       await page.evaluate(() => window.__geodeSimulation.api.endScene());
+      // Below about 58 characters of stage width the chips stay compact (icon and value), including when they wrap to a second row.
+      const compact = await page.evaluate(() => ({ stage: document.getElementById('stage').clientWidth / parseFloat(getComputedStyle(document.documentElement).fontSize),
+        label: getComputedStyle(document.getElementById('chipDescL')).display, dots: getComputedStyle(document.querySelector('#chord .dots')).display }));
+      if (compact.stage <= 58) assert.deepEqual([compact.label, compact.dots], ['none', 'none'], `compact chips at ${width}px`);
+      else assert.equal(compact.label, 'block', `full chips at ${width}px`);
       // Opening either popover must leave the top bar and the popover inside the stage.
       for (const [chip, pop] of [['#chipDesc', '#popDesc'], ['#chipHeart', '#popHeart']]) {
         await page.locator(chip).click(); await page.waitForTimeout(350);

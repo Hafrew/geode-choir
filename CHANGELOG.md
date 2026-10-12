@@ -2,6 +2,11 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
+## Unreleased
+
+### Fixed
+- On narrow stages, where the Descend/Heartstone/Horn chips drop to a second row, they stay compact (icon, ring and value) instead of switching back to their full labels. The compact Chord meter now shows only its multiplier, as intended.
+
 ## 1.11.0: The Last Chorus (2026-10-12)
 
 The Undersong becomes the Last Chorus, a finale expedition of about half an hour.
