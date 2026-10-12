@@ -4,6 +4,9 @@ Versions follow [semver](https://semver.org). The newest release is also shown i
 
 ## Unreleased
 
+### Changed
+- The Descend/Heartstone/Horn chips always stay in the top row, between the world switch and the Chord meter, instead of dropping to a second row on narrow stages. As the stage narrows the bar drops text in steps: full labels, then icon and value, then icon only (values stay in the hover tooltip), then the Chord meter, then just the rings. The Descend and Heartstone panels and the side rail now always start on the second row.
+
 ### Fixed
 - On narrow stages, where the Descend/Heartstone/Horn chips drop to a second row, they stay compact (icon, ring and value) instead of switching back to their full labels. The compact Chord meter now shows only its multiplier, as intended.
 

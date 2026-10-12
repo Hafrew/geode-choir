@@ -72,12 +72,13 @@
   #cv { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
   .veil { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.6s ease; }
   .veil.on { opacity: 1; }
-  .dock { position: absolute; inset: 14px; z-index: 5; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto minmax(0, 1fr); column-gap: 10px; row-gap: 8px; pointer-events: none; }
+  .dock { position: absolute; inset: 14px; z-index: 5; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); column-gap: 10px; row-gap: 8px; pointer-events: none; }
   .hud { display: contents; }
   .hud-left, .hud-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; align-self: start; }
   .hud-left { grid-column: 1; grid-row: 1; }
   .hud-right { grid-column: 3; grid-row: 1; justify-content: flex-end; }
-  @container (min-width: 38rem) { .dock { grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); grid-template-rows: auto minmax(0, 1fr); } .strip { grid-column: 2 !important; grid-row: 1 !important; align-self: start; flex-wrap: nowrap !important; } .pop { grid-row: 2 !important; grid-column: 1 / -1 !important; } .rail { grid-row: 2 !important; } }
+  /* The strip always shares the top row: centred on the stage when there is room, otherwise in the space between the side groups. */
+  @container (min-width: 38rem) { .dock { grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); } }
   @container (max-width: 58rem) { .schip { padding: 6px 9px; } .schip > span { display: none; } .schip svg.ic-one, .schip:not(.sea) svg.ic-desc, .schip.sea svg.ic-sea { display: block; } .hud-right #chord .dots, .hud-right #chord > span:first-child { display: none; } }
   .chip {
     pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
@@ -90,7 +91,7 @@
   button.chip:hover { color: var(--text); border-color: var(--line-2); }
   button.chip:focus-visible, .worlds button:focus-visible { outline: 2px solid var(--echo); outline-offset: 2px; }
   @container (max-width: 560px) { .chip, .schip { padding: 4px 9px; } #chord .dots { display: none; } .hud, .strip, .dock { gap: 6px; } .hud-left, .hud-right { gap: 6px; } }
-  .strip { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; pointer-events: none; }
+  .strip { grid-column: 2; grid-row: 1; align-self: start; min-width: 0; display: flex; justify-content: center; flex-wrap: nowrap; gap: 8px; pointer-events: none; }
   .schip {
     pointer-events: auto; --c: var(--fossil); --p: 0; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
     font: inherit; font-size: 0.75rem; color: var(--muted); padding: 6px 12px 6px 9px; background: var(--glass);
@@ -108,7 +109,7 @@
   .schip[aria-expanded="true"] { border-color: var(--line-2); background: var(--slab-2); color: var(--text); }
   @keyframes sglow { 50% { box-shadow: 0 0 14px color-mix(in srgb, var(--c) 50%, transparent); } }
   .pop {
-    position: absolute; grid-column: 1 / -1; grid-row: 3; top: 0; left: 0; right: 0; margin: 0 auto; max-height: 100%; min-height: 0; pointer-events: auto; box-sizing: border-box;
+    position: absolute; grid-column: 1 / -1; grid-row: 2; top: 0; left: 0; right: 0; margin: 0 auto; max-height: 100%; min-height: 0; pointer-events: auto; box-sizing: border-box;
     width: min(400px, 100%); overflow-y: auto; border-radius: 14px;
     background: var(--ground); box-shadow: 0 14px 44px var(--shadow); scrollbar-width: thin;
   }
@@ -601,7 +602,7 @@
 @media (max-width: 820px) { .brand h1 { font-size: 0.875rem; } }
 
 /* Icon rail: Settings, Sound and Chronicle, labels slide out on hover or focus */
-.rail { grid-column: 1; grid-row: 3; align-self: start; justify-self: start; display: flex; flex-direction: column; gap: 6px; width: 34px; contain: inline-size; }
+.rail { grid-column: 1; grid-row: 2; align-self: start; justify-self: start; display: flex; flex-direction: column; gap: 6px; width: 34px; contain: inline-size; }
 .rbtn { position: relative; box-sizing: border-box; width: fit-content; height: 34px; padding: 0 9px; gap: 0; justify-content: flex-start; overflow: hidden; white-space: nowrap; transition: padding .28s ease, color .15s, border-color .15s, background .15s; }
 .rbtn svg { flex: none; }
 .rbtn .lb { max-width: 0; margin-left: 0; opacity: 0; overflow: hidden; transition: max-width .28s ease, margin-left .28s ease, opacity .2s ease; }
@@ -639,8 +640,12 @@
 }
 
 .schip .ic { display: none; flex: none; }
-.hud-left { flex-wrap: wrap; }
-@container (min-width: 38rem) { .hud-left { flex-wrap: nowrap; } }
+.hud-left { flex-wrap: nowrap; }
+/* Narrower stages drop text before anything leaves the top row: first the chip values (shown on hover), then the Chord meter, then the chip icons. */
+@container (max-width: 35rem) { .schip { gap: 6px; padding: 5px 8px; } .schip > b { display: none; } }
+@container (max-width: 29.5rem) { .hud-right #chord { display: none; } }
+@container (max-width: 25.5rem) { .schip .ic { display: none !important; } .schip { padding: 6px; } }
+@container (max-width: 20rem) { .worlds button { padding: 4px 7px; } .hud-left, .strip { gap: 3px; } .dock { column-gap: 4px; } #depthChip { padding: 4px 7px; } .schip { padding: 4px; } }
 .hud-left > *, .strip > * { flex: none; white-space: nowrap; }
 
 /* The Last Chorus: the expedition card on the stage. Cues are always shown as text as well as sound and motion. */
