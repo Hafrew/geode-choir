@@ -6,7 +6,7 @@ const SAVE = { ver: '1.10.8', seenVer: '1.11.0', hum: 1e6, hearts: 3, depth: 60,
   const { chromium } = loadPlaywright(), server = await serve(); let browser;
   try {
     browser = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
-    for (const width of [1500, 1100, 700, 390]) {
+    for (const width of [1500, 1100, 950, 860, 700, 560, 390, 320]) {
       const context = await browser.newContext({ viewport: { width, height: 800 } }), page = await context.newPage(), errors = [];
       page.on('pageerror', e => errors.push(String(e)));
       await page.route('https://fonts.googleapis.com/**', r => r.fulfill({ body: '', contentType: 'text/css' }));
@@ -19,6 +19,14 @@ const SAVE = { ver: '1.10.8', seenVer: '1.11.0', hum: 1e6, hearts: 3, depth: 60,
         label: getComputedStyle(document.getElementById('chipDescL')).display, dots: getComputedStyle(document.querySelector('#chord .dots')).display }));
       if (compact.stage <= 58) assert.deepEqual([compact.label, compact.dots], ['none', 'none'], `compact chips at ${width}px`);
       else assert.equal(compact.label, 'block', `full chips at ${width}px`);
+      // The chips never leave the top row: everything shares one line, without overlapping or leaving the stage.
+      const row = await page.evaluate(() => {
+        const st = document.getElementById('stage').getBoundingClientRect();
+        const els = [...document.querySelectorAll('.hud-left > *, #strip > *, .hud-right > *')].filter(el => el.offsetParent !== null).map(el => el.getBoundingClientRect());
+        const overlap = els.some((a, i) => els.some((b, j) => j > i && a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1));
+        return { oneRow: Math.max(...els.map(r => r.top)) - Math.min(...els.map(r => r.top)) < 6, overlap, inside: els.every(r => r.left >= st.left - 1 && r.right <= st.right + 1) };
+      });
+      assert.deepEqual(row, { oneRow: true, overlap: false, inside: true }, `top row at ${width}px`);
       // Opening either popover must leave the top bar and the popover inside the stage.
       for (const [chip, pop] of [['#chipDesc', '#popDesc'], ['#chipHeart', '#popHeart']]) {
         await page.locator(chip).click(); await page.waitForTimeout(350);
