@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const { loadPlaywright } = require('./browser');
 const { serve } = require('./serve');
-const SAVE = { ver: '1.10.8', seenVer: '1.10.8', hum: 1e6, hearts: 3, depth: 60, lumen: 1e30, lore: { prologue: 1 }, sea: { unlocked: true }, hornsOn: true, hornTimer: 5, lv: { harmony: 3 } };
+const SAVE = { ver: '1.10.8', seenVer: '1.11.0', hum: 1e6, hearts: 3, depth: 60, lumen: 1e30, lore: { prologue: 1 }, sea: { unlocked: true }, hornsOn: true, hornTimer: 5, lv: { harmony: 3 } };
 (async () => {
   const { chromium } = loadPlaywright(), server = await serve(); let browser;
   try {

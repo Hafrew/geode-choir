@@ -4,7 +4,7 @@ An idle / incremental game in two worlds. Shout into a buried crystal cave to wa
 
 It's a static browser game with no build step. Progress is saved in your browser's localStorage.
 
-Current version: **1.10.8 beta**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Current version: **1.11.0 beta**. See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Run locally
 
@@ -22,13 +22,19 @@ After two Heartstones, **Strata → Patient Choir** unlocks permanently for **10
 
 ## Sea progression
 
-Soundings need enough tide and an expired settling timer. The timer starts at 10 minutes, shortens at 2/5/10/20 actual soundings to a 2-minute minimum, and follows Faster Tick in either world and at the usual offline efficiency. Tide requirements grow by ×3 per sounding. Later Heartstones require 20/24/28/... cumulative soundings; the first opens the Sea. The Undersong needs 25 actual soundings, three Heartstones, 20 feats, and 50,000 fathoms. Open the Ceiling has 15 purchasable levels; higher legacy levels keep their bonuses.
+Soundings need enough tide and an expired settling timer. The timer starts at 10 minutes, shortens at 2/5/10/20 actual soundings to a 2-minute minimum, and follows Faster Tick in either world and at the usual offline efficiency. Tide requirements grow by ×3 per sounding. Later Heartstones require 20/24/28/... cumulative soundings; the first opens the Sea. The Undersong needs 36 actual soundings, five Heartstones, 20 feats, and a 50,000-fathom offering, which begins the Last Chorus. Open the Ceiling has 15 purchasable levels; higher legacy levels keep their bonuses.
 
 ## Seashells
 
 After each successful Sea sounding, discovery has a 20% chance to find a shell (75% Common, 20% Epic, 5% Mythic among finds). In **The Deep → Seashells**, claim a Common directly; for Epic/Mythic complete three timing notes or choose **Finish with Auto**. Better timing improves depth reduction: Common 1, Epic 2–4, Mythic 5–10. Auto gives 1/3/8. Sounding reductions stay fixed at 0/1/3. Notes pause off-screen and partial results survive reloads. Inventory and sounding cards display stable 2D SVG shell art, with distinct shapes and materials for each rarity.
 
 Equip one shell, or buy the permanent second slot for **500 fathoms**. Shell Listening costs **25/50/100/200/400/800 fathoms**, raising discovery by five percentage points per level to 50%. Equipped discounts add and apply only to Heartstone eligibility, never actual depth, milestones, rewards, or the finale's 25-sounding requirement. Distinct identical shells can equip together. Inventory has no cap or forced salvage in this pass. Shells, upgrades, and pending soundings survive every reset.
+
+## The Last Chorus
+
+Answering the Undersong pays its offering once and begins a roughly half-hour expedition in five chapters of four encounters each: clues that move between the Sea and the Cave, timed horn phrases, routes across the Quiet Sea (steady, timing or listening), and Heartstone pulses to align. Encounters open 60–90 seconds apart, with ordinary play in between. Some are answered from a particular world; the card offers the way there.
+
+Every encounter advances. Results average into **harmony**, which sets the final chord and the ending card (Quiet, Full from 55%, Radiant from 80%). **Finish with Auto** gives 50% at any time; **Auto assistance** carries each encounter left for 25 seconds. The clock is active real time: it runs only while the expedition is underway and the page is visible, ignores Faster Tick, and pauses with **Leave**. Progress, open encounters and completion are saved once and survive reloads and resets. Finales completed before 1.11.0 stay complete.
 
 ## Offline horns
 
@@ -50,6 +56,8 @@ Manual arrivals become waiting calls, preserving existing calls and unfinished s
 - `src/save-store.js`: browser storage, backup swaps, GC1 codes, and import/reload write protection.
 - `src/offline-horns.js`: capped away-time horn clock and shared queue limits.
 - `src/saves.js`: serialization, compatibility migration, and restoration without DOM or storage access.
+- `src/chorus.js`: the Last Chorus rules: chapters, the active-time clock, encounter scoring, Auto, harmony and save normalization.
+- `src/chorus-ui.js`: the expedition card on the stage. It presents the saved encounter and owns no rewards.
 - `src/progression.js`: descent/sea rewards and thresholds, Heartstone eligibility and state resets, plus trait-aware decay/Gilt rules.
 - `src/main.js`: initialization, the game loop, gameplay orchestration, rendering, audio, and UI. Canvas, audio, and UI extraction remains a later refactor.
 - `tools/sim/`: seeded gameplay simulation through an explicit, opt-in interface. It serves the real application over HTTP without rewriting source files.
@@ -74,7 +82,7 @@ GitHub Actions runs unit tests on pull requests to `main` and pushes to `main`. 
 
 Use `--hornStart primordial` for a diagnostic run with the rarity upgrade and Primordial rack already unlocked (no free horns or currency). This measures the maximum-upgrade effect, not natural unlock timing. Use `--hornUpgrades 0` to disable Rarity Weaving and Primordial purchases while retaining the current ivory economy. Fast simulations skip canvas painting while retaining the physics and seeded gameplay draws.
 
-The short simulation checks setup and early progression. For balance work, run the longer, multi-seed comparisons described in `PLAN.md`. `finished: false` is expected when a short run stops before the finale; JavaScript errors cause a failing exit status.
+The short simulation checks setup and early progression. For balance work, run the longer, multi-seed comparisons described in `PLAN.md`. A run finishes when the bot has paid the offering and completed the Last Chorus with Auto assistance; `--expedition 0` stops at finale readiness as before, and `--save file` starts from an exported save (JSON or a GC1 code). `finished: false` is expected when a short run stops before the finale; JavaScript errors cause a failing exit status.
 
 ## Horn presentation
 

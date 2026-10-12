@@ -1,5 +1,10 @@
 // Newest first. `head` is the release's headline; everywhere else it is just called by its number.
 export const CHANGES = [
+  { ver: '1.11.0', date: '2026-10-12', head: 'The Last Chorus', items: [
+    'The Undersong is now an expedition. Pay the offering once and the Last Chorus begins: five chapters of short encounters, about every minute and a half, between your usual play. Follow a voice between cave and sea, answer phrases with your horns, cross the Quiet Sea, mend the broken Heartstone, and sing the last line.',
+    'Every encounter advances, however it goes. Better play earns harmony, which sets how full the final song sounds and which of three endings you see. Finish with Auto gives an average result at any time, and Auto assistance can carry each encounter you leave.',
+    'The expedition only runs while you are in it and the game is in view, never faster with Faster Tick. Leave it at any time and come back later; every answer is saved. Each cue is shown as well as heard, and finales you already sang stay complete.',
+  ] },
   { ver: '1.10.8', date: '2026-10-11', head: 'Polish', items: [
     'A title screen and main menu with an animated cave. Settings, Sound and Chronicle moved to an icon rail whose labels slide out on hover, and the top bar stays in one flat row on wide windows.',
     'Look sliders in Settings change brightness, glow and the drawn size of crystals and effects in both worlds. Calm effects are quieter and are now the default for new games.',

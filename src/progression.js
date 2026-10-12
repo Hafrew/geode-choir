@@ -1,10 +1,11 @@
 import { freshCave, freshSea, createState } from './state.js';
 import { shellDiscounts } from './seashells.js';
+import { CHORUS_COST } from './chorus.js';
 const KNEE = 10;
 const SEA_MILESTONES = [2, 5, 10, 20];
 const FINALE_SOUNDINGS = 36;
 const FINALE_HEARTS = 5;
-const SONG_FATHOMS = 50000;
+const SONG_FATHOMS = CHORUS_COST;
 const PLUMB_STEP = 1.2;
 // Sunvein bad-luck protection: each eligible descent without a Sunvein adds a step to the chance (up to a maximum),
 // and the 30th such descent is a Sunvein.
@@ -41,7 +42,7 @@ function resetHeartstone(S, version) {
     caveVariety: { ...S.caveVariety, remaining: 0 },
     shells: S.shells, pearls: S.pearls,
     horns: S.horns, coll: S.coll, hornQueue: S.hornQueue, hornPlan: S.hornPlan, hornAuto: S.hornAuto, hornInventory: S.hornInventory, gilt: S.gilt, goldUp: S.goldUp, equipped: S.equipped, primordialEquipped: S.primordialEquipped, hornPity: S.hornPity, ver: S.ver, seenVer: S.seenVer, refund: S.refund, hornSeq: S.hornSeq, hornBuys: S.hornBuys, hornsOn: true, hornTimer: S.hornTimer,
-    ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, ts: S.ts, numfmt: S.numfmt, finale: S.finale, quests: S.quests, shouts: S.shouts, tab: 'sea',
+    ivory: S.ivory, hornUp: S.hornUp, sea: S.sea, seen: S.seen, muted: S.muted, fx: S.fx, theme: S.theme, ts: S.ts, numfmt: S.numfmt, finale: S.finale, chorus: S.chorus, quests: S.quests, shouts: S.shouts, tab: 'sea',
     lore: S.lore, feats: S.feats, stats: S.stats,
   };
   keep.sea.unlocked = true;

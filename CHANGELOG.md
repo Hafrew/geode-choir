@@ -2,19 +2,35 @@
 
 Versions follow [semver](https://semver.org). The newest release is also shown in the game, under Settings → What's new.
 
-## Unreleased
+## 1.11.0: The Last Chorus (2026-10-12)
+
+The Undersong becomes the Last Chorus, a finale expedition of about half an hour.
+
+### Added
+- The Last Chorus. Answering the Undersong (same requirements: 36 actual soundings, five Heartstones, 20 feats) pays the 50,000-fathom offering once and starts the expedition instead of ending the game immediately. It has five chapters of four encounters, opening 60–90 seconds apart (the first after 15 seconds), with ordinary play in between:
+  - **Find the First Voice:** listening clues, alternating between the Sea and the Cave.
+  - **Wake the Choir:** three timed horn phrases (your worn horns are named, and more worn horns give a richer note), then a clue.
+  - **Cross the Quiet Sea:** choose a steady route (always crosses), a timing challenge or a listening puzzle, from the Sea.
+  - **Mend the Fracture:** align two Heartstone pulses, alternately from the Cave and the Sea.
+  - **Sound the Last Chorus:** a clue, a phrase, a pulse and a final phrase.
+- Every encounter advances whatever happens. Its result (0–100%) adds to **harmony**: the average sets how many voices join the final chord and which ending card plays (Quiet below 55%, Full from 55%, Radiant from 80%). Credits and the Chronicle show harmony and the ending.
+- **Finish with Auto** is always available and gives 50%, keeping any notes already played. **Auto assistance** (on the card or in Deep → The Undersong) carries each encounter you leave for 25 seconds at the same average, so a hands-off expedition takes about 35 minutes instead of about 30.
+- Clues are shown as bars and words as well as played; the pulse challenge has an "In step" meter and text, which reduced motion keeps while hiding the moving rings. Sound is never required. On narrow screens the expedition card stays pinned to the bottom of the window.
+- The simulator pays the offering and completes the expedition with Auto assistance, reporting `finaleEligible`, `finaleReady`, `finaleEntry` and `finaleComplete` marks and the fathoms held at entry and completion (`--expedition 0` keeps the old readiness stop). `--save` starts a run from an exported save.
+
+### Changed
+- The expedition clock is active real time: it runs only while the expedition is underway, the page is visible and no scene, menu or dialog is open, and Faster Tick does not speed it. **Leave** pauses it; the cave and sea carry on as usual. Offline time never advances it.
+- The finale (the Whole Song feat, the closing scene and the credits) now arrives when the last encounter is sung, not when the offering is paid.
+- Payment, every resolved encounter, any open encounter's notes and wrong answers, and completion are saved and survive reloads and every reset. Saves cannot add progress, and an unreadable encounter reopens fresh at once.
+- Finales completed before 1.11.0 stay complete and never charge again; replaying the scene is free.
+- When the top bar is compact, the Descend (or Sound), Heartstone and Horn chips show an icon, their ring and their value, with the full name and timer in the hover tooltip. The Chord meter shows only its multiplier.
 
 ### Fixed
 - Opening the Heartstone or Descend panel no longer breaks the top bar. The panel was widening the bar's columns, which pushed the Descend/Heartstone/Horn chips off the stage (or stacked them in a column). Panels now overlay their own row and take no space from the bar, and the chip row never wraps while the bar is flat.
 - The Settings → Look sliders line up in one column, with the description and Reset button below them.
-
-### Fixed
 - Hovering the depth chip on a narrow stage no longer flickers between two states. Its details now drop down as a small panel below the chip instead of resizing the bar, so nothing else shifts.
 - The top bar's columns size to their content instead of splitting the space equally, so the left controls and the centre chips no longer collide on narrow stages.
 - The top bar now stays in one flat row on much narrower stages (down to about 38 characters of text width, roughly 610px at default text size). From about 930px and below the Descend/Heartstone/Horn chips show only their ring and value, and the label slides out on hover. Only a phone-width stage still wraps the chips to a second row.
-
-### Changed
-- When the top bar is compact, the Descend (or Sound), Heartstone and Horn chips show an icon, their ring and their value, with the full name and timer in the hover tooltip. The Chord meter shows only its multiplier.
 
 ## 1.10.8: Polish (2026-10-11)
 

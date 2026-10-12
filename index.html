@@ -72,6 +72,7 @@
     </div>
     <div class="hint" id="hint">Click the dark to shout.</div>
     <div class="whisper" id="whisper" aria-live="polite"></div>
+    <section class="chorus" id="chorus" hidden aria-label="The Last Chorus" aria-live="polite"></section>
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <div class="scene" id="scene" hidden role="dialog" aria-modal="true" aria-labelledby="sceneTitle">
       <div class="scene-card" id="sceneCard">
@@ -208,6 +209,7 @@
         <h2>The Undersong</h2>
         <p class="note" id="songNote"></p>
         <div class="statgrid" id="songReqs" style="grid-template-columns:1fr"></div>
+        <label class="note" id="songAssistRow" hidden><input type="checkbox" id="songAssist"> <span id="songAssistText">Auto assistance</span></label>
         <button class="bigbtn poor" id="songBtn" type="button"></button>
       </section>
       <section>

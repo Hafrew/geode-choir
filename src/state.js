@@ -2,6 +2,7 @@ import { freshCaveVariety } from './cave-variety.js';
 import { createCaveAutomation } from './automation.js';
 import { freshShells } from './seashells.js';
 import { freshPearls } from './pearls.js';
+import { freshChorus } from './chorus.js';
 const freshCave = () => ({
   hum: 0, run: 0, depth: 0, age: 0, wind: 0,
   crystals: [{ t: 0, x: 0, y: -0.12 }], bought: [0, 0, 0, 0],
@@ -41,7 +42,7 @@ const createState = version => ({
   heartSeaLegacy: null,
   sea: freshSea(), seen: {}, muted: false, fx: 'calm', look: { bright: 1, glow: 1, size: 1 }, theme: 'dark', ts: 1, saved: Date.now(), shouts: 0, tab: 'cave',
   lore: {}, feats: {}, stats: freshStats(),
-  ver: version, seenVer: version, refund: null, numfmt: 'short', finale: 0, omen: 'steady', rubble: 0, cool: 0, quests: {},
+  ver: version, seenVer: version, refund: null, numfmt: 'short', finale: 0, chorus: freshChorus(), omen: 'steady', rubble: 0, cool: 0, quests: {},
 });
 function freshStats() {
   return { fuses: 0, maxChord: 0, maxDepth: 0, shards: 0, booms: 0, crossings: 0, pearls: 0, hornsFound: 0, bestHorn: -1, longAway: 0, playSec: 0, shafts: 0, rockfalls: 0, veins: 0, descents: 0, sunveins: 0, giltLife: 0,
