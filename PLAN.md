@@ -253,13 +253,15 @@ Hollowmere rebuilt as a choir. A new tab beside Cave and Sea.
 
 Paid at reset from the lap's Renown, harmony, feats and best depth, capped per lap. Echoes buy permanent Foundation multipliers, Keep Time, the Foundation upgrade ladders and Hall unlocks. They persist through later Second Verse resets.
 
-### Open choices
+### Decisions (agreed)
 
-1. Does the Collection survive as a read-only record (recommended) or reset fully?
-2. Are Foundations baseline-per-lap (default) or carry the finished first run?
-3. Does Keep Time catch-up cap per return (default: yes)?
-4. Does the Last Chorus stay a one-time ending, or repeat at each lap for Radiant bonuses?
-5. Names and theme (Choir Hall, Stone, Tide, Cadence, Renown, Echoes) are placeholders.
+1. The Collection survives the reset as a **read-only record**; the items themselves reset.
+2. Foundations start from a **baseline each lap**, scaled by best-ever stats and Echoes.
+3. Keep Time catch-up is **capped per return**.
+4. The Last Chorus stays a **one-time ending**; it does not repeat per lap.
+5. Names and theme (Choir Hall, Stone, Tide, Cadence, Renown, Echoes, Foundations) are accepted for now.
+
+**World switch:** three-way (Cave, Sea, Hall). After the reset the Cave and Sea tabs keep their backdrops but show the compact Foundation panel instead of the full game; the Hall is the default landing tab.
 
 ### Build order
 
