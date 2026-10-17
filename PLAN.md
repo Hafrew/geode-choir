@@ -247,7 +247,7 @@ Hollowmere rebuilt as a choir. A new tab beside Cave and Sea.
 - **Parts:** Singers are assigned to choir parts (bass, tenor, alto, treble, descant). A balanced choir beats a lopsided one, so assignment is the main decision.
 - **Rehearsal:** each assigned part produces **Cadence** over time. Cadence is spent on **Repertoire**, songs that boost the Foundations (so the old worlds stay relevant) and the Hall itself.
 - **Festival:** every 20–30 minutes a Festival opens, reusing the Last Chorus encounter machinery (timed phrases, pulses). Good play earns **Renown**, the Hall's score currency; Auto gives an average result and is always available. Renown unlocks new districts and Repertoire tiers and raises the Echoes paid on the next reset.
-- **Pacing target:** the Hall carries several hours of play per lap. Lap time to the next Chorus target should fall from 6.5 hours to roughly 2–3 hours, with the Hall's content, not the Foundations, paying for most of it.
+- **Pacing target (to be reworded):** the Hall carries several hours of play per lap. After the reset there is no old-style Chorus target to time, so lap length is defined by the Hall's own goals and Echoes payout; set it when the Hall is specified.
 
 ### Echoes
 
@@ -265,7 +265,7 @@ Paid at reset from the lap's Renown, harmony, feats and best depth, capped per l
 
 ### Build order
 
-1. Foundation formulas and the reset (no Hall). **Rules delivered:** `src/foundations.js`, `resetSecondVerse` in `progression.js`, save normalization and `tools/foundations.test.mjs`; numbers in [Second Verse model](tools/sim/second-verse.md). **Still to do:** the Foundation panels, the three-way world switch and the reset confirmation in `main.js`, then the browser-driven lap-two run.
+1. Foundation formulas and the reset (no Hall). **Delivered:** the rules (`src/foundations.js`, `resetSecondVerse`, save normalization, `tools/foundations.test.mjs`) and the in-game flow in `main.js`: the offer and confirmation (with an automatic backup) after the Last Chorus, the Foundations tab and headline, tapping and the old tabs and chips stepping aside, live and away ticking with the per-return cap, and `tools/verse-smoke.js`. Numbers are placeholders ([Second Verse model](tools/sim/second-verse.md)). **Not yet:** the Hall (step 2), a third world-switch button, a browser-driven lap-two run, and a version bump and changelog entry (this work is unreleased).
 2. Hall core: districts, singers, parts, Cadence and Repertoire.
 3. Festival, Renown and the Echoes payout.
 4. Migration and hardening. Each step is its own reviewable release.

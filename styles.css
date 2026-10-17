@@ -690,3 +690,6 @@
   .chorus { position: fixed; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 60vh; }
   .stage:has(.chorus:not([hidden])) .whisper { top: 80px; }
 }
+
+/* Second Verse: once the layer is entered, the cave and sea run themselves and the old controls step aside. */
+body.verse .strip, body.verse #depthChip, body.verse #chord, body.verse #hint, body.verse .pop, body.verse #caveVarietyPanel { display: none !important; }

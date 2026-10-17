@@ -11,10 +11,11 @@ import { CHORUS_CHAPTERS, CHORUS_TOTAL, chorusActive, chorusStep, payChorus, set
 import { PEARL_RARITY, PEARL_SLOTS, tickPearls, openOyster, applyPearls, bestPearls, equipPearl as equipPearlItem, grindPearl as grindPearlItem } from './pearls.js';
 import { discoverShell, finishShell, equipShell, SHELL_SLOT_COST, shellDiscoveryCost, shellDiscoveryChance } from './seashells.js';
 import { AUTOMATION_STAGES, automationStage, categoryUnlocked, shoppingSlots, shoppingEligible, shoppingInterval, slotShoppingHorn, buyAutomationStage, CAVE_CATEGORIES, CAVE_RESERVES, runCaveShopping } from './automation.js';
-import { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
+import { KNEE, resetDescent, resetSounding, resetHeartstone, resetSecondVerse, decayTime, sunveinArrival,
   soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, FINALE_HEARTS, PLUMB_STEP, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   depthThreshold, seaThreshold, fossilReward, fathomReward, sunPityBonus, sunveinRoll, SUN_GUARANTEE, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
 import { serializeState, restoreState, cmpVer } from './saves.js';
+import { UNLOCK_COSTS, CATCHUP_CAP, ENGINE_MAX, AWAY_EFFICIENCY, verseActive, verseOffered, echoGain, foundationRate, engineCost, buyEngine, buyUnlock, advanceFoundations } from './foundations.js';
 import { applyAutoEquip, acquireHorn, IVORY_LEVELS, discoveryIvory, grantDiscoveryIvory, RARITY, HSTATS, PRIMORDIAL, RARITY_LEVELS, PITY_AT, TRAITS, TRAIT_CHOICE_AT,
   hash32, rng32, FAMS, FAM_OF, famOf, rarityOdds, rarityRevealed, primordialUnlocked, visibleRarities,
   normalSlots, primordialSlots, equippedIds, AUTO_P, traitValue, traitQuality, activeTraits,
@@ -1557,7 +1558,7 @@ import { createState } from './state.js';
   // =====================================================================
   let drag = null, cinematic = false;
   function ptr(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-  function tap(x, y, fromObj) { if (S.world === 'sea') throwStone(x, y, fromObj); else shout(x, y, fromObj); }
+  function tap(x, y, fromObj) { if (inVerse()) return; if (S.world === 'sea') throwStone(x, y, fromObj); else shout(x, y, fromObj); }
 
   cv.addEventListener('pointerdown', e => {
     initAudio();
@@ -2677,11 +2678,15 @@ import { createState } from './state.js';
     deep:    { world: 'sea',  open: () => S.sea.soundings >= 1 || S.sea.fathomsTotal > 0 },
     choir:   { world: 'sea',  open: () => true },
     horns:   { world: 'both', open: () => S.hornsOn },
+    found:   { world: 'both', open: () => true },
   };
   const TABS = Object.keys(TABDEF);
-  const tabVisible = t => (TABDEF[t].world === 'both' || TABDEF[t].world === S.world) && TABDEF[t].open();
+  // Once the Second Verse is entered the old tabs step aside and the Foundations tab stands in for both worlds.
+  const inVerse = () => verseActive(S);
+  const homeTab = () => inVerse() ? 'found' : S.world;
+  const tabVisible = t => (inVerse() ? t === 'found' : t !== 'found') && (TABDEF[t].world === 'both' || TABDEF[t].world === S.world) && TABDEF[t].open();
   function setTab(name) {
-    if (!tabVisible(name)) name = S.world;
+    if (!tabVisible(name)) name = homeTab();
     S.tab = name;
     S.seen['tab_' + name] = 1;
     for (const t of TABS) {
@@ -2698,7 +2703,7 @@ import { createState } from './state.js';
   function setWorld(w) {
     if (w === S.world || cinematic) return;
     if (w === 'sea' && !S.sea.unlocked) return;
-    S.world = w; S.tab = w;
+    S.world = w; S.tab = homeTab();
     drag = null;
     afterStateChange();
     whisper(w === 'sea' ? 'Down to the sunless sea. Up above, the cave keeps singing quietly.' : 'Back up to the cave. Below, the sea keeps rolling quietly.');
@@ -3076,6 +3081,59 @@ import { createState } from './state.js';
     $('credits').hidden = false; $('creditsClose').focus();
   }
   function closeCredits() { creditsOpen = false; $('credits').hidden = true; }
+  // The Second Verse: a full reset, offered once the Last Chorus is done. The confirmation lists what is lost, and a backup is taken first.
+  let verseOpen = false;
+  function openVerse() {
+    if (!verseOffered(S) || inVerse() || cinematic || sceneOpen) return;
+    verseOpen = true;
+    $('verseSub').textContent = `Lap ${S.verse.laps + 1}`;
+    $('verseRows').innerHTML = [['Echoes you will earn', fmt(echoGain(S))], ['Echoes you hold now', fmt(S.verse.echoes)],
+      ['Deepest cave', S.stats.maxDepth], ['Heartstones', fmt(S.hearts)], ['Soundings', S.sea.soundings], ['Horns in your Collection', Object.keys(S.coll).length]]
+      .map(r => `<div class="stat"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+    $('verse').hidden = false; $('verseCancel').focus();
+  }
+  function closeVerse() { verseOpen = false; $('verse').hidden = true; }
+  function beginVerse() {
+    if (!verseOffered(S) || inVerse()) return false;
+    save(); backupNow();
+    const r = resetSecondVerse(S, VERSION);
+    if (!r) return false;
+    S = r.state; S.world = 'cave'; S.tab = 'found';
+    closeVerse(); closePops();
+    refreshAll(); afterStateChange(); save();
+    whisper(`The Second Verse begins. ${fmt(r.gain)} Echoes carry forward; the cave and the sea now sing on their own.`);
+    return true;
+  }
+  $('verseBtn').addEventListener('click', openVerse);
+  $('verseCancel').addEventListener('click', closeVerse);
+  $('verseConfirm').addEventListener('click', beginVerse);
+  $('verse').addEventListener('click', e => { if (e.target === $('verse')) closeVerse(); });
+  // The Foundations panel is static markup that is updated in place, so a button is never replaced under a click.
+  function renderFoundations() {
+    if (!inVerse() || S.tab !== 'found') return;
+    const V = S.verse, F = V.foundations, U = V.unlocks, E = F.engine;
+    setT('foundEchoes', `${fmt(V.echoes)} · lap ${V.laps}`);
+    setT('foundNote', 'The cave and the sea run themselves now. Their Stone and Tide gather here; the Choir Hall that will spend them opens in a later update. Echoes are permanent: they strengthen both Foundations and buy the unlocks below.');
+    const unlock = (id, name, owned, cost, text) => {
+      const b = $(id); setT(id, owned ? `${name} · unlocked` : `${name} · ${fmt(cost)} Echoes`);
+      b.title = text; b.disabled = !!owned || V.echoes < cost; b.classList.toggle('poor', !owned && V.echoes < cost);
+    };
+    unlock('buyKeepTime', 'Keep Time', U.keepTime, UNLOCK_COSTS.keepTime, `While you are away the Foundations work at their full rate, for up to ${CATCHUP_CAP / 3600} hours a visit. Without it they work at ${Math.round(AWAY_EFFICIENCY * 100)}%.`);
+    unlock('buyCaveAuto', 'Cave auto descend', U.caveAuto, UNLOCK_COSTS.caveAuto, 'The cave descends on its own, even while you are away: Stone ×1.5.');
+    const tiers = UNLOCK_COSTS.seaAuto, done = U.seaAuto >= tiers.length;
+    unlock('buySeaAuto', `Sea automation ${U.seaAuto}/${tiers.length}`, done, tiers[U.seaAuto] ?? 0, 'Each tier automates more of the sea: Tide +25% per tier.');
+    setT('fndStone', fmt(F.stone)); setT('fndStoneRate', `${fmt(foundationRate(S, 'cave'))}/s`);
+    setT('fndTide', fmt(F.tide)); setT('fndTideRate', `${fmt(foundationRate(S, 'sea'))}/s`);
+    const eng = (id, key, have) => { const full = E[key] >= ENGINE_MAX, cost = engineCost(E[key]); setT(id, full ? `Engine ${E[key]} / ${ENGINE_MAX} · full` : `Engine ${E[key]} / ${ENGINE_MAX} · ${fmt(cost)} ${key === 'cave' ? 'Stone' : 'Tide'}`); $(id).disabled = full || have < cost; $(id).classList.toggle('poor', !full && have < cost); };
+    eng('buyCaveEngine', 'cave', F.stone); eng('buySeaEngine', 'sea', F.tide);
+    setHid('foundCave', false); setHid('foundSea', false);
+    const n = Object.keys(V.record).length, owned = Object.values(V.record).reduce((a, c) => a + (c.n || 0), 0);
+    setT('foundRecord', n ? `A read-only record of ${n} horn kinds (${fmt(owned)} found in all) from before the reset. The horns themselves are gone.` : 'No horns were recorded before the reset.');
+  }
+  for (const [id, fn] of [['buyKeepTime', () => buyUnlock(S, 'keepTime')], ['buyCaveAuto', () => buyUnlock(S, 'caveAuto')], ['buySeaAuto', () => buyUnlock(S, 'seaAuto')],
+    ['buyCaveEngine', () => buyEngine(S, 'cave')], ['buySeaEngine', () => buyEngine(S, 'sea')]]) {
+    $(id).addEventListener('click', () => { if (fn()) { save(); updateUI(); } });
+  }
   $('creditsClose').addEventListener('click', closeCredits);
   $('credits').addEventListener('click', e => { if (e.target === $('credits')) closeCredits(); });
   // Pays the offering once and sets out on the Last Chorus. The finale itself completes at the end of the expedition.
@@ -3116,6 +3174,7 @@ import { createState } from './state.js';
   function updateSong() {
     const on = songOn();
     setHid('songSec', !on);
+    { const offer = verseOffered(S) && !inVerse(); setHid('verseNote', !offer); setHid('verseBtn', !offer); }
     if (!on) return;
     const C = S.chorus, done = S.finale > 0, going = chorusActive(S), ready = songReady(), afford = S.sea.fathoms >= SONG_COST;
     const harmony = chorusHarmony(S), st = chorusStep(S);
@@ -3240,6 +3299,7 @@ import { createState } from './state.js';
     if (chronOpen && e.key === 'Escape') closeChronicle();
     if (awayOpen && e.key === 'Escape') closeAway();
     if (creditsOpen && e.key === 'Escape') closeCredits();
+    if (verseOpen && e.key === 'Escape') closeVerse();
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
     const tg = e.target, tag = tg && tg.tagName;
     if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
@@ -3468,14 +3528,22 @@ import { createState } from './state.js';
     const sea = S.world === 'sea', q = S.sea;
     setT('tagline', sea ? 'A sea that pays you in ripples.' : 'A cave that pays you in echoes.');
     $('purse').classList.toggle('sea', sea);
-    setT('humVal', fmt(sea ? q.tide : S.hum));
-    setT('humUnit', sea ? 'tide' : 'hum');
-    setT('rateVal', fmt(sea ? q.rate || 0 : S.rate || 0));
-    if (sea) { if ((q.rate || 0) > S.stats.bestTide) S.stats.bestTide = q.rate; }
-    else if ((S.rate || 0) > S.stats.bestRate) S.stats.bestRate = S.rate;
-    setT('rateUnit', sea ? 'tide/s' : 'hum/s');
-    setT('echoVal', sea ? ripples.length : P.length);
-    setT('echoUnit', sea ? 'ripples spreading' : 'echoes ringing');
+    if (inVerse()) {
+      // The headline shows the Foundation's own stock and rate, and the Echoes held.
+      const F = S.verse.foundations;
+      setT('humVal', fmt(sea ? F.tide : F.stone)); setT('humUnit', sea ? 'tide' : 'stone');
+      setT('rateVal', fmt(foundationRate(S, sea ? 'sea' : 'cave'))); setT('rateUnit', sea ? 'tide/s' : 'stone/s');
+      setT('echoVal', fmt(S.verse.echoes)); setT('echoUnit', 'Echoes held');
+    } else {
+      setT('humVal', fmt(sea ? q.tide : S.hum));
+      setT('humUnit', sea ? 'tide' : 'hum');
+      setT('rateVal', fmt(sea ? q.rate || 0 : S.rate || 0));
+      if (sea) { if ((q.rate || 0) > S.stats.bestTide) S.stats.bestTide = q.rate; }
+      else if ((S.rate || 0) > S.stats.bestRate) S.stats.bestRate = S.rate;
+      setT('rateUnit', sea ? 'tide/s' : 'hum/s');
+      setT('echoVal', sea ? ripples.length : P.length);
+      setT('echoUnit', sea ? 'ripples spreading' : 'echoes ringing');
+    }
     setT('crystalCount', `${S.crystals.length} / ${maxCrystals()}`);
     setT('bellCount', `${q.bells.length} / ${bellCap()}`);
     setH('depthChip', sea
@@ -3508,8 +3576,9 @@ import { createState } from './state.js';
       const dot = $('tab-' + t).querySelector('.new');
       if (dot) dot.hidden = !vis || !!S.seen['tab_' + t];
     }
-    setHid('tabs', others === 0);
-    if (!tabVisible(S.tab)) setTab(S.world);
+    setHid('tabs', inVerse() || others === 0);
+    if (!tabVisible(S.tab)) setTab(homeTab());
+    document.body.classList.toggle('verse', inVerse());
 
     for (const it of shopEls) it.update();
 
@@ -3540,6 +3609,7 @@ import { createState } from './state.js';
     setH('choirInfo', `The cave above sings <b>${fmt(S.idleRate || 0)} hum/s</b> on its own, lifting all tide <b>×${fmtX(choirBonus())}</b>. Whichever world you aren't in keeps earning <b>${pct(quietEff())}</b> of its idle rate. Choir upgrades are never lost.`);
 
     renderCaveAutomation();
+    renderFoundations();
     shellUI.render();
     pearlUI.render();
     chorusUI.render();
@@ -3656,14 +3726,30 @@ import { createState } from './state.js';
     if (!d || typeof d.hum !== 'number') return null;
     const imported = saveStore.consumeImport();
     if (!imported && cmpVer(d.ver || '1.0.0', VERSION) < 0) backupNow(JSON.stringify(d));
-    const restored = restoreState(d, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, GILT_CAP, AWAY_CAP });
+    const restored = restoreState(d, VERSION, { WONDERS, PEARLOBJ, FLOORS, OMENS, TABS, GILT_CAP, AWAY_CAP: Math.max(AWAY_CAP, CATCHUP_CAP) });
     if (!restored) return null;
     S = restored.state;
     applyAutoEquip(S);
     return restored.away;
   }
+  // In the Second Verse the Foundations are closed-form in time, so time away is exact, applied once, and capped per return.
+  function grantFoundationsAway(seconds) {
+    const r = advanceFoundations(S, seconds, true);
+    save();
+    if (!(r.stone > 0 || r.tide > 0)) return;
+    const mins = Math.round(r.seconds / 60);
+    if (r.seconds >= 300 && !sceneOpen) {
+      awayOpen = true;
+      $('awaySub').textContent = `You were away for ${fmtDur(seconds)}.`;
+      $('awayRows').innerHTML = [['Stone', r.stone], ['Tide', r.tide]].filter(x => x[1] > 0).map(x => `<div class="stat"><span>${x[0]}</span><b>+${fmt(x[1])}</b></div>`).join('');
+      $('awayNote').textContent = `The Foundations kept working${S.verse.unlocks.keepTime ? ' at their full rate' : ' at the usual away share'}${r.capped ? `, for up to ${CATCHUP_CAP / 3600} hours` : ''}.`;
+      $('away').hidden = false; $('awayClose').focus();
+    } else whisper(`While you were away${mins >= 1 ? ` (${mins} min)` : ''}, the Foundations made ${fmt(r.stone)} stone and ${fmt(r.tide)} tide.`);
+  }
   function grantAway(seconds) {
     if (seconds < 20) return;
+    if (inVerse()) { grantFoundationsAway(seconds); return; }
+    seconds = Math.min(seconds, AWAY_CAP);
     if (seconds >= 3600) S.stats.longAway++;
     const eff = offlineEff(), qe = quietEff(), q = S.sea, sea = S.world === 'sea';
     if (S.cool > 0) S.cool = Math.max(0, S.cool - seconds * eff * tickRate());
@@ -3706,7 +3792,7 @@ import { createState } from './state.js';
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { hiddenAt = Date.now(); save(); }
     else if (hiddenAt) {
-      const seconds = Math.min((Date.now() - hiddenAt) / 1000, AWAY_CAP);
+      const seconds = Math.min((Date.now() - hiddenAt) / 1000, Math.max(AWAY_CAP, CATCHUP_CAP));
       hiddenAt = 0; grantAway(seconds); save(); updateUI(); last = performance.now();
     }
   });
@@ -3754,6 +3840,16 @@ import { createState } from './state.js';
       }
     }
     liteT += dt; if (liteT > 0.25) { liteT = 0; updateLite(); govern(); }
+    if (inVerse()) {
+      // The Foundations run on their own: no automation, shopping, horns or encounters.
+      advanceFoundations(S, dt);
+      secT += dt; if (secT >= 1) { secT -= 1; S.stats.playSec = (S.stats.playSec || 0) + 1; }
+      uiT += dt; if (uiT > 0.12) { uiT = 0; updateUI(); }
+      saveT += dt; if (saveT > 5) { saveT = 0; save(); }
+      frameMs = frameMs * 0.9 + (performance.now() - t0) * 0.1;
+      requestAnimationFrame(frame);
+      return;
+    }
     autoT += dt; if (autoT >= 0.5) { autoT = 0; if (!cinematic) runAutomation(false); }
     if (!cinematic && S.world === 'cave') {
       shoppingT += dt;
@@ -3900,6 +3996,7 @@ import { createState } from './state.js';
     shellTick: dt => shellUI.tick(dt),
     oysterOpened, bestPearls: () => bestPearls(S), equipPearl: id => equipPearlItem(S, id), grindPearl: id => grindPearlItem(S, id),
     finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),
+    beginVerse, openVerse, closeVerse, get verseOpen() { return verseOpen; }, inVerse,
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
     serialize, load, updateUI, setTab, rollPlan, buildHorn, startSounding, finishSounding, sndHit, renderSounding, renderInventory, renderColl, setHornSub,

@@ -114,6 +114,7 @@
       <button class="tab" role="tab" id="tab-deep" type="button">Deep<i class="new" hidden></i></button>
       <button class="tab" role="tab" id="tab-choir" type="button">Choir<i class="new" hidden></i></button>
       <button class="tab" role="tab" id="tab-horns" type="button">Horns<i class="new" hidden></i></button>
+      <button class="tab" role="tab" id="tab-found" type="button">Foundations</button>
     </nav>
 
     <!-- cave -->
@@ -211,6 +212,8 @@
         <div class="statgrid" id="songReqs" style="grid-template-columns:1fr"></div>
         <label class="note" id="songAssistRow" hidden><input type="checkbox" id="songAssist"> <span id="songAssistText">Auto assistance</span></label>
         <button class="bigbtn poor" id="songBtn" type="button"></button>
+        <p class="note" id="verseNote" hidden>The song is sung, but the mountain is not finished with you. You may begin again: everything resets, the cave and the sea become Foundations that run themselves, and Echoes carry forward.</p>
+        <button class="bigbtn" id="verseBtn" type="button" hidden>Begin the Second Verse</button>
       </section>
       <section>
         <h2>The Deep</h2>
@@ -233,6 +236,30 @@
         <h2>The Choir Above</h2>
         <p class="note" id="choirInfo"></p>
         <div class="list" id="shopChoir"></div>
+      </section>
+    </div>
+
+    <div class="panel" id="panel-found" role="tabpanel" hidden>
+      <section>
+        <h2>Echoes <span id="foundEchoes"></span></h2>
+        <p class="note" id="foundNote"></p>
+        <button class="bigbtn" id="buyKeepTime" type="button"></button>
+        <button class="bigbtn" id="buyCaveAuto" type="button"></button>
+        <button class="bigbtn" id="buySeaAuto" type="button"></button>
+      </section>
+      <section id="foundCave">
+        <h2>Cave Foundation</h2>
+        <div class="statgrid" style="grid-template-columns:1fr"><div class="stat"><span>Stone</span><b id="fndStone"></b></div><div class="stat"><span>Per second</span><b id="fndStoneRate"></b></div></div>
+        <button class="bigbtn" id="buyCaveEngine" type="button"></button>
+      </section>
+      <section id="foundSea">
+        <h2>Sea Foundation</h2>
+        <div class="statgrid" style="grid-template-columns:1fr"><div class="stat"><span>Tide</span><b id="fndTide"></b></div><div class="stat"><span>Per second</span><b id="fndTideRate"></b></div></div>
+        <button class="bigbtn" id="buySeaEngine" type="button"></button>
+      </section>
+      <section>
+        <h2>The Collection</h2>
+        <p class="note" id="foundRecord"></p>
       </section>
     </div>
 
@@ -449,6 +476,24 @@
       <div class="page"><p id="creditsText"></p></div>
       <div class="statgrid" id="creditsRows" style="grid-template-columns:1fr"></div>
     </div>
+  </div>
+</div>
+
+<div class="modal" id="verse" hidden role="dialog" aria-modal="true" aria-labelledby="verseTitle">
+  <div class="modal-box" style="width:min(460px,100%)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="verseTitle">Begin the Second Verse</div>
+        <div class="modal-sub" id="verseSub"></div>
+      </div>
+      <button class="link" id="verseCancel" type="button">Not yet</button>
+    </div>
+    <div class="chron-body">
+      <div class="page"><p><b>This resets everything.</b> You will lose your hum, shards, lumen, fathoms, depth, Heartstones, soundings, upgrades, horns, shells, pearls, and the Patient Choir settings.</p>
+      <p>You keep your settings, lifetime stats, feats, the finished Song, a record of your Collection, and the Echoes you earn now. The cave and the sea then run themselves as Foundations, making Stone and Tide.</p></div>
+      <div class="statgrid" id="verseRows" style="grid-template-columns:1fr"></div>
+    </div>
+    <button class="bigbtn" id="verseConfirm" type="button">Reset everything and begin</button>
   </div>
 </div>
 
