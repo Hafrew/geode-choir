@@ -265,7 +265,7 @@ Paid at reset from the lap's Renown, harmony, feats and best depth, capped per l
 
 ### Build order
 
-1. Foundation formulas and the reset (no Hall): the simulator proves lap 2 is faster and Keep Time catch-up is exact.
+1. Foundation formulas and the reset (no Hall). **Rules delivered:** `src/foundations.js`, `resetSecondVerse` in `progression.js`, save normalization and `tools/foundations.test.mjs`; numbers in [Second Verse model](tools/sim/second-verse.md). **Still to do:** the Foundation panels, the three-way world switch and the reset confirmation in `main.js`, then the browser-driven lap-two run.
 2. Hall core: districts, singers, parts, Cadence and Repertoire.
 3. Festival, Renown and the Echoes payout.
 4. Migration and hardening. Each step is its own reviewable release.
