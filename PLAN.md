@@ -231,22 +231,25 @@ Draft for discussion; nothing here is implemented and numbers are placeholders u
 ### Rules (proposed defaults)
 
 - **Trigger:** `S.chorus.done`. An opt-in button on the credits/Chronicle card; never automatic. Saves that completed the finale before this release get the layer unlocked without being reset.
-- **Resets:** hum, shards, lumen, fathoms, depth, Heartstones, soundings, floors, cave and Sea upgrades, and the Chorus expedition state (replay stays cosmetic and pays nothing).
-- **Kept** (everything that already survives every reset): shells, horns, pearl items, Collection, Patient Choir settings, lifetime and best stats, the finale's completed flag and its ending.
+- **Resets: everything.** Hum, shards, lumen, fathoms, depth, Heartstones, soundings, floors, all cave and Sea upgrades, shells, horns, pearl items and dust, the Collection, Patient Choir settings, and the Chorus expedition state (replay stays cosmetic and pays nothing). Only meta survives: Settings, lifetime and best stats, the finale's completed flag and ending, and the new layer's own currency and unlocks. This is harsher than every earlier reset, so the confirmation must list what is lost.
 - **New currency:** earned at reset from run performance (harmony, feats, deepest depth, soundings). Spent on permanent multipliers, earlier automation unlocks and the third world's upgrades. Gains are capped per run so replaying is never required to stay ahead.
 - **Third world:** a tab beside Cave and Sea with its own production loop. Cave and Sea output feed it; it does not replace either. Theme and mechanics are undecided.
+- **Unlocks bought with the new currency** (permanent, kept through later Second Verse resets):
+  1. **Keep Time:** the world keeps ticking while the tab is hidden or closed. A browser cannot run a closed tab, and hidden tabs are throttled, so this is done by catch-up: on return the game computes the elapsed time and applies it at **100% efficiency** (today's away rate is 35% plus horn bonuses, capped at 100%). The tab can only be throttled, never trusted to run, so everything is timestamp-based, not tick-count-based, and the result is applied once and saved immediately. No server or service worker is involved.
+  2. **Cave auto descend:** descends whenever the settling timer and depth allow, including during Keep Time catch-up. This lifts the current rule that dives, cave events and shopping do not advance offline. Catch-up needs a bounded closed-form or batched loop with a cap per return, and neutral choices for any cave event that comes up, like Auto does today.
+  3. **Sea automation, with its own unlock tiers:** a Sea counterpart of Patient Choir covering soundings, shell and pearl purchases and Deep upgrades, with currency reserves, off by default and unlocked in stages by the new currency. Sea auto-sounding uses Auto quality, not Perfect.
 - **Target pacing:** lap 2 should reach the finale in roughly 1–2 hours, against 6.5 hours for the first run. Tune with the currency's multipliers, not by cutting gates.
 
 ### Open choices
 
 1. Third world as its own tab (default) or an expansion of the Sea.
 2. Opt-in reset (default) or automatic.
-3. Whether the currency also scales the old Heartstone economy (default: only the new world and automation unlocks).
+3. Whether Keep Time catch-up is capped per return (default: yes, same five-batch idea as horns) and whether the currency also scales the old Heartstone economy (default: only the new world and automation unlocks).
 4. Whether the Last Chorus stays a one-time ending or becomes repeatable for harmony upgrades.
 
 ### Validation
 
-Extend `tools/sim` to play a full lap, reset, and a second lap, recording per-lap time to finale, currency earned, and how many laps until the new world's upgrades stop mattering. Check migration of finished saves, reload mid-reset (reset once, pay once), the Chorus `legacy` flag, and that shells, horns and pearls survive.
+Extend `tools/sim` to play a full lap, reset, and a second lap, recording per-lap time to finale, currency earned, and how many laps until the new world's upgrades stop mattering. Check migration of finished saves, reload mid-reset (reset once, pay once), the Chorus `legacy` flag, that a full reset really clears shells, horns, pearls and the Collection but keeps Settings and the new unlocks, and that Keep Time catch-up cannot double-apply after a reload or clock change.
 
 ## 1.12.0 — Descent minigame and Risky Descent (original Phase 5)
 
