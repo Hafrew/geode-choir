@@ -43,6 +43,7 @@ Current source version: **1.11.0 beta** (The Last Chorus). Everything through 1.
 | **1.10.7** | Cave dives, milestone events, shopping horn rack and staged Patient Choir | Implemented together; see release validation below |
 | 1.10.8 | Polish: title screen, icon rail, Look sliders, motion pass, top-bar fixes | Delivered; no balance changes |
 | **1.11.0** | The Last Chorus finale expedition | Implemented; entry price kept at 50,000 pending tuning (see 1.11.0 below) |
+| **Proposed: Second Verse** | Post-finale prestige layer and third world (draft spec below) | Needs sign-off on the open choices; if adopted it takes 1.12.0 and the rows below shift one minor version |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -222,6 +223,30 @@ Replace immediate first-time finale completion with a **roughly 30-minute intera
 - **Still open:** harmony thresholds and the 25 s assist wait need real-player tuning; the clue is short-term memory (free replay) rather than a hard puzzle; whether to drop the beta label now that the finale has landed.
 
 Measure **eligibility**, **entry**, and **expedition completion** separately. Current simulation “finished” means readiness, not paid completion; extend it to exercise actual payment and every chapter. Record held/lifetime fathoms and post-payment balance. Compare active/assisted completion, interruptions/reloads, disabled sound, and mobile controls.
+
+## Proposed: Second Verse — post-finale prestige layer (draft)
+
+Draft for discussion; nothing here is implemented and numbers are placeholders until simulated. After the Last Chorus, the player may reset **both worlds** for a permanent new currency and a third world.
+
+### Rules (proposed defaults)
+
+- **Trigger:** `S.chorus.done`. An opt-in button on the credits/Chronicle card; never automatic. Saves that completed the finale before this release get the layer unlocked without being reset.
+- **Resets:** hum, shards, lumen, fathoms, depth, Heartstones, soundings, floors, cave and Sea upgrades, and the Chorus expedition state (replay stays cosmetic and pays nothing).
+- **Kept** (everything that already survives every reset): shells, horns, pearl items, Collection, Patient Choir settings, lifetime and best stats, the finale's completed flag and its ending.
+- **New currency:** earned at reset from run performance (harmony, feats, deepest depth, soundings). Spent on permanent multipliers, earlier automation unlocks and the third world's upgrades. Gains are capped per run so replaying is never required to stay ahead.
+- **Third world:** a tab beside Cave and Sea with its own production loop. Cave and Sea output feed it; it does not replace either. Theme and mechanics are undecided.
+- **Target pacing:** lap 2 should reach the finale in roughly 1–2 hours, against 6.5 hours for the first run. Tune with the currency's multipliers, not by cutting gates.
+
+### Open choices
+
+1. Third world as its own tab (default) or an expansion of the Sea.
+2. Opt-in reset (default) or automatic.
+3. Whether the currency also scales the old Heartstone economy (default: only the new world and automation unlocks).
+4. Whether the Last Chorus stays a one-time ending or becomes repeatable for harmony upgrades.
+
+### Validation
+
+Extend `tools/sim` to play a full lap, reset, and a second lap, recording per-lap time to finale, currency earned, and how many laps until the new world's upgrades stop mattering. Check migration of finished saves, reload mid-reset (reset once, pay once), the Chorus `legacy` flag, and that shells, horns and pearls survive.
 
 ## 1.12.0 — Descent minigame and Risky Descent (original Phase 5)
 
