@@ -43,7 +43,7 @@ Current source version: **1.11.0 beta** (The Last Chorus). Everything through 1.
 | **1.10.7** | Cave dives, milestone events, shopping horn rack and staged Patient Choir | Implemented together; see release validation below |
 | 1.10.8 | Polish: title screen, icon rail, Look sliders, motion pass, top-bar fixes | Delivered; no balance changes |
 | **1.11.0** | The Last Chorus finale expedition | Implemented; entry price kept at 50,000 pending tuning (see 1.11.0 below) |
-| **Proposed: Second Verse** | Post-finale prestige layer and third world (draft spec below) | Needs sign-off on the open choices; if adopted it takes 1.12.0 and the rows below shift one minor version |
+| **Proposed: Second Verse** | Foundations and the Choir Hall: post-finale prestige layer (draft spec below) | Needs sign-off on the open choices; if adopted it takes 1.12.0 and the rows below shift one minor version |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -224,32 +224,53 @@ Replace immediate first-time finale completion with a **roughly 30-minute intera
 
 Measure **eligibility**, **entry**, and **expedition completion** separately. Current simulation “finished” means readiness, not paid completion; extend it to exercise actual payment and every chapter. Record held/lifetime fathoms and post-payment balance. Compare active/assisted completion, interruptions/reloads, disabled sound, and mobile controls.
 
-## Proposed: Second Verse — post-finale prestige layer (draft)
+## Proposed: Second Verse — Foundations and the Choir Hall (draft)
 
-Draft for discussion; nothing here is implemented and numbers are placeholders until simulated. After the Last Chorus, the player may reset **both worlds** for a permanent new currency and a third world.
+Draft for discussion; nothing here is implemented, and all names and numbers are placeholders until simulated. Finishing the Last Chorus opens an opt-in reset. The Cave and the Sea become compact **Foundations** that run themselves and feed a new third world, **the Choir Hall**, where most play happens.
 
-### Rules (proposed defaults)
+### Reset (everything)
 
-- **Trigger:** `S.chorus.done`. An opt-in button on the credits/Chronicle card; never automatic. Saves that completed the finale before this release get the layer unlocked without being reset.
-- **Resets: everything.** Hum, shards, lumen, fathoms, depth, Heartstones, soundings, floors, all cave and Sea upgrades, shells, horns, pearl items and dust, the Collection, Patient Choir settings, and the Chorus expedition state (replay stays cosmetic and pays nothing). Only meta survives: Settings, lifetime and best stats, the finale's completed flag and ending, and the new layer's own currency and unlocks. This is harsher than every earlier reset, so the confirmation must list what is lost.
-- **New currency:** earned at reset from run performance (harmony, feats, deepest depth, soundings). Spent on permanent multipliers, earlier automation unlocks and the third world's upgrades. Gains are capped per run so replaying is never required to stay ahead.
-- **Third world:** a tab beside Cave and Sea with its own production loop. Cave and Sea output feed it; it does not replace either. Theme and mechanics are undecided.
-- **Unlocks bought with the new currency** (permanent, kept through later Second Verse resets):
-  1. **Keep Time:** the world keeps ticking while the tab is hidden or closed. A browser cannot run a closed tab, and hidden tabs are throttled, so this is done by catch-up: on return the game computes the elapsed time and applies it at **100% efficiency** (today's away rate is 35% plus horn bonuses, capped at 100%). The tab can only be throttled, never trusted to run, so everything is timestamp-based, not tick-count-based, and the result is applied once and saved immediately. No server or service worker is involved.
-  2. **Cave auto descend:** descends whenever the settling timer and depth allow, including during Keep Time catch-up. This lifts the current rule that dives, cave events and shopping do not advance offline. Catch-up needs a bounded closed-form or batched loop with a cap per return, and neutral choices for any cave event that comes up, like Auto does today.
-  3. **Sea automation, with its own unlock tiers:** a Sea counterpart of Patient Choir covering soundings, shell and pearl purchases and Deep upgrades, with currency reserves, off by default and unlocked in stages by the new currency. Sea auto-sounding uses Auto quality, not Perfect.
-- **Target pacing:** lap 2 should reach the finale in roughly 1–2 hours, against 6.5 hours for the first run. Tune with the currency's multipliers, not by cutting gates.
+Hum, shards, lumen, fathoms, depth, Heartstones, soundings, floors, cave and Sea upgrades, shells, horns, pearl items and dust, the Collection, Patient Choir settings and the Chorus expedition state all reset (Chorus replay stays cosmetic and pays nothing). Only meta survives: Settings, lifetime and best stats, the finale's completed flag and ending, and the new layer's currency (**Echoes**) and unlocks. The confirmation lists what is lost. Opt-in; saves that already finished the Chorus get the layer unlocked without being reset. Whether the Collection survives as a read-only record is open.
+
+### Foundations (Cave and Sea, simplified)
+
+- Each world becomes one panel: a rate, a few upgrades, and a toggle. No live minigames, no sounding or horn calls, no tick-by-tick simulation.
+- **Cave Foundation** produces **Stone**; **Sea Foundation** produces **Tide**. Rate is a closed-form formula of the Foundation's upgrades, the player's best-ever depth and Heartstone count (lifetime stats survive), and Echoes. Because the output is a formula of time, catch-up is exact and cheap.
+- Foundations start from a baseline each lap, scaled by best-ever stats, so a lap is always faster than the last without being skippable.
+- The three requested unlocks are built into this structure: **Keep Time** (the game applies elapsed time on return at 100% efficiency; a browser cannot run a closed tab, so it is catch-up by timestamp, applied once and saved at once), **cave auto descend** (a Foundation upgrade that raises Stone yield; there is no longer a descent to perform), and **Sea automation** (a Foundation upgrade ladder for Tide, bought with Echoes in tiers).
+
+### The Choir Hall (third world)
+
+Hollowmere rebuilt as a choir. A new tab beside Cave and Sea.
+
+- **Districts** (Quarry Steps, Harbor Stairs, Belfry, Hall, Gardens) are built and upgraded with Stone and Tide. Each houses **Singers**; singers are recruited with a mix of Stone and Tide and trained over time.
+- **Parts:** Singers are assigned to choir parts (bass, tenor, alto, treble, descant). A balanced choir beats a lopsided one, so assignment is the main decision.
+- **Rehearsal:** each assigned part produces **Cadence** over time. Cadence is spent on **Repertoire**, songs that boost the Foundations (so the old worlds stay relevant) and the Hall itself.
+- **Festival:** every 20–30 minutes a Festival opens, reusing the Last Chorus encounter machinery (timed phrases, pulses). Good play earns **Renown**, the Hall's score currency; Auto gives an average result and is always available. Renown unlocks new districts and Repertoire tiers and raises the Echoes paid on the next reset.
+- **Pacing target:** the Hall carries several hours of play per lap. Lap time to the next Chorus target should fall from 6.5 hours to roughly 2–3 hours, with the Hall's content, not the Foundations, paying for most of it.
+
+### Echoes
+
+Paid at reset from the lap's Renown, harmony, feats and best depth, capped per lap. Echoes buy permanent Foundation multipliers, Keep Time, the Foundation upgrade ladders and Hall unlocks. They persist through later Second Verse resets.
 
 ### Open choices
 
-1. Third world as its own tab (default) or an expansion of the Sea.
-2. Opt-in reset (default) or automatic.
-3. Whether Keep Time catch-up is capped per return (default: yes, same five-batch idea as horns) and whether the currency also scales the old Heartstone economy (default: only the new world and automation unlocks).
-4. Whether the Last Chorus stays a one-time ending or becomes repeatable for harmony upgrades.
+1. Does the Collection survive as a read-only record (recommended) or reset fully?
+2. Are Foundations baseline-per-lap (default) or carry the finished first run?
+3. Does Keep Time catch-up cap per return (default: yes)?
+4. Does the Last Chorus stay a one-time ending, or repeat at each lap for Radiant bonuses?
+5. Names and theme (Choir Hall, Stone, Tide, Cadence, Renown, Echoes) are placeholders.
+
+### Build order
+
+1. Foundation formulas and the reset (no Hall): the simulator proves lap 2 is faster and Keep Time catch-up is exact.
+2. Hall core: districts, singers, parts, Cadence and Repertoire.
+3. Festival, Renown and the Echoes payout.
+4. Migration and hardening. Each step is its own reviewable release.
 
 ### Validation
 
-Extend `tools/sim` to play a full lap, reset, and a second lap, recording per-lap time to finale, currency earned, and how many laps until the new world's upgrades stop mattering. Check migration of finished saves, reload mid-reset (reset once, pay once), the Chorus `legacy` flag, that a full reset really clears shells, horns, pearls and the Collection but keeps Settings and the new unlocks, and that Keep Time catch-up cannot double-apply after a reload or clock change.
+Extend `tools/sim` to play a full lap, reset and a second lap, recording time to the next Chorus target, Echoes earned and how many laps until the Foundation ladders stop mattering. Check migration of finished saves, reload mid-reset (reset once, pay once), the Chorus `legacy` flag, that a reset really clears shells, horns, pearls and the Collection (if Q1 says so) but keeps Settings and the new unlocks, and that Keep Time catch-up cannot double-apply after a reload or clock change.
 
 ## 1.12.0 — Descent minigame and Risky Descent (original Phase 5)
 
