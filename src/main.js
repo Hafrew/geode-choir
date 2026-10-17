@@ -15,6 +15,7 @@ import { KNEE, resetDescent, resetSounding, resetHeartstone, resetSecondVerse, d
   soundingReady, advanceSeaTimer, seaLock, FINALE_SOUNDINGS, FINALE_HEARTS, PLUMB_STEP, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   depthThreshold, seaThreshold, fossilReward, fathomReward, sunPityBonus, sunveinRoll, SUN_GUARANTEE, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady } from './progression.js';
 import { serializeState, restoreState, cmpVer } from './saves.js';
+import { PARTS, DISTRICTS, SONGS, LEVEL_MAX, hallOf, districtCost, districtOpen, capacity, assigned, recruitCost, balance, songOpen, songCost, cadenceRate, buildDistrict, recruit, assign, buySong } from './hall.js';
 import { UNLOCK_COSTS, CATCHUP_CAP, ENGINE_MAX, AWAY_EFFICIENCY, verseActive, verseOffered, echoGain, foundationRate, engineCost, buyEngine, buyUnlock, advanceFoundations } from './foundations.js';
 import { applyAutoEquip, acquireHorn, IVORY_LEVELS, discoveryIvory, grantDiscoveryIvory, RARITY, HSTATS, PRIMORDIAL, RARITY_LEVELS, PITY_AT, TRAITS, TRAIT_CHOICE_AT,
   hash32, rng32, FAMS, FAM_OF, famOf, rarityOdds, rarityRevealed, primordialUnlocked, visibleRarities,
@@ -2679,12 +2680,14 @@ import { createState } from './state.js';
     choir:   { world: 'sea',  open: () => true },
     horns:   { world: 'both', open: () => S.hornsOn },
     found:   { world: 'both', open: () => true },
+    hall:    { world: 'both', open: () => true },
   };
   const TABS = Object.keys(TABDEF);
   // Once the Second Verse is entered the old tabs step aside and the Foundations tab stands in for both worlds.
   const inVerse = () => verseActive(S);
-  const homeTab = () => inVerse() ? 'found' : S.world;
-  const tabVisible = t => (inVerse() ? t === 'found' : t !== 'found') && (TABDEF[t].world === 'both' || TABDEF[t].world === S.world) && TABDEF[t].open();
+  const homeTab = () => inVerse() ? (S.tab === 'hall' ? 'hall' : 'found') : S.world;
+  const VERSE_TABS = ['found', 'hall'];
+  const tabVisible = t => (inVerse() ? VERSE_TABS.includes(t) : !VERSE_TABS.includes(t)) && (TABDEF[t].world === 'both' || TABDEF[t].world === S.world) && TABDEF[t].open();
   function setTab(name) {
     if (!tabVisible(name)) name = homeTab();
     S.tab = name;
@@ -2703,13 +2706,16 @@ import { createState } from './state.js';
   function setWorld(w) {
     if (w === S.world || cinematic) return;
     if (w === 'sea' && !S.sea.unlocked) return;
-    S.world = w; S.tab = homeTab();
+    S.world = w; S.tab = inVerse() ? 'found' : w;
     drag = null;
     afterStateChange();
     whisper(w === 'sea' ? 'Down to the sunless sea. Up above, the cave keeps singing quietly.' : 'Back up to the cave. Below, the sea keeps rolling quietly.');
   }
-  $('wCave').addEventListener('click', () => setWorld('cave'));
-  $('wSea').addEventListener('click', () => setWorld('sea'));
+  // In the Second Verse the Cave and Sea buttons open their Foundation, and the Hall button opens the Choir Hall.
+  const toFoundation = () => { if (inVerse() && S.tab === 'hall') { setTab('found'); updateUI(); } };
+  $('wCave').addEventListener('click', () => { toFoundation(); setWorld('cave'); });
+  $('wSea').addEventListener('click', () => { toFoundation(); setWorld('sea'); });
+  $('wHall').addEventListener('click', () => { if (inVerse()) { setTab('hall'); updateUI(); } });
 
   // =====================================================================
   // prestige: descend, sound, kindle
@@ -3098,7 +3104,7 @@ import { createState } from './state.js';
     save(); backupNow();
     const r = resetSecondVerse(S, VERSION);
     if (!r) return false;
-    S = r.state; S.world = 'cave'; S.tab = 'found';
+    S = r.state; S.world = 'cave'; S.tab = 'hall';
     closeVerse(); closePops();
     refreshAll(); afterStateChange(); save();
     whisper(`The Second Verse begins. ${fmt(r.gain)} Echoes carry forward; the cave and the sea now sing on their own.`);
@@ -3130,6 +3136,55 @@ import { createState } from './state.js';
     const n = Object.keys(V.record).length, owned = Object.values(V.record).reduce((a, c) => a + (c.n || 0), 0);
     setT('foundRecord', n ? `A read-only record of ${n} horn kinds (${fmt(owned)} found in all) from before the reset. The horns themselves are gone.` : 'No horns were recorded before the reset.');
   }
+  // The Choir Hall: static rows built once and updated in place, so a button is never replaced under a click.
+  const hallRows = { districts: {}, parts: [], songs: {} };
+  function buildHall() {
+    $('hallDistricts').innerHTML = DISTRICTS.map(d => `<button class="item hrow" type="button" data-district="${d.id}"><div class="body"><b>${d.name}</b><small></small></div><span class="cs"></span></button>`).join('');
+    $('hallParts').innerHTML = PARTS.map((p, i) => `<div class="item hrow"><div class="body"><b>${p}</b><small></small></div><span class="cs"><button class="link" type="button" data-part="${i}" data-delta="-1" aria-label="Fewer ${p}">−</button> <button class="link" type="button" data-part="${i}" data-delta="1" aria-label="More ${p}">+</button></span></div>`).join('');
+    $('hallSongs').innerHTML = SONGS.map(x => `<button class="item hrow" type="button" data-song="${x.id}"><div class="body"><b>${x.name}</b><small>${x.text}</small></div><span class="cs"></span></button>`).join('');
+    for (const el of $('hallDistricts').children) hallRows.districts[el.dataset.district] = el;
+    hallRows.parts = [...$('hallParts').children];
+    for (const el of $('hallSongs').children) hallRows.songs[el.dataset.song] = el;
+  }
+  buildHall();
+  const costText = c => [c.stone ? `${fmt(c.stone)} stone` : '', c.tide ? `${fmt(c.tide)} tide` : ''].filter(Boolean).join(' + ');
+  const canPay = c => S.verse.foundations.stone >= c.stone && S.verse.foundations.tide >= c.tide;
+  const setRow = (el, title, sub, cost, off) => {
+    const b = el.querySelector('b'), sm = el.querySelector('small'), c = el.querySelector('.cs');
+    if (title != null && b._t !== title) { b._t = title; b.textContent = title; }
+    if (sm._t !== sub) { sm._t = sub; sm.textContent = sub; }
+    if (c && cost != null && c._t !== cost) { c._t = cost; c.textContent = cost; }
+    if ('disabled' in el) el.disabled = !!off;
+    el.classList.toggle('poor', !!off);
+  };
+  function renderHall() {
+    if (!inVerse() || S.tab !== 'hall') return;
+    const H = hallOf(S), cap = capacity(H), free = H.singers - assigned(H);
+    setT('hallNote', 'Hollowmere, rebuilt as a choir. Build districts with Stone and Tide, recruit singers, and give each part a voice: a balanced choir sings at full strength, a lopsided one at half. Cadence buys songs that lift both Foundations.');
+    setT('hallCadence', fmt(H.cadence)); setT('hallRate', `${fmt(cadenceRate(S))}/s`);
+    setT('hallSingers', `${H.singers} / ${cap}${free ? ` · ${free} unassigned` : ''}`); setT('hallBalance', `${Math.round(balance(H) * 100)}%`);
+    for (const d of DISTRICTS) {
+      const lv = H.districts[d.id], full = lv >= LEVEL_MAX, open = districtOpen(H, d.id), c = districtCost(d.id, lv);
+      const need = d.need.length && !open ? ` · needs ${d.need.map(n => DISTRICTS.find(x => x.id === n).name).join(' and ')}` : '';
+      setRow(hallRows.districts[d.id], `${d.name} · level ${lv}`, `${d.text}${need}`, full ? 'full' : costText(c), full || !open || !canPay(c));
+    }
+    const rc = recruitCost(H), room = H.singers < cap;
+    setT('hallRecruit', room ? `Recruit a singer · ${costText(rc)}` : cap ? 'The districts are full: build more to house singers' : 'Build a district first to house singers');
+    $('hallRecruit').disabled = !room || !canPay(rc); $('hallRecruit').classList.toggle('poor', !room || !canPay(rc));
+    setT('hallPartsNote', free ? `${free} singer${free === 1 ? '' : 's'} not yet singing. Add them to a part.` : 'Every singer has a part.');
+    hallRows.parts.forEach((el, i) => {
+      setRow(el, null, `${H.parts[i]} singing`, null);
+      el.querySelector('[data-delta="-1"]').disabled = H.parts[i] <= 0; el.querySelector('[data-delta="1"]').disabled = free <= 0;
+    });
+    for (const x of SONGS) {
+      const own = !!H.songs[x.id], open = songOpen(H, x.id), cost = songCost(H, x.id);
+      setRow(hallRows.songs[x.id], x.name, `${x.text}${open ? '' : ' · opens with the Hall district'}`, own ? 'known' : `${fmt(cost)} cadence`, own || !open || H.cadence < cost);
+    }
+  }
+  $('hallDistricts').addEventListener('click', e => { const el = e.target.closest('[data-district]'); if (el && buildDistrict(S, el.dataset.district)) { save(); updateUI(); } });
+  $('hallRecruit').addEventListener('click', () => { if (recruit(S)) { save(); updateUI(); } });
+  $('hallParts').addEventListener('click', e => { const el = e.target.closest('[data-part]'); if (el && assign(S, +el.dataset.part, +el.dataset.delta)) { save(); updateUI(); } });
+  $('hallSongs').addEventListener('click', e => { const el = e.target.closest('[data-song]'); if (el && buySong(S, el.dataset.song)) { save(); updateUI(); } });
   for (const [id, fn] of [['buyKeepTime', () => buyUnlock(S, 'keepTime')], ['buyCaveAuto', () => buyUnlock(S, 'caveAuto')], ['buySeaAuto', () => buyUnlock(S, 'seaAuto')],
     ['buyCaveEngine', () => buyEngine(S, 'cave')], ['buySeaEngine', () => buyEngine(S, 'sea')]]) {
     $(id).addEventListener('click', () => { if (fn()) { save(); updateUI(); } });
@@ -3528,11 +3583,17 @@ import { createState } from './state.js';
     const sea = S.world === 'sea', q = S.sea;
     setT('tagline', sea ? 'A sea that pays you in ripples.' : 'A cave that pays you in echoes.');
     $('purse').classList.toggle('sea', sea);
+    const inHall = inVerse() && S.tab === 'hall';
     if (inVerse()) {
       // The headline shows the Foundation's own stock and rate, and the Echoes held.
       const F = S.verse.foundations;
-      setT('humVal', fmt(sea ? F.tide : F.stone)); setT('humUnit', sea ? 'tide' : 'stone');
-      setT('rateVal', fmt(foundationRate(S, sea ? 'sea' : 'cave'))); setT('rateUnit', sea ? 'tide/s' : 'stone/s');
+      if (inHall) {
+        setT('humVal', fmt(hallOf(S).cadence)); setT('humUnit', 'cadence');
+        setT('rateVal', fmt(cadenceRate(S))); setT('rateUnit', 'cadence/s');
+      } else {
+        setT('humVal', fmt(sea ? F.tide : F.stone)); setT('humUnit', sea ? 'tide' : 'stone');
+        setT('rateVal', fmt(foundationRate(S, sea ? 'sea' : 'cave'))); setT('rateUnit', sea ? 'tide/s' : 'stone/s');
+      }
       setT('echoVal', fmt(S.verse.echoes)); setT('echoUnit', 'Echoes held');
     } else {
       setT('humVal', fmt(sea ? q.tide : S.hum));
@@ -3552,8 +3613,10 @@ import { createState } from './state.js';
     { const ct = sea ? '' : floorBlurb().replace(/<[^>]*>/g, ''); const dc = $('depthChip'); if (dc.title !== ct) dc.title = ct; }
     setT('lifetime', q.unlocked ? `${fmt(S.total)} hum · ${fmt(q.total)} tide, all told` : `${fmt(S.total)} hum sung, all told`);
     setHid('worlds', !q.unlocked);
-    $('wCave').setAttribute('aria-pressed', String(!sea));
-    $('wSea').setAttribute('aria-pressed', String(sea));
+    setHid('wHall', !inVerse());
+    $('wCave').setAttribute('aria-pressed', String(!sea && !inHall));
+    $('wSea').setAttribute('aria-pressed', String(sea && !inHall));
+    $('wHall').setAttribute('aria-pressed', String(inHall));
     if (setOpen) setT('fxNote', `Auto trims glows and halos when more than about 100 things are moving. Calm always does, draws at lower resolution, and shows ripples and echoes fainter and sparser (rewards are unchanged).${S.fx === 'auto' ? (lite ? ' Right now it is trimming.' : ' Right now it is drawing everything.') : ''}`);
 
     setHid('pillShard', sea || !shardsOn()); setT('shardVal', fmt(S.shards));
@@ -3610,6 +3673,7 @@ import { createState } from './state.js';
 
     renderCaveAutomation();
     renderFoundations();
+    renderHall();
     shellUI.render();
     pearlUI.render();
     chorusUI.render();
@@ -3996,7 +4060,7 @@ import { createState } from './state.js';
     shellTick: dt => shellUI.tick(dt),
     oysterOpened, bestPearls: () => bestPearls(S), equipPearl: id => equipPearlItem(S, id), grindPearl: id => grindPearlItem(S, id),
     finishShell: (id, quality) => finishShell(S, id, quality), equipShell: id => equipShell(S, id),
-    beginVerse, openVerse, closeVerse, get verseOpen() { return verseOpen; }, inVerse,
+    beginVerse, openVerse, closeVerse, get verseOpen() { return verseOpen; }, inVerse, renderHall,
     fossilGain, fathomGain, deepenAt, soundAt, heartCost, hornSlots, hornBoost, computeHB, gainHorn,
     maxCrystals, bellCap, have, TIERS, BELLS, RARITY, FEATS, heartDepth,
     serialize, load, updateUI, setTab, rollPlan, buildHorn, startSounding, finishSounding, sndHit, renderSounding, renderInventory, renderColl, setHornSub,

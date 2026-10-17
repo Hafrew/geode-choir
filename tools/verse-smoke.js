@@ -44,13 +44,13 @@ const KEY = 'geode-choir-v1';
         await page.locator('#verseBtn').click(); await page.locator('#verseConfirm').click();
         const s = await A(() => { const S = window.__geodeSimulation.api.S; return { hearts: S.hearts, hum: S.hum, soundings: S.sea.soundings, fathoms: S.sea.fathoms, laps: S.verse.laps, echoes: S.verse.echoes, tab: S.tab,
           best: S.verse.best, record: Object.keys(S.verse.record), finale: S.finale, maxDepth: S.stats.maxDepth, feats: Object.keys(S.feats).length }; });
-        assert.deepEqual({ ...s, best: undefined }, { hearts: 0, hum: 0, soundings: 0, fathoms: 0, laps: 1, echoes: s.echoes, tab: 'found', best: undefined, record: ['x:3'], finale: 1000, maxDepth: 120, feats: s.feats });
+        assert.deepEqual({ ...s, best: undefined }, { hearts: 0, hum: 0, soundings: 0, fathoms: 0, laps: 1, echoes: s.echoes, tab: 'hall', best: undefined, record: ['x:3'], finale: 1000, maxDepth: 120, feats: s.feats });
         assert(s.feats >= 2, 'feats survive');
         assert(s.echoes > 0); assert.equal(s.best.hearts, 5);
-        assert.equal(await page.locator('#panel-found').isVisible(), true);
-        for (const t of ['cave', 'sea', 'strata', 'pearls', 'deep', 'choir', 'horns']) assert.equal(await page.locator('#tab-' + t).isHidden(), true, t + ' tab');
+        assert.equal(await page.locator('#panel-hall').isVisible(), true, 'the Hall is the landing tab');
+        assert.equal(await page.locator('#wHall').isVisible(), true);
+        for (const t of ['cave', 'sea', 'strata', 'pearls', 'deep', 'choir', 'horns', 'found', 'hall']) assert.equal(await page.locator('#tab-' + t).isHidden(), true, t + ' tab');
         assert.equal(await page.locator('#chipDesc').isHidden(), true);
-        assert.match(await page.locator('#foundRecord').innerText(), /1 horn kinds/);
 
         // Tapping the world gives nothing, and the two worlds still switch.
         const hum = await A(() => { const a = window.__geodeSimulation.api; a.tap(300, 300); return a.S.hum; });
@@ -58,6 +58,32 @@ const KEY = 'geode-choir-v1';
         await page.locator('#wSea').click();
         assert.equal(await A(() => window.__geodeSimulation.api.S.world), 'sea');
         assert.equal(await A(() => window.__geodeSimulation.api.S.tab), 'found');
+        assert.equal(await page.locator('#panel-found').isVisible(), true);
+        assert.match(await page.locator('#foundRecord').innerText(), /1 horn kinds/);
+        await page.locator('#wHall').click();
+        assert.equal(await A(() => window.__geodeSimulation.api.S.tab), 'hall');
+        assert.equal(await page.locator('#wHall').getAttribute('aria-pressed'), 'true');
+        await page.locator('#wCave').click();
+        assert.equal(await A(() => window.__geodeSimulation.api.S.tab), 'found');
+
+        // The Hall: build, recruit, assign, rehearse and learn a song.
+        await A(() => { const a = window.__geodeSimulation.api, F = a.S.verse.foundations; F.stone = F.tide = 1e12; a.setTab('hall'); a.updateUI(); });
+        assert.equal(await page.locator('#hallRecruit').isDisabled(), true, 'no room before a district stands');
+        await page.locator('[data-district="quarry"]').click();
+        await page.locator('#hallRecruit').click(); await page.locator('#hallRecruit').click();
+        await page.locator('[data-part="0"][data-delta="1"]').click(); await page.locator('[data-part="1"][data-delta="1"]').click();
+        const hall = await A(() => { const H = window.__geodeSimulation.api.S.verse.hall; return { q: H.districts.quarry, singers: H.singers, parts: H.parts.slice() }; });
+        assert.deepEqual(hall, { q: 1, singers: 2, parts: [1, 1, 0, 0, 0] });
+        assert.equal(await page.locator('[data-district="belfry"]').isDisabled(), true, 'the Belfry needs its neighbours');
+        await A(() => { const a = window.__geodeSimulation.api; a.frame(performance.now() + 1000); });
+        await A(() => { const a = window.__geodeSimulation.api; let t = performance.now(); for (let i = 0; i < 60; i++) a.frame(t += 50); a.S.verse.hall.cadence = 1000; a.updateUI(); });
+        assert((await A(() => window.__geodeSimulation.api.S.verse.hall.cadence)) >= 1000, 'Cadence accrues');
+        await page.locator('[data-song="firstLight"]').click();
+        assert.equal(await A(() => window.__geodeSimulation.api.S.verse.hall.songs.firstLight), 1);
+        assert.match(await page.locator('[data-song="firstLight"]').innerText(), /known/);
+        assert.equal(await page.locator('[data-song="deepHymn"]').isDisabled(), true, 'the second songbook needs the Hall');
+        assert.match(await page.locator('#humUnit').innerText(), /cadence/i);
+        await A(() => window.__geodeSimulation.api.setTab('found'));
 
         // The Foundations run on frames and on time away.
         await A(() => { const a = window.__geodeSimulation.api; let t = performance.now(); for (let i = 0; i < 40; i++) a.frame(t += 50); });
@@ -82,8 +108,8 @@ const KEY = 'geode-choir-v1';
         // Reload keeps all of it, and the offer is gone.
         await A(() => window.__geodeSimulation.api.save());
         await page.reload(); await page.waitForFunction(() => !!window.__geodeSimulation?.api);
-        const r = await A(() => { const S = window.__geodeSimulation.api.S; return { laps: S.verse.laps, kt: S.verse.unlocks.keepTime, eng: S.verse.foundations.engine.cave, tab: S.tab, inV: window.__geodeSimulation.api.inVerse() }; });
-        assert.deepEqual(r, { laps: 1, kt: 1, eng: 1, tab: 'found', inV: true });
+        const r = await A(() => { const S = window.__geodeSimulation.api.S; return { laps: S.verse.laps, kt: S.verse.unlocks.keepTime, eng: S.verse.foundations.engine.cave, tab: S.tab, inV: window.__geodeSimulation.api.inVerse(), q: S.verse.hall.districts.quarry, song: S.verse.hall.songs.firstLight }; });
+        assert.deepEqual(r, { laps: 1, kt: 1, eng: 1, tab: 'found', inV: true, q: 1, song: 1 });
         assert.equal(await page.locator('#verseBtn').isHidden(), true);
         assert.deepEqual(errors, []);
         console.log(`PASS ${width}px: Second Verse offer, confirmation, full reset, Foundations, time away and reload`);

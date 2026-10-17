@@ -266,7 +266,7 @@ Paid at reset from the lap's Renown, harmony, feats and best depth, capped per l
 ### Build order
 
 1. Foundation formulas and the reset (no Hall). **Delivered:** the rules (`src/foundations.js`, `resetSecondVerse`, save normalization, `tools/foundations.test.mjs`) and the in-game flow in `main.js`: the offer and confirmation (with an automatic backup) after the Last Chorus, the Foundations tab and headline, tapping and the old tabs and chips stepping aside, live and away ticking with the per-return cap, and `tools/verse-smoke.js`. Numbers are placeholders ([Second Verse model](tools/sim/second-verse.md)). **Not yet:** the Hall (step 2), a third world-switch button, a browser-driven lap-two run, and a version bump and changelog entry (this work is unreleased).
-2. Hall core: districts, singers, parts, Cadence and Repertoire.
+2. Hall core. **Delivered (rules and screens):** `src/hall.js` (districts, singers, parts, Cadence, Repertoire), the Hall tab and third world-switch button, the Hall as the landing tab after a reset, and `tools/hall.test.mjs`. The Hall resets each lap, and its `renown` field is reserved for step 3. Engine costs were retuned after the pacing model ([Choir Hall model](tools/sim/second-verse.md)). **Open:** the Tide bottleneck, a wide strong/weak spread, and what Cadence buys beyond the two songbooks.
 3. Festival, Renown and the Echoes payout.
 4. Migration and hardening. Each step is its own reviewable release.
 

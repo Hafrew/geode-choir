@@ -2,6 +2,7 @@ import { freshCave, freshSea, createState } from './state.js';
 import { shellDiscounts } from './seashells.js';
 import { CHORUS_COST } from './chorus.js';
 import { verseOffered, echoGain, freshVerse } from './foundations.js';
+import { freshHall } from './hall.js';
 const KNEE = 10;
 const SEA_MILESTONES = [2, 5, 10, 20];
 const FINALE_SOUNDINGS = 36;
@@ -51,7 +52,7 @@ function resetHeartstone(S, version) {
 }
 // Second Verse: after the Last Chorus, everything resets for Echoes. Only meta survives: settings, lifetime stats,
 // feats, the finale and its ending, the Echoes and unlocks, and a read-only record of the Collection.
-function resetSecondVerse(S, version, renown = 0) {
+function resetSecondVerse(S, version, renown = S.verse?.hall?.renown || 0) {
   if (!verseOffered(S)) return null;
   const V = { ...freshVerse(), ...S.verse }, gain = echoGain(S, renown), results = S.chorus.results || [];
   const harmony = results.length ? results.reduce((a, b) => a + b, 0) / results.length : 0;
@@ -64,7 +65,7 @@ function resetSecondVerse(S, version, renown = 0) {
     ...V, laps: V.laps + 1, echoes: V.echoes + gain, echoesLife: V.echoesLife + gain, record,
     best: { depth: Math.max(V.best.depth, S.depth, S.stats.maxDepth), hearts: Math.max(V.best.hearts, S.hearts),
       soundings: Math.max(V.best.soundings, S.sea.soundings), harmony: Math.max(V.best.harmony, harmony) },
-    foundations: { ...V.foundations, stone: 0, tide: 0, engine: { cave: 0, sea: 0 }, last: 0 },
+    foundations: { ...V.foundations, stone: 0, tide: 0, engine: { cave: 0, sea: 0 }, last: 0 }, hall: freshHall(),
   };
   const keep = {
     verse: next, stats: S.stats, feats: S.feats, lore: S.lore, seen: S.seen, finale: S.finale, chorus: S.chorus,

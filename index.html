@@ -23,6 +23,7 @@
         <div class="worlds" id="worlds" hidden>
           <button type="button" id="wCave" aria-pressed="true">Cave</button>
           <button type="button" id="wSea" aria-pressed="false">Sea</button>
+          <button type="button" id="wHall" aria-pressed="false" hidden>Hall</button>
         </div>
         <div class="chip" id="depthChip" tabindex="0" role="button" aria-expanded="false" title="Show details"><b>Depth 0</b><span>Major pentatonic</span></div>
       </div>
@@ -115,6 +116,7 @@
       <button class="tab" role="tab" id="tab-choir" type="button">Choir<i class="new" hidden></i></button>
       <button class="tab" role="tab" id="tab-horns" type="button">Horns<i class="new" hidden></i></button>
       <button class="tab" role="tab" id="tab-found" type="button">Foundations</button>
+      <button class="tab" role="tab" id="tab-hall" type="button">Choir Hall</button>
     </nav>
 
     <!-- cave -->
@@ -260,6 +262,33 @@
       <section>
         <h2>The Collection</h2>
         <p class="note" id="foundRecord"></p>
+      </section>
+    </div>
+
+    <div class="panel" id="panel-hall" role="tabpanel" hidden>
+      <section>
+        <h2>The Choir Hall</h2>
+        <p class="note" id="hallNote"></p>
+        <div class="statgrid" style="grid-template-columns:1fr">
+          <div class="stat"><span>Cadence</span><b id="hallCadence"></b></div>
+          <div class="stat"><span>Per second</span><b id="hallRate"></b></div>
+          <div class="stat"><span>Singers</span><b id="hallSingers"></b></div>
+          <div class="stat"><span>Balance</span><b id="hallBalance"></b></div>
+        </div>
+      </section>
+      <section>
+        <h2>Districts</h2>
+        <div class="list" id="hallDistricts"></div>
+      </section>
+      <section>
+        <h2>The choir</h2>
+        <p class="note" id="hallPartsNote"></p>
+        <button class="bigbtn" id="hallRecruit" type="button"></button>
+        <div class="list" id="hallParts"></div>
+      </section>
+      <section>
+        <h2>Repertoire</h2>
+        <div class="list" id="hallSongs"></div>
       </section>
     </div>
 

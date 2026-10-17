@@ -693,3 +693,9 @@
 
 /* Second Verse: once the layer is entered, the cave and sea run themselves and the old controls step aside. */
 body.verse .strip, body.verse #depthChip, body.verse #chord, body.verse #hint, body.verse .pop, body.verse #caveVarietyPanel { display: none !important; }
+.item.hrow { grid-template-columns: minmax(0, 1fr) auto; }
+.item.hrow .body b { font-weight: 600; font-size: 0.875rem; }
+.item.hrow .body small { display: block; color: var(--muted); font-size: 0.7188rem; margin-top: 2px; }
+.item.hrow.poor { opacity: .6; }
+.item.hrow:disabled { cursor: default; }
+.item.hrow .cs .link { padding: 2px 10px; font-size: 1rem; }

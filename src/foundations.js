@@ -1,12 +1,13 @@
 // Second Verse: after the Last Chorus, the Cave and the Sea become Foundations that make Stone and Tide.
-// Rules only, without DOM, audio or storage, and no imports, so state and progression can both depend on this module.
+// Rules only, without DOM, audio or storage. The only import is the Hall, which has none, so state and progression can both depend on this module.
+import { freshHall, normalizeHall, hallMult, advanceHall } from './hall.js';
 // Every number here is a placeholder until simulated (see PLAN.md, "Second Verse").
 const KEEP_TIME_UNLOCK = 'keepTime', CAVE_AUTO_UNLOCK = 'caveAuto';
 const UNLOCK_COSTS = { keepTime: 10, caveAuto: 25, seaAuto: [15, 40, 90] };
 // A browser cannot run a closed tab, so time away is applied on return. Without Keep Time it pays the usual away
 // share; with it, everything. Either way one return is capped, and excess time is consumed, never banked.
 const AWAY_EFFICIENCY = 0.35, KEEP_TIME_EFFICIENCY = 1, CATCHUP_CAP = 8 * 3600;
-const ENGINE_MAX = 40, ENGINE_BASE_COST = 50, ENGINE_GROWTH = 1.9, ENGINE_STEP = 1.6;
+const ENGINE_MAX = 40, ENGINE_BASE_COST = 5000, ENGINE_GROWTH = 2.2, ENGINE_STEP = 1.6;
 const CAVE_BASE = 1, SEA_BASE = 0.6, ECHO_STEP = 0.1;
 const CAVE_AUTO_BONUS = 1.5, SEA_AUTO_BONUS = 0.25;
 const ECHO_BASE = 5, ECHO_CAP = 200;
@@ -16,7 +17,7 @@ const freshVerse = () => ({
   best: { depth: 0, hearts: 0, soundings: 0, harmony: 0 },
   unlocks: { keepTime: 0, caveAuto: 0, seaAuto: 0 },
   foundations: { stone: 0, tide: 0, stoneLife: 0, tideLife: 0, engine: { cave: 0, sea: 0 }, last: 0 },
-  record: {},
+  record: {}, hall: freshHall(),
 });
 const whole = (v, max = Infinity) => Math.min(max, Math.max(0, Math.floor(+v) || 0));
 const num = v => Number.isFinite(+v) ? Math.max(0, +v) : 0;
@@ -41,10 +42,10 @@ function foundationRate(S, kind) {
   const V = verseOf(S), eng = V.foundations.engine[kind] || 0;
   if (kind === 'cave') {
     return CAVE_BASE * (1 + 0.15 * V.best.depth) * (1 + 0.5 * V.best.hearts) * Math.pow(ENGINE_STEP, eng) * echoMult(V)
-      * (V.unlocks.caveAuto ? CAVE_AUTO_BONUS : 1);
+      * (V.unlocks.caveAuto ? CAVE_AUTO_BONUS : 1) * hallMult(S, 'cave');
   }
   return SEA_BASE * (1 + 0.1 * V.best.soundings) * (1 + 0.5 * V.best.hearts) * Math.pow(ENGINE_STEP, eng) * echoMult(V)
-    * (1 + SEA_AUTO_BONUS * V.unlocks.seaAuto);
+    * (1 + SEA_AUTO_BONUS * V.unlocks.seaAuto) * hallMult(S, 'sea');
 }
 const engineCost = level => Math.ceil(ENGINE_BASE_COST * Math.pow(ENGINE_GROWTH, level));
 function buyEngine(S, kind) {
@@ -76,6 +77,7 @@ function advanceFoundations(S, seconds, away = false) {
   const work = used * (away ? (V.unlocks.keepTime ? KEEP_TIME_EFFICIENCY : AWAY_EFFICIENCY) : 1);
   const stone = foundationRate(S, 'cave') * work, tide = foundationRate(S, 'sea') * work;
   F.stone += stone; F.tide += tide; F.stoneLife += stone; F.tideLife += tide;
+  advanceHall(S, work);
   return { stone, tide, seconds: used, capped: away && dt > CATCHUP_CAP };
 }
 function normalizeVerse(S) {
@@ -90,6 +92,7 @@ function normalizeVerse(S) {
   V.foundations = { stone: num(f.stone), tide: num(f.tide), stoneLife: Math.max(num(f.stone), num(f.stoneLife)), tideLife: Math.max(num(f.tide), num(f.tideLife)),
     engine: { cave: whole(e.cave, ENGINE_MAX), sea: whole(e.sea, ENGINE_MAX) }, last: num(f.last) };
   V.record = raw.record && typeof raw.record === 'object' ? raw.record : {};
+  V.hall = normalizeHall(raw.hall);
   S.verse = V;
   return V;
 }
