@@ -43,6 +43,7 @@ Current source version: **1.11.0 beta** (The Last Chorus). Everything through 1.
 | **1.10.7** | Cave dives, milestone events, shopping horn rack and staged Patient Choir | Implemented together; see release validation below |
 | 1.10.8 | Polish: title screen, icon rail, Look sliders, motion pass, top-bar fixes | Delivered; no balance changes |
 | **1.11.0** | The Last Chorus finale expedition | Implemented; entry price kept at 50,000 pending tuning (see 1.11.0 below) |
+| **Proposed: Second Verse** | Foundations and the Choir Hall: post-finale prestige layer (draft spec below) | Needs sign-off on the open choices; if adopted it takes 1.12.0 and the rows below shift one minor version |
 | **1.12.0** · original Phase 5 | Standard descent minigame and Risky Descent | Independent of finale; follows the newly approved delivery order |
 | **1.13.0** | Pearlbright Sea | Optional release reservation; skip if unconfirmed |
 | **1.14.0** · original Phase 6, part 1 | Chronicle drip and richer offline return report | Reuses actual progression and away accounting |
@@ -222,6 +223,56 @@ Replace immediate first-time finale completion with a **roughly 30-minute intera
 - **Still open:** harmony thresholds and the 25 s assist wait need real-player tuning; the clue is short-term memory (free replay) rather than a hard puzzle; whether to drop the beta label now that the finale has landed.
 
 Measure **eligibility**, **entry**, and **expedition completion** separately. Current simulation “finished” means readiness, not paid completion; extend it to exercise actual payment and every chapter. Record held/lifetime fathoms and post-payment balance. Compare active/assisted completion, interruptions/reloads, disabled sound, and mobile controls.
+
+## Proposed: Second Verse — Foundations and the Choir Hall (draft)
+
+Draft for discussion; nothing here is implemented, and all names and numbers are placeholders until simulated. Finishing the Last Chorus opens an opt-in reset. The Cave and the Sea become compact **Foundations** that run themselves and feed a new third world, **the Choir Hall**, where most play happens.
+
+### Reset (everything)
+
+Hum, shards, lumen, fathoms, depth, Heartstones, soundings, floors, cave and Sea upgrades, shells, horns, pearl items and dust, the Collection, Patient Choir settings and the Chorus expedition state all reset (Chorus replay stays cosmetic and pays nothing). Only meta survives: Settings, lifetime and best stats, the finale's completed flag and ending, and the new layer's currency (**Echoes**) and unlocks. The confirmation lists what is lost. Opt-in; saves that already finished the Chorus get the layer unlocked without being reset. Whether the Collection survives as a read-only record is open.
+
+### Foundations (Cave and Sea, simplified)
+
+- Each world becomes one panel: a rate, a few upgrades, and a toggle. No live minigames, no sounding or horn calls, no tick-by-tick simulation.
+- **Cave Foundation** produces **Stone**; **Sea Foundation** produces **Tide**. Rate is a closed-form formula of the Foundation's upgrades, the player's best-ever depth and Heartstone count (lifetime stats survive), and Echoes. Because the output is a formula of time, catch-up is exact and cheap.
+- Foundations start from a baseline each lap, scaled by best-ever stats, so a lap is always faster than the last without being skippable.
+- The three requested unlocks are built into this structure: **Keep Time** (the game applies elapsed time on return at 100% efficiency; a browser cannot run a closed tab, so it is catch-up by timestamp, applied once and saved at once), **cave auto descend** (a Foundation upgrade that raises Stone yield; there is no longer a descent to perform), and **Sea automation** (a Foundation upgrade ladder for Tide, bought with Echoes in tiers).
+
+### The Choir Hall (third world)
+
+Hollowmere rebuilt as a choir. A new tab beside Cave and Sea.
+
+- **Districts** (Quarry Steps, Harbor Stairs, Belfry, Hall, Gardens) are built and upgraded with Stone and Tide. Each houses **Singers**; singers are recruited with a mix of Stone and Tide and trained over time.
+- **Parts:** Singers are assigned to choir parts (bass, tenor, alto, treble, descant). A balanced choir beats a lopsided one, so assignment is the main decision.
+- **Rehearsal:** each assigned part produces **Cadence** over time. Cadence is spent on **Repertoire**, songs that boost the Foundations (so the old worlds stay relevant) and the Hall itself.
+- **Festival:** every 20–30 minutes a Festival opens, reusing the Last Chorus encounter machinery (timed phrases, pulses). Good play earns **Renown**, the Hall's score currency; Auto gives an average result and is always available. Renown unlocks new districts and Repertoire tiers and raises the Echoes paid on the next reset.
+- **Pacing target (to be reworded):** the Hall carries several hours of play per lap. After the reset there is no old-style Chorus target to time, so lap length is defined by the Hall's own goals and Echoes payout; set it when the Hall is specified.
+
+### Echoes
+
+Paid at reset from the lap's Renown, harmony, feats and best depth, capped per lap. Echoes buy permanent Foundation multipliers, Keep Time, the Foundation upgrade ladders and Hall unlocks. They persist through later Second Verse resets.
+
+### Decisions (agreed)
+
+1. The Collection survives the reset as a **read-only record**; the items themselves reset.
+2. Foundations start from a **baseline each lap**, scaled by best-ever stats and Echoes.
+3. Keep Time catch-up is **capped per return**.
+4. The Last Chorus stays a **one-time ending**; it does not repeat per lap.
+5. Names and theme (Choir Hall, Stone, Tide, Cadence, Renown, Echoes, Foundations) are accepted for now.
+
+**World switch:** three-way (Cave, Sea, Hall). After the reset the Cave and Sea tabs keep their backdrops but show the compact Foundation panel instead of the full game; the Hall is the default landing tab.
+
+### Build order
+
+1. Foundation formulas and the reset (no Hall). **Delivered:** the rules (`src/foundations.js`, `resetSecondVerse`, save normalization, `tools/foundations.test.mjs`) and the in-game flow in `main.js`: the offer and confirmation (with an automatic backup) after the Last Chorus, the Foundations tab and headline, tapping and the old tabs and chips stepping aside, live and away ticking with the per-return cap, and `tools/verse-smoke.js`. Numbers are placeholders ([Second Verse model](tools/sim/second-verse.md)). **Not yet:** the Hall (step 2), a third world-switch button, a browser-driven lap-two run, and a version bump and changelog entry (this work is unreleased).
+2. Hall core. **Delivered (rules and screens):** `src/hall.js` (districts, singers, parts, Cadence, Repertoire), the Hall tab and third world-switch button, the Hall as the landing tab after a reset, and `tools/hall.test.mjs`. The Hall resets each lap, and its `renown` field is reserved for step 3. Engine costs were retuned after the pacing model ([Choir Hall model](tools/sim/second-verse.md)). **Open:** the Tide bottleneck, a wide strong/weak spread, and what Cadence buys beyond the two songbooks.
+3. Festival, Renown and the Echoes payout.
+4. Migration and hardening. Each step is its own reviewable release.
+
+### Validation
+
+Extend `tools/sim` to play a full lap, reset and a second lap, recording time to the next Chorus target, Echoes earned and how many laps until the Foundation ladders stop mattering. Check migration of finished saves, reload mid-reset (reset once, pay once), the Chorus `legacy` flag, that a reset really clears shells, horns, pearls and the Collection (if Q1 says so) but keeps Settings and the new unlocks, and that Keep Time catch-up cannot double-apply after a reload or clock change.
 
 ## 1.12.0 — Descent minigame and Risky Descent (original Phase 5)
 

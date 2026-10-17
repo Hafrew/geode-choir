@@ -1,6 +1,8 @@
 import { freshCave, freshSea, createState } from './state.js';
 import { shellDiscounts } from './seashells.js';
 import { CHORUS_COST } from './chorus.js';
+import { verseOffered, echoGain, freshVerse } from './foundations.js';
+import { freshHall } from './hall.js';
 const KNEE = 10;
 const SEA_MILESTONES = [2, 5, 10, 20];
 const FINALE_SOUNDINGS = 36;
@@ -48,6 +50,32 @@ function resetHeartstone(S, version) {
   keep.sea.unlocked = true;
   return Object.assign(createState(version), keep);
 }
+// Second Verse: after the Last Chorus, everything resets for Echoes. Only meta survives: settings, lifetime stats,
+// feats, the finale and its ending, the Echoes and unlocks, and a read-only record of the Collection.
+function resetSecondVerse(S, version, renown = S.verse?.hall?.renown || 0) {
+  if (!verseOffered(S)) return null;
+  const V = { ...freshVerse(), ...S.verse }, gain = echoGain(S, renown), results = S.chorus.results || [];
+  const harmony = results.length ? results.reduce((a, b) => a + b, 0) / results.length : 0;
+  const record = { ...V.record };
+  for (const [k, c] of Object.entries(S.coll || {})) {
+    const old = record[k];
+    record[k] = old ? { ...old, n: Math.max(old.n || 0, c.n || 0) } : { name: c.name, r: c.r, n: c.n || 0 };
+  }
+  const next = {
+    ...V, laps: V.laps + 1, echoes: V.echoes + gain, echoesLife: V.echoesLife + gain, record,
+    best: { depth: Math.max(V.best.depth, S.depth, S.stats.maxDepth), hearts: Math.max(V.best.hearts, S.hearts),
+      soundings: Math.max(V.best.soundings, S.sea.soundings), harmony: Math.max(V.best.harmony, harmony) },
+    foundations: { ...V.foundations, stone: 0, tide: 0, engine: { cave: 0, sea: 0 }, last: 0 }, hall: freshHall(),
+  };
+  const keep = {
+    verse: next, stats: S.stats, feats: S.feats, lore: S.lore, seen: S.seen, finale: S.finale, chorus: S.chorus,
+    muted: S.muted, fx: S.fx, look: S.look, theme: S.theme, ts: S.ts, numfmt: S.numfmt, ver: S.ver, seenVer: S.seenVer, refund: S.refund,
+    shouts: S.shouts, quests: S.quests,
+  };
+  const fresh = createState(version);
+  fresh.sea.unlocked = true;
+  return { state: Object.assign(fresh, keep), gain };
+}
 function decayTime(S, floorTau, memory = 0) {
   return 600 * (S.hearts >= 2 ? 2 : 1) * (1 + 0.25 * Math.max(0, S.hearts - 3)) * floorTau / (1 - memory);
 }
@@ -79,7 +107,7 @@ const heartSeaRequired = S => {
   return Math.max(1, baseline - shellDiscounts(S).soundings);
 };
 const kindleReady = (S, omen) => S.lumen >= heartLumenCost(S, omen) && S.depth >= heartDepthRequired(S, omen) && S.sea.soundings >= heartSeaRequired(S);
-export { KNEE, resetDescent, resetSounding, resetHeartstone, decayTime, sunveinArrival,
+export { KNEE, resetDescent, resetSounding, resetHeartstone, resetSecondVerse, decayTime, sunveinArrival,
   SEA_MILESTONES, FINALE_SOUNDINGS, FINALE_HEARTS, HEART_LUMEN_GROWTH, PLUMB_STEP, SUN_PITY_STEP, SUN_PITY_MAX, SUN_GUARANTEE, sunPityBonus, sunveinRoll, SONG_FATHOMS, CEILING_MAX, CEILING_BASE, CEILING_GROWTH,
   seaLock, advanceSeaTimer, soundingReady, heartSeaBaseline,
   depthThreshold, seaThreshold, fossilReward, fathomReward, FATHOM_EXPONENT, heartLumenCost, heartDepthRequired, heartSeaRequired, kindleReady };
